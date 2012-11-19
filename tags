@@ -1,0 +1,216 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+ACTIVECONTOURS_H	ActiveContours.h	9;"	d
+ARRAY_COUNT	GLWidget.cpp	21;"	d	file:
+ActiveContours	ActiveContours.cpp	/^ActiveContours::ActiveContours() {$/;"	f	class:ActiveContours
+ActiveContours	ActiveContours.cpp	/^ActiveContours::ActiveContours(const ActiveContours& orig) {$/;"	f	class:ActiveContours
+ActiveContours	ActiveContours.h	/^class ActiveContours {$/;"	c
+BLUE	GLWidget.cpp	26;"	d	file:
+CAMERAMOV_H	CameraMovement.h	9;"	d
+CalcFrustrumScale	CameraMovement.cpp	/^float CameraMovement::CalcFrustrumScale(float FOVdeg)$/;"	f	class:CameraMovement
+CameraMovement	CameraMovement.cpp	/^CameraMovement::CameraMovement(float fzNear, float fzFar, float FOV)$/;"	f	class:CameraMovement
+CameraMovement	CameraMovement.h	/^class CameraMovement {$/;"	c
+CreateSamplers	GLWidget.cpp	/^void GLWidget::CreateSamplers() {$/;"	f	class:GLWidget
+FPSMOV_H	FPSMovement.h	9;"	d
+FPSMovement	FPSMovement.cpp	/^FPSMovement::FPSMovement(const FPSMovement& orig) :CameraMovement(orig)$/;"	f	class:FPSMovement
+FPSMovement	FPSMovement.cpp	/^FPSMovement::FPSMovement(float fzNear, float fzFar, float FOV) : CameraMovement(fzNear,fzFar, FOV)$/;"	f	class:FPSMovement
+FPSMovement	FPSMovement.h	/^class FPSMovement : public CameraMovement{$/;"	c
+GLWidget	GLWidget.cpp	/^GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {$/;"	f	class:GLWidget
+GLWidget	GLWidget.h	/^class GLWidget : public QGLWidget {$/;"	c
+GREEN	GLWidget.cpp	25;"	d	file:
+ITER	ActiveContours.cpp	17;"	d	file:
+InitActiveCountours	GLWidget.cpp	/^void GLWidget::InitActiveCountours() {$/;"	f	class:GLWidget
+InitMaskSetExample	GLWidget.cpp	/^void GLWidget::InitMaskSetExample(int example) {$/;"	f	class:GLWidget
+InitTextures	GLWidget.cpp	/^void GLWidget::InitTextures() {$/;"	f	class:GLWidget
+InitializeProgram	GLWidget.cpp	/^void GLWidget::InitializeProgram() {$/;"	f	class:GLWidget
+InitializeVertexBuffer	GLWidget.cpp	/^void GLWidget::InitializeVertexBuffer() {$/;"	f	class:GLWidget
+Keyboard	FPSMovement.cpp	/^void FPSMovement::Keyboard(unsigned char key, int x, int y)$/;"	f	class:FPSMovement
+MAXDPHIDT	ActiveContours.cpp	9;"	d	file:
+MAXF	ActiveContours.cpp	8;"	d	file:
+MButton	FPSMovement.cpp	/^void FPSMovement::MButton(int button, int state, int x, int y)$/;"	f	class:FPSMovement
+MMotion	FPSMovement.cpp	/^void FPSMovement::MMotion(int x, int y)$/;"	f	class:FPSMovement
+MainWindow	MainWindow.cpp	/^MainWindow::MainWindow() {$/;"	f	class:MainWindow
+MainWindow	MainWindow.h	/^class MainWindow : public QMainWindow {$/;"	c
+MainWindow	ui_MainWindow.h	/^    class MainWindow: public Ui_MainWindow {};$/;"	c	namespace:Ui
+NUM_SAMPLERS	GLWidget.cpp	30;"	d	file:
+PI	CameraMovement.cpp	15;"	d	file:
+PRINT_IMG_VAL	ActiveContours.cpp	15;"	d	file:
+ProgramData	GLWidget.h	/^struct ProgramData {$/;"	s
+RED	GLWidget.cpp	24;"	d	file:
+Reshape	CameraMovement.cpp	/^void CameraMovement::Reshape(int w, int h)$/;"	f	class:CameraMovement
+SDFOZ	ActiveContours.h	28;"	d
+SDFVORO	ActiveContours.h	29;"	d
+SDFmethod	ActiveContours.h	/^    int SDFmethod;$/;"	m	class:ActiveContours
+UI_MAINWINDOW_H	ui_MainWindow.h	11;"	d
+Ui	ui_MainWindow.h	/^namespace Ui {$/;"	n
+Ui_MainWindow	ui_MainWindow.h	/^class Ui_MainWindow$/;"	c
+WHITE	GLWidget.cpp	28;"	d	file:
+WRITE	ActiveContours.cpp	13;"	d	file:
+YELLOW	GLWidget.cpp	27;"	d	file:
+_GLWIDGET_H	GLWidget.h	2;"	d
+_MAINWINDOW_H	MainWindow.h	9;"	d
+__CL_ENABLE_EXCEPTIONS	ActiveContours.h	11;"	d
+acExample	GLWidget.h	/^    int acExample;$/;"	m	class:GLWidget
+acIterate	GLWidget.h	/^    bool acIterate;$/;"	m	class:GLWidget
+alpha	ActiveContours.h	/^    float alpha;$/;"	m	class:ActiveContours
+appendStr	ActiveContours.cpp	/^inline std::string appendStr(char* prev, char* post) {$/;"	f
+arr_avgInOutByGrp	ActiveContours.h	/^    float* arr_avgInOutByGrp;$/;"	m	class:ActiveContours
+arr_buf_mask	ActiveContours.h	/^	float* arr_buf_mask;$/;"	m	class:ActiveContours
+arr_img_in	ActiveContours.h	/^    float* arr_img_in;$/;"	m	class:ActiveContours
+arr_img_out	ActiveContours.h	/^    float* arr_img_out;$/;"	m	class:ActiveContours
+arr_img_phi	ActiveContours.h	/^    float* arr_img_phi;$/;"	m	class:ActiveContours
+arr_max_F	ActiveContours.h	/^    float* arr_max_F;$/;"	m	class:ActiveContours
+arr_max_dphidt	ActiveContours.h	/^    float* arr_max_dphidt;$/;"	m	class:ActiveContours
+buf_F	ActiveContours.h	/^    cl::Buffer buf_F;$/;"	m	class:ActiveContours
+buf_avg_in_out	ActiveContours.h	/^    cl::Buffer buf_avg_in_out;$/;"	m	class:ActiveContours
+buf_img_in	ActiveContours.h	/^    cl::Buffer buf_img_in;$/;"	m	class:ActiveContours
+buf_mask	ActiveContours.h	/^	cl::Buffer buf_mask;$/;"	m	class:ActiveContours
+buf_max_dphidt	ActiveContours.h	/^    cl::Buffer buf_max_dphidt;$/;"	m	class:ActiveContours
+buf_sdf	ActiveContours.h	/^	cl::Buffer buf_sdf;$/;"	m	class:ActiveContours
+camMatrix	CameraMovement.h	/^    glm::mat4 camMatrix;\/\/Original perspective matrix$/;"	m	class:CameraMovement
+camera	GLWidget.h	/^    CameraMovement* camera;$/;"	m	class:GLWidget
+cameraToClipMatrixUnif	GLWidget.h	/^    GLuint cameraToClipMatrixUnif;$/;"	m	struct:ProgramData
+centralwidget	ui_MainWindow.h	/^    QWidget *centralwidget;$/;"	m	class:Ui_MainWindow
+clMan	ActiveContours.h	/^    CLManager clMan;$/;"	m	class:ActiveContours
+clObj	GLWidget.h	/^    ActiveContours clObj;$/;"	m	class:GLWidget
+cl_textures	ActiveContours.h	/^	std::vector<cl::Memory> cl_textures;$/;"	m	class:ActiveContours
+compArrMaxReduction	ActiveContours.cpp	/^cl::Event ActiveContours::compArrMaxReduction(cl::Buffer& buf_in, int curr_size, bool absVal,$/;"	f	class:ActiveContours
+compAvgInAndOut	ActiveContours.cpp	/^cl::Event ActiveContours::compAvgInAndOut(cl::Image2D& img_phi, cl::Image2D& img_in,$/;"	f	class:ActiveContours
+compCurvAndF	ActiveContours.cpp	/^cl::Event ActiveContours::compCurvAndF(vector<cl::Event> vecEvPrev, bool useAllBands) {$/;"	f	class:ActiveContours
+compDphiDt	ActiveContours.cpp	/^cl::Event ActiveContours::compDphiDt(vector<cl::Event> vecEvPrev) {$/;"	f	class:ActiveContours
+compImgMaxReduction	ActiveContours.cpp	/^cl::Event ActiveContours::compImgMaxReduction(cl::Image2D& img, vector<cl::Event> vecEvPrev,$/;"	f	class:ActiveContours
+compNewPhi	ActiveContours.cpp	/^cl::Event ActiveContours::compNewPhi(vector<cl::Event> vecEvPrev) {$/;"	f	class:ActiveContours
+context	ActiveContours.h	/^    cl::Context* context;$/;"	m	class:ActiveContours
+copyBufToImg	ActiveContours.cpp	/^cl::Event ActiveContours::copyBufToImg(cl::Buffer& buf, cl::Image2D& img, vector<cl::Event> vecEvPrev, bool bufHasAllBands) {$/;"	f	class:ActiveContours
+copySegToText	ActiveContours.cpp	/^void ActiveContours::copySegToText() {$/;"	f	class:ActiveContours
+copyTextToBuf	ActiveContours.cpp	/^cl::Event ActiveContours::copyTextToBuf(cl::Image2DGL& text, cl::Buffer& buf, vector<cl::Event> vecEvPrev) {$/;"	f	class:ActiveContours
+createRGBAMask	ActiveContours.cpp	/^void ActiveContours::createRGBAMask(int width, int height, int xstart, int xend,$/;"	f	class:ActiveContours
+currIter	ActiveContours.h	/^    int currIter; \/\/Current iteration of the algorithm$/;"	m	class:ActiveContours
+currIter	GLWidget.h	/^    int currIter;$/;"	m	class:GLWidget
+ebo	GLWidget.h	/^    GLuint ebo; \/\/Element buffer object$/;"	m	class:GLWidget
+err	ActiveContours.h	/^    cl_int err;$/;"	m	class:ActiveContours
+evAcOGL	ActiveContours.h	/^	cl::Event evAcOGL; \/\/Event to aquire the input texture from OpenGL$/;"	m	class:ActiveContours
+evAvgInOut	ActiveContours.h	/^    cl::Event evAvgInOut;$/;"	m	class:ActiveContours
+evCurvAndF	ActiveContours.h	/^    cl::Event evCurvAndF;$/;"	m	class:ActiveContours
+evDphiDt	ActiveContours.h	/^    cl::Event evDphiDt;$/;"	m	class:ActiveContours
+evImgInWrt	ActiveContours.h	/^    cl::Event evImgInWrt; \/\/Event for writing the 'in' image$/;"	m	class:ActiveContours
+evImgSegWrt	ActiveContours.h	/^    cl::Event evImgSegWrt; \/\/Wevent for writing the 'mask' image$/;"	m	class:ActiveContours
+evMaxDphiDt	ActiveContours.h	/^    cl::Event evMaxDphiDt;$/;"	m	class:ActiveContours
+evMaxF	ActiveContours.h	/^    cl::Event evMaxF;$/;"	m	class:ActiveContours
+evNewPhi	ActiveContours.h	/^    cl::Event evNewPhi;$/;"	m	class:ActiveContours
+evSDF	ActiveContours.h	/^    cl::Event evSDF;$/;"	m	class:ActiveContours
+evSmoothPhi	ActiveContours.h	/^    cl::Event evSmoothPhi;$/;"	m	class:ActiveContours
+eventFilter	MainWindow.cpp	/^bool MainWindow::eventFilter(QObject *o, QEvent *event){$/;"	f	class:MainWindow
+fFrustumScale	CameraMovement.h	/^    float fFrustumScale;$/;"	m	class:CameraMovement
+fragmentShader	GLWidget.h	/^    QGLShader *vertexShader, *fragmentShader;$/;"	m	class:GLWidget
+frame	ui_MainWindow.h	/^    QFrame *frame;$/;"	m	class:Ui_MainWindow
+g_program	GLWidget.h	/^    ProgramData g_program;$/;"	m	class:GLWidget
+getCameraMatrix	CameraMovement.cpp	/^glm::mat4 CameraMovement::getCameraMatrix(){$/;"	f	class:CameraMovement
+getStaticMetaObject	moc_GLWidget.cpp	/^const QMetaObject &GLWidget::getStaticMetaObject() { return staticMetaObject; }$/;"	f	class:GLWidget
+getStaticMetaObject	moc_MainWindow.cpp	/^const QMetaObject &MainWindow::getStaticMetaObject() { return staticMetaObject; }$/;"	f	class:MainWindow
+glWidget	MainWindow.h	/^	GLWidget *glWidget;$/;"	m	class:MainWindow
+grp_size_x	ActiveContours.h	/^    int grp_size_x; \/\/ Default group size on x. $/;"	m	class:ActiveContours
+grp_size_y	ActiveContours.h	/^    int grp_size_y; \/\/ Default group size on y.$/;"	m	class:ActiveContours
+height	ActiveContours.h	/^    int height;$/;"	m	class:ActiveContours
+height	GLWidget.h	/^    int height;$/;"	m	class:GLWidget
+hsize	GLWidget.h	/^    float hsize;$/;"	m	class:GLWidget
+img_curv_F	ActiveContours.h	/^    cl::Image2D img_curv_F;$/;"	m	class:ActiveContours
+img_dphidt	ActiveContours.h	/^    cl::Image2D img_dphidt;$/;"	m	class:ActiveContours
+img_in	ActiveContours.h	/^    cl::Image2D img_in;$/;"	m	class:ActiveContours
+img_in_gl	ActiveContours.h	/^    cl::Image2DGL img_in_gl;$/;"	m	class:ActiveContours
+img_mask	ActiveContours.h	/^    cl::Image2D img_mask;$/;"	m	class:ActiveContours
+img_newphi	ActiveContours.h	/^    cl::Image2D img_newphi;$/;"	m	class:ActiveContours
+img_phi	ActiveContours.h	/^    cl::Image2D img_phi;$/;"	m	class:ActiveContours
+img_phi_gl	ActiveContours.h	/^    cl::Image2DGL img_phi_gl;$/;"	m	class:ActiveContours
+init	ActiveContours.cpp	/^void ActiveContours::init(int SDFmethod, char* inputFile, char* outputFile,$/;"	f	class:ActiveContours
+init	GLWidget.cpp	/^void GLWidget::init() {$/;"	f	class:GLWidget
+initImagesArraysAndBuffers	ActiveContours.cpp	/^void ActiveContours::initImagesArraysAndBuffers(GLuint& tbo_in, GLuint& tbo_out) {$/;"	f	class:ActiveContours
+initializeGL	GLWidget.cpp	/^void GLWidget::initializeGL() {$/;"	f	class:GLWidget
+inputImage	GLWidget.h	/^    char* inputImage;$/;"	m	class:GLWidget
+iterStep	GLWidget.h	/^    int iterStep;$/;"	m	class:GLWidget
+iterate	ActiveContours.cpp	/^void ActiveContours::iterate(int numIterations, bool useAllBands) {$/;"	f	class:ActiveContours
+keyPressEvent	GLWidget.cpp	/^void GLWidget::keyPressEvent(QKeyEvent* event) {$/;"	f	class:GLWidget
+keyPressEvent	MainWindow.cpp	/^void MainWindow::keyPressEvent(QKeyEvent* event) {$/;"	f	class:MainWindow
+labelTitle	ui_MainWindow.h	/^    QLabel *labelTitle;$/;"	m	class:Ui_MainWindow
+loadProgram	ActiveContours.cpp	/^void ActiveContours::loadProgram(int SDFmethod, char* inputFile, char* outputFile, int iter,$/;"	f	class:ActiveContours
+main	main.cpp	/^int main(int argc, char *argv[]) {$/;"	f
+mask	GLWidget.h	/^    int* mask;$/;"	m	class:GLWidget
+maxActCountIter	GLWidget.h	/^    int maxActCountIter;$/;"	m	class:GLWidget
+max_warp_size	ActiveContours.h	/^    int max_warp_size;$/;"	m	class:ActiveContours
+menuQuit	ui_MainWindow.h	/^    QMenu *menuQuit;$/;"	m	class:Ui_MainWindow
+menubar	ui_MainWindow.h	/^    QMenuBar *menubar;$/;"	m	class:Ui_MainWindow
+metaObject	moc_GLWidget.cpp	/^const QMetaObject *GLWidget::metaObject() const$/;"	f	class:GLWidget
+metaObject	moc_MainWindow.cpp	/^const QMetaObject *MainWindow::metaObject() const$/;"	f	class:MainWindow
+modelMatrix	GLWidget.h	/^    glm::mat4 modelMatrix;$/;"	m	class:GLWidget
+modelToCameraMatrixUnif	GLWidget.h	/^    GLuint modelToCameraMatrixUnif;$/;"	m	class:GLWidget
+mouseMoveEvent	GLWidget.cpp	/^void GLWidget::mouseMoveEvent(QMouseEvent *event) {$/;"	f	class:GLWidget
+mousePressEvent	GLWidget.cpp	/^void GLWidget::mousePressEvent(QMouseEvent *event) {$/;"	f	class:GLWidget
+offsets	GLWidget.h	/^    glm::vec3 offsets[1];$/;"	m	class:GLWidget
+origin	ActiveContours.h	/^    cl::size_t < 3 > origin;$/;"	m	class:ActiveContours
+outputFile	ActiveContours.h	/^    char* outputFile; \/\/Final png file with the segmentation$/;"	m	class:ActiveContours
+outputImage	GLWidget.h	/^    char* outputImage;$/;"	m	class:GLWidget
+paintGL	GLWidget.cpp	/^void GLWidget::paintGL() {$/;"	f	class:GLWidget
+program	ActiveContours.h	/^    cl::Program* program;$/;"	m	class:ActiveContours
+qt_meta_data_GLWidget	moc_GLWidget.cpp	/^static const uint qt_meta_data_GLWidget[] = {$/;"	v	file:
+qt_meta_data_MainWindow	moc_MainWindow.cpp	/^static const uint qt_meta_data_MainWindow[] = {$/;"	v	file:
+qt_meta_stringdata_GLWidget	moc_GLWidget.cpp	/^static const char qt_meta_stringdata_GLWidget[] = {$/;"	v	file:
+qt_meta_stringdata_MainWindow	moc_MainWindow.cpp	/^static const char qt_meta_stringdata_MainWindow[] = {$/;"	v	file:
+qt_metacall	moc_GLWidget.cpp	/^int GLWidget::qt_metacall(QMetaObject::Call _c, int _id, void **_a)$/;"	f	class:GLWidget
+qt_metacall	moc_MainWindow.cpp	/^int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)$/;"	f	class:MainWindow
+qt_metacast	moc_GLWidget.cpp	/^void *GLWidget::qt_metacast(const char *_clname)$/;"	f	class:GLWidget
+qt_metacast	moc_MainWindow.cpp	/^void *MainWindow::qt_metacast(const char *_clname)$/;"	f	class:MainWindow
+queue	ActiveContours.h	/^    cl::CommandQueue* queue;$/;"	m	class:ActiveContours
+region	ActiveContours.h	/^    cl::size_t < 3 > region;$/;"	m	class:ActiveContours
+res	ActiveContours.h	/^    cl_int res;$/;"	m	class:ActiveContours
+resizeGL	GLWidget.cpp	/^void GLWidget::resizeGL(int w, int h) {$/;"	f	class:GLWidget
+retranslateUi	ui_MainWindow.h	/^    void retranslateUi(QMainWindow *MainWindow)$/;"	f	class:Ui_MainWindow
+runSDF	ActiveContours.cpp	/^void ActiveContours::runSDF() {$/;"	f	class:ActiveContours
+sampler	GLWidget.h	/^    GLuint sampler;$/;"	m	class:GLWidget
+samplerID	GLWidget.h	/^    GLuint samplerID[1];$/;"	m	class:GLWidget
+setupUi	ui_MainWindow.h	/^    void setupUi(QMainWindow *MainWindow)$/;"	f	class:Ui_MainWindow
+shaderProg	GLWidget.h	/^    QGLShaderProgram *shaderProg;$/;"	m	class:GLWidget
+smoothPhi	ActiveContours.cpp	/^cl::Event ActiveContours::smoothPhi(vector<cl::Event> vecEvPrev, float alpha) {$/;"	f	class:ActiveContours
+staticMetaObject	moc_GLWidget.cpp	/^const QMetaObject GLWidget::staticMetaObject = {$/;"	m	class:GLWidget	file:
+staticMetaObject	moc_MainWindow.cpp	/^const QMetaObject MainWindow::staticMetaObject = {$/;"	m	class:MainWindow	file:
+statusbar	ui_MainWindow.h	/^    QStatusBar *statusbar;$/;"	m	class:Ui_MainWindow
+tbo_in	GLWidget.h	/^    GLuint tbo_in; \/\/Texture buffer object$/;"	m	class:GLWidget
+tbo_out	GLWidget.h	/^    GLuint tbo_out; \/\/Texture buffer object$/;"	m	class:GLWidget
+textCoords	GLWidget.cpp	/^float textCoords[] = {$/;"	v
+textUnit	GLWidget.h	/^    GLuint textUnit;$/;"	m	class:GLWidget
+theProgram	GLWidget.h	/^    GLuint theProgram;$/;"	m	struct:ProgramData
+to_string	ActiveContours.cpp	/^inline std::string to_string(char* prev, const T& t, char* post) {$/;"	f
+tot_grps_x	ActiveContours.h	/^    int tot_grps_x;$/;"	m	class:ActiveContours
+tot_grps_y	ActiveContours.h	/^    int tot_grps_y;$/;"	m	class:ActiveContours
+totalIterations	ActiveContours.h	/^    int totalIterations;$/;"	m	class:ActiveContours
+ts	GLWidget.h	/^    Timings ts;$/;"	m	class:GLWidget
+useAllBands	GLWidget.h	/^    bool useAllBands;$/;"	m	class:GLWidget
+usingOGL	ActiveContours.h	/^	bool usingOGL;$/;"	m	class:ActiveContours
+vaoID	GLWidget.h	/^    GLuint vaoID;$/;"	m	class:GLWidget
+vbo_color	GLWidget.h	/^    GLuint vbo_color;$/;"	m	class:GLWidget
+vbo_pos	GLWidget.h	/^    GLuint vbo_pos;$/;"	m	class:GLWidget
+vbo_tcord	GLWidget.h	/^    GLuint vbo_tcord;$/;"	m	class:GLWidget
+vecEvAvg	ActiveContours.h	/^    vector<cl::Event> vecEvAvg;$/;"	m	class:ActiveContours
+vecEvCurvF	ActiveContours.h	/^    vector<cl::Event> vecEvCurvF;$/;"	m	class:ActiveContours
+vecEvDphiDt	ActiveContours.h	/^    vector<cl::Event> vecEvDphiDt;$/;"	m	class:ActiveContours
+vecEvMaxDphiDt	ActiveContours.h	/^    vector<cl::Event> vecEvMaxDphiDt;$/;"	m	class:ActiveContours
+vecEvMaxF	ActiveContours.h	/^    vector<cl::Event> vecEvMaxF;$/;"	m	class:ActiveContours
+vecEvNewPhi	ActiveContours.h	/^    vector<cl::Event> vecEvNewPhi;$/;"	m	class:ActiveContours
+vecEvPrevAvgInOut	ActiveContours.h	/^    vector<cl::Event> vecEvPrevAvgInOut;$/;"	m	class:ActiveContours
+vecEvSDF	ActiveContours.h	/^    vector<cl::Event> vecEvSDF;$/;"	m	class:ActiveContours
+vecEvSmPhi	ActiveContours.h	/^    vector<cl::Event> vecEvSmPhi;$/;"	m	class:ActiveContours
+vecWriteImage	ActiveContours.h	/^    vector<cl::Event> vecWriteImage;$/;"	m	class:ActiveContours
+vertexColors	GLWidget.cpp	/^float vertexColors[] = {RED, GREEN, BLUE, YELLOW};$/;"	v
+vertexIndexes	GLWidget.cpp	/^unsigned int vertexIndexes[] = {0, 1, 2, 3};$/;"	v
+vertexPositions	GLWidget.cpp	/^float vertexPositions[] = {$/;"	v
+vertexShader	GLWidget.h	/^    QGLShader *vertexShader, *fragmentShader;$/;"	m	class:GLWidget
+widget	MainWindow.h	/^    Ui::MainWindow widget;$/;"	m	class:MainWindow
+width	ActiveContours.h	/^    int width;$/;"	m	class:ActiveContours
+width	GLWidget.h	/^    int width;$/;"	m	class:GLWidget
+z	GLWidget.h	/^    float z;$/;"	m	class:GLWidget
+~ActiveContours	ActiveContours.cpp	/^ActiveContours::~ActiveContours() {$/;"	f	class:ActiveContours
+~FPSMovement	FPSMovement.cpp	/^FPSMovement::~FPSMovement() $/;"	f	class:FPSMovement
+~MainWindow	MainWindow.cpp	/^MainWindow::~MainWindow() {$/;"	f	class:MainWindow
