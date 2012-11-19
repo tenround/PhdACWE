@@ -34,7 +34,6 @@ public:
     GLWidget(QWidget *parent = NULL);
     void printMatrix(glm::mat4 matrix);
 
-
 protected:
     void initializeGL();
     void resizeGL(int w, int h);
@@ -44,11 +43,12 @@ protected:
     void keyPressEvent(QKeyEvent *event);
     void init();
     void InitializeProgram();
-    void InitMaskSetExample(int example);
     void InitTextures();
     void InitializeVertexBuffer();
     void InitActiveCountours();
     void CreateSamplers();
+    void SelectImage();
+
 private:
     GLuint modelToCameraMatrixUnif;
     glm::mat4 modelMatrix;
@@ -80,6 +80,10 @@ private:
     GLuint textUnit;
 
     GLuint samplerID[1];
+
+    //GUI
+    bool imageSelected;
+    bool maskSelected;
 
     ActiveContours clObj;
     int maxActCountIter;

@@ -1,5 +1,6 @@
 #include <QtGui/QMouseEvent>
 #include <QFileInfo>
+#include <QFileDialog>
 #include <glew.h>
 #include <fstream>
 
@@ -9,6 +10,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
+#include <sstream>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -78,7 +80,7 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
     sampler = 0;
     textUnit = 0;
 
-    maxActCountIter = 1200;
+    maxActCountIter = 12000;
     currIter = 0;
     iterStep = 5;
     acIterate = false;
@@ -87,130 +89,26 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
     useAllBands = true;
 
     mask = new int[4];
+
+    imageSelected = false;
+    maskSelected = false;
+
+    SelectImage();
 }
 
-/**
- * This initializes the mask, TODO make it by the user 
- * @param example
- */
-void GLWidget::InitMaskSetExample(int example) {
-    switch (example) {
-        case 0:
-            mask[0] = 3;
-            mask[1] = 4;
-            mask[2] = 7;
-            mask[3] = 8;
-            inputImage = (char*) "images/Mini.png";
-            outputImage = (char*) "images/MiniResult.png";
-            break;
-        case 1:
-            mask[0] = 350;
-            mask[1] = 450;
-            mask[2] = 750;
-            mask[3] = 850;
-            inputImage = (char*) "images/RectTest1.png";
-            outputImage = (char*) "images/RectTestResult.png";
-            break;
-        case 2:
-            mask[0] = 800;
-            mask[1] = 900;
-            mask[2] = 250;
-            mask[3] = 350;
-            inputImage = (char*) "images/SmallRealTest.png";
-            outputImage = (char*) "images/SmallRealTestResult.png";
-            break;
-        case 3:
-            mask[0] = 150;
-            mask[1] = 250;
-            mask[2] = 80;
-            mask[3] = 150;
-            inputImage = (char*) "images/airplane.jpg";
-            outputImage = (char*) "images/airplaneResult.png";
-            break;
-        case 4:
-            mask[0] = 350;
-            mask[1] = 450;
-            mask[2] = 750;
-            mask[3] = 850;
-            inputImage = (char*) "images/RectTest1Vect.png";
-            outputImage = (char*) "images/RectTestVectResult.png";
-            break;
-        case 5:
-            mask[0] = 70;
-            mask[1] = 100;
-            mask[2] = 70;
-            mask[3] = 100;
-            inputImage = (char*) "images/TestSizes/128.png";
-            outputImage = (char*) "images/TestSizes/128Result.png";
-            break;
-        case 6:
-            mask[0] = 140;
-            mask[1] = 200;
-            mask[2] = 140;
-            mask[3] = 200;
-            inputImage = (char*) "images/TestSizes/256.png";
-            outputImage = (char*) "images/TestSizes/256Result.png";
-            break;
-        case 7:
-            mask[0] = 280;
-            mask[1] = 400;
-            mask[2] = 280;
-            mask[3] = 400;
-            inputImage = (char*) "images/TestSizes/512.png";
-            outputImage = (char*) "images/TestSizes/512Result.png";
-            break;
-        case 8:
-            mask[0] = 560;
-            mask[1] = 800;
-            mask[2] = 560;
-            mask[3] = 800;
-            inputImage = (char*) "images/TestSizes/1024.png";
-            outputImage = (char*) "images/TestSizes/1024Result.png";
-            break;
-        case 9:
-            mask[0] = 1120;
-            mask[1] = 1600;
-            mask[2] = 1120;
-            mask[3] = 1600;
-            inputImage = (char*) "images/TestSizes/2048.png";
-            outputImage = (char*) "images/TestSizes/2048Result.png";
-            break;
-        case 10:
-            mask[0] = 400;
-            mask[1] = 600;
-            mask[2] = 300;
-            mask[3] = 500;
-            inputImage = (char*) "images/planet1.jpg";
-            outputImage = (char*) "images/planet1Result.png";
-            break;
-        case 11:
-            mask[0] = 400;
-            mask[1] = 600;
-            mask[2] = 300;
-            mask[3] = 500;
-            inputImage = (char*) "images/planet2.jpg";
-            outputImage = (char*) "images/planet2Result.png";
-            break;
-        case 12:
-            //Width
-            mask[0] = 200;
-            mask[1] = 280;
-            //Height
-            mask[2] = 320;
-            mask[3] = 400;
-            inputImage = (char*) "images/niiT1.png";
-            outputImage = (char*) "images/niiT1Result.png";
-            break;
-        case 13:
-            mask[0] = 200;
-            mask[1] = 300;
-            mask[2] = 150;
-            mask[3] = 250;
-            inputImage = (char*) "images/planet3.jpg";
-            outputImage = (char*) "images/planet3Result.png";
-            break;
+void GLWidget::SelectImage(){
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Select an image"), "", tr("Files (*.*)"));
 
-    }
+    inputImage = new char[fileName.length() + 1];
+    outputImage = new char[fileName.length() + 9];
+
+    strcpy(inputImage, fileName.toLatin1().constData());
+    dout << "Input image: " << inputImage << endl;
+
+    fileName = fileName.replace(QString("."), QString("_result."));
+    strcpy(outputImage, fileName.toLatin1().constData());
+    dout << "Output image: " << outputImage << endl;
+
 }
 
 void GLWidget::CreateSamplers() {
@@ -250,32 +148,6 @@ void GLWidget::InitActiveCountours() {
 }
 
 void GLWidget::InitializeVertexBuffer() {
-    GLManager::CreateBuffer(vbo_pos, vertexPositions, sizeof (vertexPositions),
-            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
-
-    GLManager::CreateBuffer(vbo_color, vertexColors, sizeof (vertexColors),
-            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 1, 4, GL_FALSE, 0, 0, GL_FLOAT);
-
-    GLManager::CreateBuffer(vbo_tcord, textCoords, sizeof (textCoords),
-            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 2, 2, GL_FALSE, 0, 0, GL_FLOAT);
-
-    GLManager::CreateElementBuffer(ebo, vertexIndexes, sizeof (vertexIndexes), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void GLWidget::InitTextures() {
-
-    //inputImage = "images/planet1.jpg";
-
-    BYTE* imageTemp = ImageManager::loadImageByte(inputImage, width, height);
-    float* image = ImageManager::byteToFloatNorm(imageTemp, width * height * 4);
-
-    dout << "Size of byte: " << sizeof(BYTE) << endl;
-    dout << "Size of char: " << sizeof(char) << endl;
-    //for(int i=1; i<100; i++){
-    //    dout << (float)image[i]*255 << endl;
-    //}
 
     int maxDim = max(width, height);
     //Top left
@@ -294,8 +166,42 @@ void GLWidget::InitTextures() {
     vertexPositions[12] = (float) -width / maxDim;
     vertexPositions[13] = (float) -height / maxDim;
 
+    GLManager::CreateBuffer(vbo_pos, vertexPositions, sizeof (vertexPositions),
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
+
+    GLManager::CreateBuffer(vbo_color, vertexColors, sizeof (vertexColors),
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 1, 4, GL_FALSE, 0, 0, GL_FLOAT);
+
+    GLManager::CreateBuffer(vbo_tcord, textCoords, sizeof (textCoords),
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 2, 2, GL_FALSE, 0, 0, GL_FLOAT);
+
+    GLManager::CreateElementBuffer(ebo, vertexIndexes, sizeof (vertexIndexes), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void GLWidget::InitTextures() {
+
+    //inputImage = "images/planet1.jpg";
+    //inputImage = "/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/images/planet1.jpg";
+
+    BYTE* imageTemp = ImageManager::loadImageByte(inputImage, width, height);
+    float* image = ImageManager::byteToFloatNorm(imageTemp, width * height * 4);
+
+    dout << "Size of byte: " << sizeof(BYTE) << endl;
+    dout << "Size of char: " << sizeof(char) << endl;
+    //for(int i=1; i<100; i++){
+    //    dout << (float)image[i]*255 << endl;
+    //}
+
     GLManager::Create2DTexture(tbo_in, image, width, height, GL_FLOAT, GL_RGBA16, GL_LINEAR, GL_LINEAR);
     GLManager::Create2DTexture(tbo_out, NULL, width, height, GL_FLOAT, GL_RGBA16, GL_LINEAR, GL_LINEAR);
+
+    float div = 3;
+    mask[0] = width/div;
+    mask[1] = width - width/div;
+    mask[2] = height/div;
+    mask[3] = height - height/div;
 
     delete[] image;
 }
@@ -342,6 +248,36 @@ void GLWidget::InitializeProgram() {
  */
 void GLWidget::init() {
 
+    // This should be already after mask 
+    dout << "Initializing OpenCL... " << endl;
+    InitActiveCountours();
+
+    dout << "Initializing images, arrays and buffers (CL)!! " << endl;
+    clObj.initImagesArraysAndBuffers(tbo_in, tbo_out);
+
+    //tm_ocl_sdf.start();
+    clObj.runSDF();
+    //tm_ocl_sdf.end();
+    //tm_oclogl_init.end();
+
+    dout << "Init SUCCESSFUL................" << endl;
+
+    glBindVertexArray(0); //Unbind any vertex array
+
+    clObj.iterate(iterStep, useAllBands); //Iterate the ActiveCountours n times
+}
+
+void GLWidget::initializeGL() {
+    
+    GLenum err = glewInit();
+    if (GLEW_OK != err) {
+        fprintf(stderr, "GLEW Error: %s\n", glewGetErrorString(err));
+    }
+
+    glEnable(GL_CULL_FACE);//Cull ('desechar') one or more faces of polygons
+    glCullFace(GL_BACK);// Hide the 'back' face
+    glFrontFace(GL_CW);//Which face is 'front' face, defindes as Clock Wise
+
     Timer tm_oclogl_init(ts, "OCLinit");
     Timer tm_ocl_sdf(ts, "SDF");
 
@@ -362,10 +298,6 @@ void GLWidget::init() {
     glGenVertexArrays(1, &vaoID); //Generate 1 vertex array
     glBindVertexArray(vaoID); //First VAO setup (only one this time)
 
-    dout << "Initializing OpenCL... " << endl;
-    InitMaskSetExample(acExample);
-    InitActiveCountours();
-
     dout << "Initializing Textures... " << endl;
     InitTextures(); //Init textures
     dout << "Textures initialized!! " << endl;
@@ -374,33 +306,10 @@ void GLWidget::init() {
     dout << "Initializing Vertex buffers... " << endl;
     InitializeVertexBuffer(); //Init Vertex buffers
 
-    dout << "Initializing images, arrays and buffers (CL)!! " << endl;
-    clObj.initImagesArraysAndBuffers(tbo_in, tbo_out);
-
-    tm_ocl_sdf.start();
-    clObj.runSDF();
-    tm_ocl_sdf.end();
-    tm_oclogl_init.end();
-
-    dout << "Init SUCCESSFUL................" << endl;
-
-    glBindVertexArray(0); //Unbind any vertex array
-
-    clObj.iterate(iterStep, useAllBands); //Iterate the ActiveCountours n times
-}
-
-void GLWidget::initializeGL() {
-    
-    GLenum err = glewInit();
-    if (GLEW_OK != err) {
-        fprintf(stderr, "GLEW Error: %s\n", glewGetErrorString(err));
-    }
-
-    glEnable(GL_CULL_FACE);//Cull ('desechar') one or more faces of polygons
-    glCullFace(GL_BACK);// Hide the 'back' face
-    glFrontFace(GL_CW);//Which face is 'front' face, defindes as Clock Wise
-
     init();
+    imageSelected = true;
+    maskSelected = true;
+
 }
 
 void GLWidget::resizeGL(int w, int h) {
@@ -415,47 +324,55 @@ void GLWidget::resizeGL(int w, int h) {
 }
 
 void GLWidget::paintGL() {
-    dout << "Displaying ...." << endl;
+    //dout << "Displaying ...." << endl;
     glFlush();
 
-    Timer tm_ocl_ac(ts, "ACont");
-    if ((currIter < maxActCountIter) && acIterate) {
-		dout << "iterating ....." << endl;
-        tm_ocl_ac.start();
-        clObj.iterate(iterStep, useAllBands); //Iterate the ActiveCountours n times
-        currIter += iterStep;
-        tm_ocl_ac.end();
-        dout << "Current iter: " << currIter << endl;
-        ts.dumpTimings();
+    if(imageSelected){
+
+        if(maskSelected){
+            Timer tm_ocl_ac(ts, "ACont");
+            if ((currIter < maxActCountIter) && acIterate) {
+                dout << "iterating ....." << endl;
+                tm_ocl_ac.start();
+                clObj.iterate(iterStep, useAllBands); //Iterate the ActiveCountours n times
+                currIter += iterStep;
+                tm_ocl_ac.end();
+                dout << "Current iter: " << currIter << endl;
+                ts.dumpTimings();
+            }
+        }
+
+
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glUseProgram(g_program.theProgram);
+
+        glBindVertexArray(vaoID); //First VAO setup (only one this time)
+
+        modelMatrix[3] = glm::vec4(offsets[0], 1.0f);
+        
+        glUniformMatrix4fv(modelToCameraMatrixUnif, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+
+        glActiveTexture(GL_TEXTURE0 + textUnit);
+        glBindTexture(GL_TEXTURE_2D, tbo_in);
+        glBindSampler(textUnit,samplerID[0]);
+
+        glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
+
+        if(maskSelected){
+            glBindTexture(GL_TEXTURE_2D, tbo_out);
+            glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
+        }
+
+        //-------- TEXTURES ----------
+        glBindSampler(textUnit, 0);
+        glBindTexture(GL_TEXTURE_2D,0);
+
+        glBindVertexArray(0);//Unbind VAO
+        glUseProgram(0);//Unbind program
+
     }
-
-
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    glUseProgram(g_program.theProgram);
-
-    glBindVertexArray(vaoID); //First VAO setup (only one this time)
-
-	modelMatrix[3] = glm::vec4(offsets[0], 1.0f);
-	
-    glUniformMatrix4fv(modelToCameraMatrixUnif, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-
-    glActiveTexture(GL_TEXTURE0 + textUnit);
-    glBindTexture(GL_TEXTURE_2D, tbo_in);
-    glBindSampler(textUnit,samplerID[0]);
-
-    glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
-
-    glBindTexture(GL_TEXTURE_2D, tbo_out);
-    glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
-
-    //-------- TEXTURES ----------
-    glBindSampler(textUnit, 0);
-    glBindTexture(GL_TEXTURE_2D,0);
-
-    glBindVertexArray(0);//Unbind VAO
-    glUseProgram(0);//Unbind program
     update();
 }
 
@@ -469,7 +386,7 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event) {
 
 void GLWidget::keyPressEvent(QKeyEvent* event) {
 
-    cout << "Key= " << (unsigned char)event->key() << endl;
+    dout << "Key = " << (unsigned char)event->key() << endl;
     camera->Keyboard((unsigned char)event->key(), 0, 0);
     //printMatrix(camera->getCameraMatrix());
     switch (event->key()) {
@@ -485,6 +402,9 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
         case 116:// Case 'T' shows the timings
         case 84:
             ts.dumpTimings();
+            break;
+        case 'S':
+            SelectImage();
             break;
         case Qt::Key_Escape:
             close();
