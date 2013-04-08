@@ -63,6 +63,10 @@ unsigned int vertexIndexes[] = {0, 1, 2, 3};
 
 using namespace std;
 
+/**
+ * Constructor of the Widget. It sets the default
+ * values of all its internal properties.
+ */
 GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
     setMouseTracking(true);
     setFocusPolicy(Qt::StrongFocus);
@@ -96,19 +100,30 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
     SelectImage();
 }
 
-void GLWidget::SelectImage(){
+/**
+ * Opens the 'select image' dialog. Stops all previous
+ * segmentation and reloads everything.
+ * TODO use exceptions or something similar to avoid returning ints
+ */
+int GLWidget::SelectImage(){
     QString fileName = QFileDialog::getOpenFileName(this, tr("Select an image"), "", tr("Files (*.*)"));
 
-    inputImage = new char[fileName.length() + 1];
-    outputImage = new char[fileName.length() + 9];
+    if(!fileName.isNull()){
+        inputImage = new char[fileName.length() + 1];
+        outputImage = new char[fileName.length() + 9];
 
-    strcpy(inputImage, fileName.toLatin1().constData());
-    dout << "Input image: " << inputImage << endl;
+        strcpy(inputImage, fileName.toLatin1().constData());
+        dout << "Input image: " << inputImage << endl;
 
-    fileName = fileName.replace(QString("."), QString("_result."));
-    strcpy(outputImage, fileName.toLatin1().constData());
-    dout << "Output image: " << outputImage << endl;
-
+        fileName = fileName.replace(QString("."), QString("_result."));
+        strcpy(outputImage, fileName.toLatin1().constData());
+        dout << "Output image: " << outputImage << endl;
+        return 1;
+    }else{
+        //TODO display a dialog informing the following text.
+        cout << "The image haven't been selected. " << endl;
+        return 0;
+    }
 }
 
 void GLWidget::CreateSamplers() {
@@ -206,6 +221,10 @@ void GLWidget::InitTextures() {
     delete[] image;
 }
 
+/**
+ * Initializes the shaders for OpenGL. It also
+ * initializes the OpenGL program, the camera and the 
+ * uniforms */ 
 void GLWidget::InitializeProgram() {
     std::vector<GLuint> shaderList;
 
@@ -244,9 +263,23 @@ void GLWidget::InitializeProgram() {
 }
 
 /**
- * Makes all the initialization
+ * Initializes the vertex and textures once the image
+ * has been loaded properly. 
  */
 void GLWidget::init() {
+
+    //Create the Vertex Array Object (contains info of vertex, color, coords, and textures)
+    glGenVertexArrays(1, &vaoID); //Generate 1 vertex array
+    glBindVertexArray(vaoID); //First VAO setup (only one this time)
+
+    dout << "Initializing Textures... " << endl;
+    InitTextures(); //Init textures
+    dout << "Textures initialized!! " << endl;
+    CreateSamplers();
+
+    dout << "Initializing Vertex buffers... " << endl;
+    InitializeVertexBuffer(); //Init Vertex buffers
+
 
     // This should be already after mask 
     dout << "Initializing OpenCL... " << endl;
@@ -265,8 +298,14 @@ void GLWidget::init() {
     glBindVertexArray(0); //Unbind any vertex array
 
     clObj.iterate(iterStep, useAllBands); //Iterate the ActiveCountours n times
+
+    imageSelected = true;
+    maskSelected = true;
 }
 
+/* This is the first call after the constructor.
+ * This method initializes the state for OpenGL.
+ */
 void GLWidget::initializeGL() {
     
     GLenum err = glewInit();
@@ -290,26 +329,9 @@ void GLWidget::initializeGL() {
 
     camera = new FPSMovement(fzNear, fzFar, FOV);
 
-    dout << "Initializing program... " << endl;
+    dout << "Initializing OpenGL program... " << endl;
     InitializeProgram();
-    dout << "Program initialized ... " << endl;
-
-    //Create the Vertex Array Object (contains info of vertex, color, coords, and textures)
-    glGenVertexArrays(1, &vaoID); //Generate 1 vertex array
-    glBindVertexArray(vaoID); //First VAO setup (only one this time)
-
-    dout << "Initializing Textures... " << endl;
-    InitTextures(); //Init textures
-    dout << "Textures initialized!! " << endl;
-    CreateSamplers();
-
-    dout << "Initializing Vertex buffers... " << endl;
-    InitializeVertexBuffer(); //Init Vertex buffers
-
-    init();
-    imageSelected = true;
-    maskSelected = true;
-
+    dout << "OpenGL program initialized ... " << endl;
 }
 
 void GLWidget::resizeGL(int w, int h) {
@@ -321,12 +343,19 @@ void GLWidget::resizeGL(int w, int h) {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
+    //TODO this should not be here, we need to call it because the 
+    // 'select file' window doesnt' work if it is not called from the constructor
+    init();
 }
 
+/**
+ * This is the main OpenGL loop. Here the display of results is made
+ */
 void GLWidget::paintGL() {
     //dout << "Displaying ...." << endl;
     glFlush();
 
+    //Check if we arlready have an image selected, if not nothing should be done
     if(imageSelected){
 
         if(maskSelected){
@@ -381,13 +410,19 @@ void GLWidget::mousePressEvent(QMouseEvent *event) {
 }
 
 void GLWidget::mouseMoveEvent(QMouseEvent *event) {
-    printf("%d, %d\n", event->x(), event->y());
+    //printf("%d, %d\n", event->x(), event->y());
 }
 
+/**
+ * Management of all the keyboards pressed.
+ */
 void GLWidget::keyPressEvent(QKeyEvent* event) {
 
     dout << "Key = " << (unsigned char)event->key() << endl;
     camera->Keyboard((unsigned char)event->key(), 0, 0);
+
+    int success = 0;//Var used to ensure success of actions
+
     //printMatrix(camera->getCameraMatrix());
     switch (event->key()) {
 
@@ -404,11 +439,14 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
             ts.dumpTimings();
             break;
         case 'S':
-            SelectImage();
+            success = SelectImage();
+            if(success){
+                init();
+            }
             break;
         case Qt::Key_Escape:
             close();
-            break;
+           break;
         default:
             event->ignore();
             break;

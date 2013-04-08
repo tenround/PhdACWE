@@ -47,7 +47,7 @@ protected:
     void InitializeVertexBuffer();
     void InitActiveCountours();
     void CreateSamplers();
-    void SelectImage();
+    int SelectImage();
 
 private:
     GLuint modelToCameraMatrixUnif;

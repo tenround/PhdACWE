@@ -25,6 +25,6 @@ TARGET = RunActiveContoursQt
 #DEFINES += DEBUG
 
 #CONFIG += qt debug
-CONFIG += qt
+CONFIG += qt debug
 
 QT +=core gui opengl

@@ -5,7 +5,7 @@
 __constant sampler_t def_sampler = CLK_NORMALIZED_COORDS_FALSE |
 								CLK_ADDRESS_CLAMP_TO_EDGE |
 								CLK_FILTER_NEAREST;
-__constant float thres = 2;
+__constant float thresporc = .004;
 __constant float EPS = .00001;
 
 // It computes the curvature of the curve phi close to 0 and
@@ -20,6 +20,7 @@ smoothPhi(read_only image2d_t img_phi, write_only image2d_t img_smooth_phi,
 
 	int width = get_image_width(img_phi);
 	int height = get_image_height(img_phi);
+
 
     int col = (int)get_global_id(0);
     int row = (int)get_global_id(1);
@@ -70,6 +71,8 @@ smoothPhi(read_only image2d_t img_phi, write_only image2d_t img_smooth_phi,
 
 
 	float contour = 0;
+
+    float thres = min(width, height)* thresporc;
 	if( (newVal <= thres) && (newVal >= -thres) ){
 		contour = 255;
 	}
@@ -82,7 +85,7 @@ void newphi( read_only image2d_t img_phi, read_only image2d_t img_dphidt,
 			  write_only image2d_t img_newphi,  sampler_t sampler,
 			global float* max_dphidt){
 				
-	float dt = .45/(max_dphidt[0] + EPS);
+	float dt = 1/(max_dphidt[0] + EPS);
 	int col = get_global_id(0);
 	int row = get_global_id(1);
 
@@ -162,6 +165,10 @@ void ArrMaxInt( global int* arr_in, int use_abs ) {
 	}
 }
 
+/**
+ * This kernel paints the contour red on the image texture.
+ * Depending on the 'threshold' is what we take as contour
+ */
 __kernel 
 void segmToTexture( read_only image2d_t img_phi, read_only 
 					image2d_t img_in, write_only image2d_t img_phi_gl){
@@ -174,6 +181,7 @@ void segmToTexture( read_only image2d_t img_phi, read_only
 	float4 curr_seg = read_imagef(img_phi, def_sampler, (int2)(col,row));
 	float4 text_val = read_imagef(img_in, def_sampler, (int2)(col,row));
 
+    float thres = min(width, height)* thresporc;
 	if( (curr_seg.x <= thres) && (curr_seg.x >= -thres) ){
 		text_val = (float4)(1,0,0,1);//Red pixel on the boundary
 	}
@@ -264,6 +272,7 @@ dphidt(read_only image2d_t phi, read_only image2d_t curvAndF,
 
 	newval.x = F/(fabs(maxF)) + alpha*curv;
 
+    float thres = min(width, height)* thresporc;
 	if( (curr_pix.x <= thres) && (curr_pix.x >= -thres) ){
 //		newval.x = -255*(F/maxF + alpha*curv); //Usefull to see something in the image
 		newval.y = 255;//Usufull to see the border of the curve
@@ -300,7 +309,16 @@ CurvatureAndF(read_only image2d_t phi, read_only image2d_t in,
 		curr_img = curr_img_all.x;
 	}
 
+    //This threshold is not only for visualization, it has an impact
+    // on the algorithm.
+    float thres = min(width, height) * .01;
+    // This is important. The force is basicale been computed in a region
+    // close to the contour. If we remove this restriction then the algorithm
+    // can segment other regions that are not close to the original mask
+    // So this basically controls how far can a new segmented region can appear from
+    // original segmentation.
 	if( (curr_phi.x <= thres) && (curr_phi.x >= -thres) ){
+	//if( 1 ){
 		// Compute Curvature
 		float4 cu	= curr_phi;
 		float4 up	= read_imagef(phi, sampler, (int2)(col,row-1));
@@ -312,6 +330,14 @@ CurvatureAndF(read_only image2d_t phi, read_only image2d_t in,
 		float4 rh	= read_imagef(phi, sampler, (int2)(col+1,row));
 		float4 ur	= read_imagef(phi, sampler, (int2)(col+1,row-1));
 
+		float phi_x = cu.x - lf.x;
+		float phi_y = cu.x - dn.x;
+		float phi_xx = rh.x - 2*cu.x + lf.x;
+		float phi_yy = up.x - 2*cu.x + dn.x;
+		float phi_xy = .25 * dr.x -.25 * ur.x + .25 * ul.x - .25 * dl.x ;
+		float phi_x2 = phi_x * phi_x;
+		float phi_y2 = phi_y * phi_y;
+        /*
 		float phi_x = -lf.x + rh.x;
 		float phi_y = dn.x + up.x;
 		float phi_xx = lf.x - 2*cu.x + rh.x;
@@ -320,6 +346,7 @@ CurvatureAndF(read_only image2d_t phi, read_only image2d_t in,
 //		float phi_xy = -1*dl.x -1*ur.x + 1*dr.x + 1*ul.x;
 		float phi_x2 = phi_x * phi_x;
 		float phi_y2 = phi_y * phi_y;
+        */
 
 		float eps = .001;
 //		float curv = ( phi_x2* phi_yy + phi_y2*phi_xx - 2*phi_x*phi_y*phi_xy)/
@@ -327,13 +354,10 @@ CurvatureAndF(read_only image2d_t phi, read_only image2d_t in,
 
 		float curv = ( phi_x2* phi_yy + phi_y2*phi_xx - 2*phi_x*phi_y*phi_xy)/
 					( powr(phi_x2 + phi_y2 + eps , 3/2) );
-		
-		curv = 0;
 
 		// Computing F
 		float F = pow( curr_img - avgIn, 2) -
 								pow( curr_img - avgOut, 2);
-//		F = -F; // Just if you want to search for light places rather than dark places
 
 		float4 curv_and_F_value = (float4)(curv, F, 255, 255);
 //		float4 curv_and_F_value = (float4)(0, 255, 0, 255);

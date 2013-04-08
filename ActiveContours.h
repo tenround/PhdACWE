@@ -41,8 +41,7 @@ public:
 
     void iterate(int numIterations, bool useAllBands);
     void initImagesArraysAndBuffers(GLuint& gl_text_input, GLuint& gl_text_output);
-    void runSDF();
-
+    void runSDF(); 
 private:
     //    float* createRGBAMask(int width, int height, int xstart, int xend,
     //            int ystart, int yend);
