@@ -24,6 +24,7 @@
 
 struct ProgramData {
     GLuint theProgram;
+    GLuint simpleFragProgram;
     GLuint cameraToClipMatrixUnif;
 };
 
@@ -39,12 +40,14 @@ protected:
     void resizeGL(int w, int h);
     void paintGL();
     void mousePressEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *event);
     void init();
     void InitializeProgram();
     void InitTextures();
     void InitializeVertexBuffer();
+    void InitializeSimpleVertexBuffer();
     void InitActiveCountours();
     void CreateSamplers();
     int SelectImage();
@@ -71,8 +74,10 @@ private:
     GLuint vbo_tcord;
     GLuint vbo_color;
     GLuint ebo; //Element buffer object
+    GLuint vbo_selection;
 
     GLuint vaoID;
+    GLuint vaoSimpleID;//Just used to display ROI
 
     GLuint tbo_in; //Texture buffer object
     GLuint tbo_out; //Texture buffer object
@@ -83,7 +88,19 @@ private:
 
     //GUI
     bool imageSelected;
-    bool maskSelected;
+    bool newMask;
+    bool displaySegmentation;
+
+    //Mask selection
+    bool updatingROI;
+    float startXmask;
+    float startYmask;
+    float endXmask;
+    float endYmask;
+
+    //Window size
+    int winWidth;
+    int winHeight;
 
     ActiveContours clObj;
     int maxActCountIter;

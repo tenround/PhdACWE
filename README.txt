@@ -1,4 +1,15 @@
+-------- PROBLEM WITH MULTIPLE DEFINITIONS-------
+Comment HEADERS+=*.h
+-------- PROBLEM WITH MULTIPLE DEFINITIONS-------
+
+
+With shortcuts
+qm
+mk
+./RunActiveContoursQt
+
 To compile:
+make clean
 qmake Proj.pro
 make -j 8
 ./RunActiveContoursQt

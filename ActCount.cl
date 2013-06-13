@@ -166,7 +166,9 @@ void ArrMaxInt( global int* arr_in, int use_abs ) {
 }
 
 /**
- * This kernel paints the contour red on the image texture.
+ * This kernel reads data from the current segmentation (img_phi)
+ * and the input image (img_in) and merge the values
+ * to draw the contour of the segmentation.
  * Depending on the 'threshold' is what we take as contour
  */
 __kernel 
@@ -185,6 +187,7 @@ void segmToTexture( read_only image2d_t img_phi, read_only
 	if( (curr_seg.x <= thres) && (curr_seg.x >= -thres) ){
 		text_val = (float4)(1,0,0,1);//Red pixel on the boundary
 	}
+    //text_val = (float4)(1,0,0,1);//Red pixel on the boundary
 
 	write_imagef(img_phi_gl, (int2)(col,row), text_val);
 }

@@ -1,9 +1,55 @@
+	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent>  :nbkey C-B$/;"	m
+	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent>  :nbkey C-D$/;"	m
+	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent>  :nbkey C-E$/;"	m
+		/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^inoremap <silent> 	 =TriggerSnippet()$/;"	m
+	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent>  :nbkey C-N$/;"	m
+	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^omap  o$/;"	m
+	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^vmap  o$/;"	m
+	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent>  :nbkey C-P$/;"	m
+		/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^inoremap <silent> 	 =ShowAvailableSnips()$/;"	m
+	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent>  :nbkey C-U$/;"	m
+	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent>  :nbkey C-X$/;"	m
+	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent>  :nbkey C-Z$/;"	m
+	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^map  I\/\/$/;"	m
+	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^map  ^2x$/;"	m
 !_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
 !_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
 !_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+0	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^normal! 0$/;"	m
+<C-F5>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^imap <C-F5>  :Pyclewn $/;"	m
+<C-F5>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^map <C-F5> :Pyclewn $/;"	m
+<C-F6>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^imap <C-F6>  :Cfile a.out $/;"	m
+<C-F6>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^map <C-F6> :Cfile RunActiveContoursQt $/;"	m
+<C-F8>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^imap <C-F8>  :exe "Cprint *" . expand("<cword>") $/;"	m
+<C-F8>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^map <C-F8> :exe "Cprint *" . expand("<cword>") $/;"	m
+<C-S-F5>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^imap <C-S-F5>  :Cunmapkeys $/;"	m
+<C-S-F5>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^map <C-S-F5> :Cunmapkeys $/;"	m
+<F4>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^map <F4> :TlistToggle$/;"	m
+<F5>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^imap <F5>  :!clear; make go $/;"	m
+<F5>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^map <F5> :!clear; make go $/;"	m
+<F6>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^imap <F6>  :make $/;"	m
+<F6>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^map <F6> :make $/;"	m
+<F8>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^imap <F8>  :exe "Cprint " . expand("<cword>") $/;"	m
+<F8>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^map <F8> :exe "Cprint " . expand("<cword>") $/;"	m
+<M-Left>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nnoremap <silent> <M-Left> :execute 'silent! tabmove ' . (tabpagenr()-2)$/;"	m
+<M-Right>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nnoremap <silent> <M-Right> :execute 'silent! tabmove ' . tabpagenr()$/;"	m
+<NL>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^imap <NL> <Plug>IMAP_JumpForward$/;"	m
+<NL>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <NL> <Plug>IMAP_JumpForward$/;"	m
+<NL>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^vmap <NL> <Plug>IMAP_JumpForward$/;"	m
+<Plug>IMAP_DeleteAndJumpBack	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^vmap <silent> <Plug>IMAP_DeleteAndJumpBack "_<Del>i=IMAP_Jumpfunc('b', 0)$/;"	m
+<Plug>IMAP_DeleteAndJumpForward	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^vmap <silent> <Plug>IMAP_DeleteAndJumpForward "_<Del>i=IMAP_Jumpfunc('', 0)$/;"	m
+<Plug>IMAP_JumpBack	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^imap <silent> <Plug>IMAP_JumpBack =IMAP_Jumpfunc('b', 0)$/;"	m
+<Plug>IMAP_JumpBack	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent> <Plug>IMAP_JumpBack i=IMAP_Jumpfunc('b', 0)$/;"	m
+<Plug>IMAP_JumpBack	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^vmap <silent> <Plug>IMAP_JumpBack `<i=IMAP_Jumpfunc('b', 0)$/;"	m
+<Plug>IMAP_JumpForward	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^imap <silent> <Plug>IMAP_JumpForward =IMAP_Jumpfunc('', 0)$/;"	m
+<Plug>IMAP_JumpForward	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent> <Plug>IMAP_JumpForward i=IMAP_Jumpfunc('', 0)$/;"	m
+<Plug>IMAP_JumpForward	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^vmap <silent> <Plug>IMAP_JumpForward i=IMAP_Jumpfunc('', 0)$/;"	m
+<Plug>NetrwBrowseX	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nnoremap <silent> <Plug>NetrwBrowseX :call netrw#NetrwBrowseX(expand("<cWORD>"),0)$/;"	m
+<S-Tab>	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^inoremap <silent> <S-Tab> =BackwardsSnippet()$/;"	m
+A	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent> A :nbkey S-A$/;"	m
 ACTIVECONTOURS_H	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/ActiveContours.h	9;"	d
 ACTIVECONTOURS_H	ActiveContours.h	9;"	d
 AR	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^AR            = ar cqs$/;"	m
@@ -13,17 +59,19 @@ ActiveContours	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCounto
 ActiveContours	ActiveContours.cpp	/^ActiveContours::ActiveContours() {$/;"	f	class:ActiveContours
 ActiveContours	ActiveContours.cpp	/^ActiveContours::ActiveContours(const ActiveContours& orig) {$/;"	f	class:ActiveContours
 ActiveContours	ActiveContours.h	/^class ActiveContours {$/;"	c
+B	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent> B :nbkey S-B$/;"	m
+C	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent> C :nbkey S-C$/;"	m
 CAMERAMOV_H	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/CameraMovement.h	9;"	d
 CAMERAMOV_H	CameraMovement.h	9;"	d
 CC	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^CC            = gcc$/;"	m
-CFLAGS	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^CFLAGS        = -m64 -pipe -O2 -D_REENTRANT -Wall -W $(DEFINES)$/;"	m
+CFLAGS	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^CFLAGS        = -m64 -pipe -g -D_REENTRANT -Wall -W $(DEFINES)$/;"	m
 CHK_DIR_EXISTS	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^CHK_DIR_EXISTS= test -d$/;"	m
 COMPRESS	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^COMPRESS      = gzip -9f$/;"	m
 COPY	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^COPY          = cp -f$/;"	m
 COPY_DIR	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^COPY_DIR      = $(COPY) -r$/;"	m
 COPY_FILE	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^COPY_FILE     = $(COPY)$/;"	m
 CXX	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^CXX           = g++$/;"	m
-CXXFLAGS	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^CXXFLAGS      = -m64 -pipe -O2 -D_REENTRANT -Wall -W $(DEFINES)$/;"	m
+CXXFLAGS	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^CXXFLAGS      = -m64 -pipe -g -D_REENTRANT -Wall -W $(DEFINES)$/;"	m
 CalcFrustrumScale	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/CameraMovement.cpp	/^float CameraMovement::CalcFrustrumScale(float FOVdeg)$/;"	f	class:CameraMovement
 CalcFrustrumScale	CameraMovement.cpp	/^float CameraMovement::CalcFrustrumScale(float FOVdeg)$/;"	f	class:CameraMovement
 CameraMovement	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/CameraMovement.cpp	/^CameraMovement::CameraMovement(float fzNear, float fzFar, float FOV)$/;"	f	class:CameraMovement
@@ -32,11 +80,12 @@ CameraMovement	CameraMovement.cpp	/^CameraMovement::CameraMovement(float fzNear,
 CameraMovement	CameraMovement.h	/^class CameraMovement {$/;"	c
 CreateSamplers	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/GLWidget.cpp	/^void GLWidget::CreateSamplers() {$/;"	f	class:GLWidget
 CreateSamplers	GLWidget.cpp	/^void GLWidget::CreateSamplers() {$/;"	f	class:GLWidget
-DEFINES	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^DEFINES       = -DQT_WEBKIT -DQT_NO_DEBUG -DQT_OPENGL_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED$/;"	m
+DEFINES	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^DEFINES       = -DQT_WEBKIT -DQT_OPENGL_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED$/;"	m
 DEL_DIR	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^DEL_DIR       = rmdir$/;"	m
 DEL_FILE	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^DEL_FILE      = rm -f$/;"	m
 DESTDIR	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^DESTDIR       = $/;"	m
 DIST	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^DIST          = \/usr\/share\/qt4\/mkspecs\/common\/g++.conf \\$/;"	m
+F	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent> F :nbkey S-F$/;"	m
 FPSMOV_H	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/FPSMovement.h	9;"	d
 FPSMOV_H	FPSMovement.h	9;"	d
 FPSMovement	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/FPSMovement.cpp	/^FPSMovement::FPSMovement(const FPSMovement& orig) :CameraMovement(orig)$/;"	f	class:FPSMovement
@@ -53,6 +102,9 @@ INCPATH	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/
 INSTALL_DIR	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^INSTALL_DIR   = $(COPY_DIR)$/;"	m
 INSTALL_FILE	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^INSTALL_FILE  = install -m 644 -p$/;"	m
 INSTALL_PROGRAM	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^INSTALL_PROGRAM = install -m 755 -p$/;"	m
+Imap_Debug	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Imap_Debug =  0 $/;"	v
+Imap_DeleteEmptyPlaceHolders	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Imap_DeleteEmptyPlaceHolders =  1 $/;"	v
+Imap_StickyPlaceHolders	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Imap_StickyPlaceHolders =  1 $/;"	v
 InitActiveCountours	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/GLWidget.cpp	/^void GLWidget::InitActiveCountours() {$/;"	f	class:GLWidget
 InitActiveCountours	GLWidget.cpp	/^void GLWidget::InitActiveCountours() {$/;"	f	class:GLWidget
 InitTextures	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/GLWidget.cpp	/^void GLWidget::InitTextures() {$/;"	f	class:GLWidget
@@ -63,7 +115,8 @@ InitializeVertexBuffer	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/Acti
 InitializeVertexBuffer	GLWidget.cpp	/^void GLWidget::InitializeVertexBuffer() {$/;"	f	class:GLWidget
 Keyboard	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/FPSMovement.cpp	/^void FPSMovement::Keyboard(unsigned char key, int x, int y)$/;"	f	class:FPSMovement
 Keyboard	FPSMovement.cpp	/^void FPSMovement::Keyboard(unsigned char key, int x, int y)$/;"	f	class:FPSMovement
-LFLAGS	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^LFLAGS        = -m64 -Wl,-O1$/;"	m
+L	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent> L :nbkey S-L$/;"	m
+LFLAGS	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^LFLAGS        = -m64$/;"	m
 LIBS	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^LIBS          = $(SUBLIBS)  -L\/usr\/lib\/x86_64-linux-gnu -L\/usr\/X11R6\/lib64 -L\/media\/USBSimpleDrive\/Olmo\/OZlib -lOpenCL -lglut -lGLEW -lX11 -lm -lFileManager -lGLManager -lCLManager -lImageManager -lGordonTimers -lfreeimage -lQtOpenGL -lQtGui -lQtCore -lGLU -lGL -lpthread $/;"	m
 LINK	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^LINK          = g++$/;"	m
 MButton	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/FPSMovement.cpp	/^void FPSMovement::MButton(int button, int state, int x, int y)$/;"	f	class:FPSMovement
@@ -78,15 +131,74 @@ MainWindow	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursI
 MainWindow	MainWindow.cpp	/^MainWindow::MainWindow() {$/;"	f	class:MainWindow
 MainWindow	MainWindow.h	/^class MainWindow : public QMainWindow {$/;"	c
 MainWindow	ui_MainWindow.h	/^    class MainWindow: public Ui_MainWindow {};$/;"	c	namespace:Ui
+NERDChristmasTree	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDChristmasTree = "1"$/;"	v
+NERDTreeAutoCenter	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeAutoCenter = "1"$/;"	v
+NERDTreeAutoCenterThreshold	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeAutoCenterThreshold = "3"$/;"	v
+NERDTreeBookmarksFile	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeBookmarksFile = "\/home\/olmozavala\/.NERDTreeBookmarks"$/;"	v
+NERDTreeCaseSensitiveSort	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeCaseSensitiveSort = "0"$/;"	v
+NERDTreeChDirMode	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeChDirMode = "0"$/;"	v
+NERDTreeCopyCmd	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeCopyCmd = "cp -r "$/;"	v
+NERDTreeDirArrows	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeDirArrows = "1"$/;"	v
+NERDTreeHighlightCursorline	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeHighlightCursorline = "1"$/;"	v
+NERDTreeHijackNetrw	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeHijackNetrw = "1"$/;"	v
+NERDTreeMapActivateNode	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapActivateNode = "o"$/;"	v
+NERDTreeMapChangeRoot	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapChangeRoot = "C"$/;"	v
+NERDTreeMapChdir	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapChdir = "cd"$/;"	v
+NERDTreeMapCloseChildren	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapCloseChildren = "X"$/;"	v
+NERDTreeMapCloseDir	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapCloseDir = "x"$/;"	v
+NERDTreeMapDeleteBookmark	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapDeleteBookmark = "D"$/;"	v
+NERDTreeMapHelp	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapHelp = "?"$/;"	v
+NERDTreeMapJumpFirstChild	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapJumpFirstChild = "K"$/;"	v
+NERDTreeMapJumpLastChild	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapJumpLastChild = "J"$/;"	v
+NERDTreeMapJumpNextSibling	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapJumpNextSibling = "<C-j>"$/;"	v
+NERDTreeMapJumpParent	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapJumpParent = "p"$/;"	v
+NERDTreeMapJumpPrevSibling	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapJumpPrevSibling = "<C-k>"$/;"	v
+NERDTreeMapJumpRoot	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapJumpRoot = "P"$/;"	v
+NERDTreeMapMenu	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapMenu = "m"$/;"	v
+NERDTreeMapOpenExpl	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapOpenExpl = "e"$/;"	v
+NERDTreeMapOpenInTab	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapOpenInTab = "t"$/;"	v
+NERDTreeMapOpenInTabSilent	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapOpenInTabSilent = "T"$/;"	v
+NERDTreeMapOpenRecursively	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapOpenRecursively = "O"$/;"	v
+NERDTreeMapOpenSplit	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapOpenSplit = "i"$/;"	v
+NERDTreeMapOpenVSplit	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapOpenVSplit = "s"$/;"	v
+NERDTreeMapPreview	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapPreview = "go"$/;"	v
+NERDTreeMapPreviewSplit	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapPreviewSplit = "gi"$/;"	v
+NERDTreeMapPreviewVSplit	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapPreviewVSplit = "gs"$/;"	v
+NERDTreeMapQuit	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapQuit = "q"$/;"	v
+NERDTreeMapRefresh	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapRefresh = "r"$/;"	v
+NERDTreeMapRefreshRoot	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapRefreshRoot = "R"$/;"	v
+NERDTreeMapToggleBookmarks	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapToggleBookmarks = "B"$/;"	v
+NERDTreeMapToggleFiles	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapToggleFiles = "F"$/;"	v
+NERDTreeMapToggleFilters	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapToggleFilters = "f"$/;"	v
+NERDTreeMapToggleHidden	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapToggleHidden = "I"$/;"	v
+NERDTreeMapToggleZoom	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapToggleZoom = "A"$/;"	v
+NERDTreeMapUpdir	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapUpdir = "u"$/;"	v
+NERDTreeMapUpdirKeepOpen	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMapUpdirKeepOpen = "U"$/;"	v
+NERDTreeMinimalUI	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMinimalUI = "0"$/;"	v
+NERDTreeMouseMode	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeMouseMode = "1"$/;"	v
+NERDTreeNotificationThreshold	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeNotificationThreshold = "100"$/;"	v
+NERDTreeQuitOnOpen	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeQuitOnOpen = "0"$/;"	v
+NERDTreeRemoveDirCmd	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeRemoveDirCmd = "rm -rf "$/;"	v
+NERDTreeShowBookmarks	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeShowBookmarks = "0"$/;"	v
+NERDTreeShowFiles	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeShowFiles = "1"$/;"	v
+NERDTreeShowHidden	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeShowHidden = "0"$/;"	v
+NERDTreeShowLineNumbers	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeShowLineNumbers = "0"$/;"	v
+NERDTreeSortDirs	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeSortDirs = "1"$/;"	v
+NERDTreeStatusline	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeStatusline = "%{exists('b:NERDTreeRoot')?b:NERDTreeRoot.path.str():''}"$/;"	v
+NERDTreeWinPos	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeWinPos = "left"$/;"	v
+NERDTreeWinSize	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let NERDTreeWinSize = "31"$/;"	v
 OBJECTS	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^OBJECTS       = ActiveContours.o \\$/;"	m
 OBJECTS_DIR	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^OBJECTS_DIR   = .\/$/;"	m
 ProgramData	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/GLWidget.h	/^struct ProgramData {$/;"	s
 ProgramData	GLWidget.h	/^struct ProgramData {$/;"	s
+Q	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent> Q :nbkey S-Q$/;"	m
 QMAKE	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^QMAKE         = \/usr\/bin\/qmake$/;"	m
 QMAKE_TARGET	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^QMAKE_TARGET  = RunActiveContoursQt$/;"	m
+R	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent> R :nbkey S-R$/;"	m
 RANLIB	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^RANLIB        = $/;"	m
 Reshape	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/CameraMovement.cpp	/^void CameraMovement::Reshape(int w, int h)$/;"	f	class:CameraMovement
 Reshape	CameraMovement.cpp	/^void CameraMovement::Reshape(int w, int h)$/;"	f	class:CameraMovement
+S	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent> S :nbkey S-S$/;"	m
 SDFOZ	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/ActiveContours.h	28;"	d
 SDFOZ	ActiveContours.h	28;"	d
 SDFVORO	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/ActiveContours.h	29;"	d
@@ -97,16 +209,48 @@ SED	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Make
 SOURCES	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^SOURCES       = ActiveContours.cpp \\$/;"	m
 STRIP	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^STRIP         = strip$/;"	m
 SYMLINK	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^SYMLINK       = ln -f -s$/;"	m
-SelectImage	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/GLWidget.cpp	/^void GLWidget::SelectImage(){$/;"	f	class:GLWidget
-SelectImage	GLWidget.cpp	/^void GLWidget::SelectImage(){$/;"	f	class:GLWidget
+SelectImage	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/GLWidget.cpp	/^int GLWidget::SelectImage(){$/;"	f	class:GLWidget
+SelectImage	GLWidget.cpp	/^int GLWidget::SelectImage(){$/;"	f	class:GLWidget
+SessionLoad	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let SessionLoad = 1$/;"	v
 TAR	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^TAR           = tar -cf$/;"	m
 TARGET	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Makefile	/^TARGET        = RunActiveContoursQt$/;"	m
+TT	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nnoremap TT :TlistToggle$/;"	m
+TagList_title	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let TagList_title = "__Tag_List__"$/;"	v
+Tex_BIBINPUTS	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tex_BIBINPUTS = "\/home\/olmozavala\/Desktop\/Delete"$/;"	v
+Tex_DefaultTargetFormat	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tex_DefaultTargetFormat = "pdf"$/;"	v
+Tlist_Auto_Highlight_Tag	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Auto_Highlight_Tag =  1 $/;"	v
+Tlist_Auto_Open	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Auto_Open =  0 $/;"	v
+Tlist_Auto_Update	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Auto_Update =  1 $/;"	v
+Tlist_Close_On_Select	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Close_On_Select =  0 $/;"	v
+Tlist_Compact_Format	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Compact_Format =  1 $/;"	v
+Tlist_Ctags_Cmd	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Ctags_Cmd = "ctags"$/;"	v
+Tlist_Display_Prototype	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Display_Prototype =  0 $/;"	v
+Tlist_Display_Tag_Scope	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Display_Tag_Scope =  1 $/;"	v
+Tlist_Enable_Fold_Column	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Enable_Fold_Column =  1 $/;"	v
+Tlist_Exit_OnlyWindow	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Exit_OnlyWindow =  1 $/;"	v
+Tlist_File_Fold_Auto_Close	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_File_Fold_Auto_Close =  1 $/;"	v
+Tlist_GainFocus_On_ToggleOpen	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_GainFocus_On_ToggleOpen =  1 $/;"	v
+Tlist_Highlight_Tag_On_BufEnter	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Highlight_Tag_On_BufEnter =  1 $/;"	v
+Tlist_Inc_Winwidth	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Inc_Winwidth =  1 $/;"	v
+Tlist_Max_Submenu_Items	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Max_Submenu_Items =  20 $/;"	v
+Tlist_Max_Tag_Length	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Max_Tag_Length =  10 $/;"	v
+Tlist_Process_File_Always	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Process_File_Always =  0 $/;"	v
+Tlist_Show_Menu	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Show_Menu =  0 $/;"	v
+Tlist_Show_One_File	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Show_One_File =  0 $/;"	v
+Tlist_Sort_Type	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Sort_Type = "order"$/;"	v
+Tlist_Use_Horiz_Window	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Use_Horiz_Window =  0 $/;"	v
+Tlist_Use_Right_Window	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Use_Right_Window =  1 $/;"	v
+Tlist_Use_SingleClick	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_Use_SingleClick =  0 $/;"	v
+Tlist_WinHeight	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_WinHeight =  10 $/;"	v
+Tlist_WinWidth	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let Tlist_WinWidth =  30 $/;"	v
 UI_MAINWINDOW_H	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/ui_MainWindow.h	11;"	d
 UI_MAINWINDOW_H	ui_MainWindow.h	11;"	d
 Ui	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/ui_MainWindow.h	/^namespace Ui {$/;"	n
 Ui	ui_MainWindow.h	/^namespace Ui {$/;"	n
 Ui_MainWindow	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/ui_MainWindow.h	/^class Ui_MainWindow$/;"	c
 Ui_MainWindow	ui_MainWindow.h	/^class Ui_MainWindow$/;"	c
+W	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent> W :nbkey S-W$/;"	m
+X	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap <silent> X :nbkey S-X$/;"	m
 _GLWIDGET_H	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/GLWidget.h	2;"	d
 _GLWIDGET_H	GLWidget.h	2;"	d
 _MAINWINDOW_H	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/MainWindow.h	9;"	d
@@ -235,6 +379,7 @@ grp_size_x	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursI
 grp_size_x	ActiveContours.h	/^    int grp_size_x; \/\/ Default group size on x. $/;"	m	class:ActiveContours
 grp_size_y	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/ActiveContours.h	/^    int grp_size_y; \/\/ Default group size on y.$/;"	m	class:ActiveContours
 grp_size_y	ActiveContours.h	/^    int grp_size_y; \/\/ Default group size on y.$/;"	m	class:ActiveContours
+gx	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^nmap gx <Plug>NetrwBrowseX$/;"	m
 height	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/ActiveContours.h	/^    int height;$/;"	m	class:ActiveContours
 height	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/GLWidget.h	/^    int height;$/;"	m	class:GLWidget
 height	ActiveContours.h	/^    int height;$/;"	m	class:ActiveContours
@@ -339,6 +484,15 @@ retranslateUi	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountou
 retranslateUi	ui_MainWindow.h	/^    void retranslateUi(QMainWindow *MainWindow)$/;"	f	class:Ui_MainWindow
 runSDF	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/ActiveContours.cpp	/^void ActiveContours::runSDF() {$/;"	f	class:ActiveContours
 runSDF	ActiveContours.cpp	/^void ActiveContours::runSDF() {$/;"	f	class:ActiveContours
+s:cpo_save	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let s:cpo_save=&cpo$/;"	v
+s:l	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let s:l = 1 - ((0 * winheight(0) + 21) \/ 43)$/;"	v
+s:l	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let s:l = 1 - ((0 * winheight(0) + 22) \/ 44)$/;"	v
+s:l	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let s:l = 1 - ((0 * winheight(0) + 3) \/ 7)$/;"	v
+s:l	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let s:l = 1 - ((0 * winheight(0) + 4) \/ 8)$/;"	v
+s:l	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let s:l = 100 - ((13 * winheight(0) + 14) \/ 28)$/;"	v
+s:so_save	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let s:so_save = &so | let s:siso_save = &siso | set so=0 siso=0$/;"	v
+s:sx	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^let s:sx = expand("<sfile>:p:r")."x.vim"$/;"	v
+s:wipebuf	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^  let s:wipebuf = bufnr('%')$/;"	v
 sampler	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/GLWidget.h	/^    GLuint sampler;$/;"	m	class:GLWidget
 sampler	GLWidget.h	/^    GLuint sampler;$/;"	m	class:GLWidget
 samplerID	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/GLWidget.h	/^    GLuint samplerID[1];$/;"	m	class:GLWidget
@@ -421,6 +575,8 @@ width	ActiveContours.h	/^    int width;$/;"	m	class:ActiveContours
 width	GLWidget.h	/^    int width;$/;"	m	class:GLWidget
 z	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/GLWidget.h	/^    float z;$/;"	m	class:GLWidget
 z	GLWidget.h	/^    float z;$/;"	m	class:GLWidget
+zo	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^normal zo$/;"	m
+zt	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/Session.vim	/^normal! zt$/;"	m
 zval	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/GLWidget.cpp	/^const float zval = 1;\/\/Bigger the number farther away$/;"	v
 zval	GLWidget.cpp	/^const float zval = 1;\/\/Bigger the number farther away$/;"	v
 ~ActiveContours	/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/ActiveContours.cpp	/^ActiveContours::~ActiveContours() {$/;"	f	class:ActiveContours

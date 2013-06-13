@@ -51,13 +51,18 @@ ActiveContours::ActiveContours(const ActiveContours& orig) {
 ActiveContours::~ActiveContours() {
 }
 
+/**
+ * Initializes all the images objects. It receives the two textures pointers
+ * from OpenGL.
+ * @param {GLuint} tbo_in OpenGL texture pointer to the input image
+ * @param {GLuint} tbo_out OpenGL texture pointer to the output maks or segmentation.
+ */
 void ActiveContours::initImagesArraysAndBuffers(GLuint& tbo_in, GLuint& tbo_out) {
     origin = CLManager::getSizeT(0, 0, 0);
     region = CLManager::getSizeT(width, height, 1);
 
     try {
         cl::Context* context = clMan.getContext();
-        cl::CommandQueue* queue = clMan.getQueue();
 
         if (usingOGL) {//Assume we use OpenGL
 
@@ -67,7 +72,6 @@ void ActiveContours::initImagesArraysAndBuffers(GLuint& tbo_in, GLuint& tbo_out)
             //Add the images to the vector of cl::Memory that is used to acquire and release ogl objects
             cl_textures.push_back(img_in_gl);
             cl_textures.push_back(img_phi_gl);
-
         }
 
         img_phi = cl::Image2D(*context, CL_MEM_READ_WRITE,
@@ -131,11 +135,20 @@ void ActiveContours::initImagesArraysAndBuffers(GLuint& tbo_in, GLuint& tbo_out)
 void ActiveContours::init(int SDFmethod, char* inputFile, char* outputFile,
         int iter, float alpha, float def_dt, int* maskPos) {
     usingOGL = false;
-    this->loadProgram(SDFmethod, inputFile, outputFile, iter, alpha, def_dt, maskPos);
+    this->loadProgram(SDFmethod, inputFile, outputFile, iter, alpha, def_dt,  -1, -1);
+    createRGBAMask(width, height, maskPos[0], maskPos[1], maskPos[2], maskPos[3]);
 }
 
 void ActiveContours::loadProgram(int SDFmethod, char* inputFile, char* outputFile, int iter,
-        float alpha, float dt, int* maskPos) {
+        float alpha, float dt, int locwidth, int locheight) {
+
+    //Important! here is where we set the width and height
+    width = locwidth;
+    height = locheight;
+
+    cout << "Delete. At loadProgram size is: (" << locwidth << "," << locheight << ")" << endl;
+    cout << "Delete. At loadProgram size is: (" << width << "," << height << ")" << endl;
+
     this->outputFile = outputFile;
     this->totalIterations = iter;
     this->currIter = 0;
@@ -159,18 +172,19 @@ void ActiveContours::loadProgram(int SDFmethod, char* inputFile, char* outputFil
         queue = clMan.getQueue();
         program = clMan.getProgram();
 
-        //TODO change this, I am only open the image again to have the width and height
-        BYTE* imgByte = ImageManager::loadImageByte(inputFile, width, height);
-        arr_img_in = ImageManager::byteToFloat(imgByte, width * height * 4);
+        //If we are not receiving the width and height then we need to 
+        //read the image size again
+        if( (width == -1) || (height == -1)){
+            BYTE* imgByte = ImageManager::loadImageByte(inputFile, width, height);
+            arr_img_in = ImageManager::byteToFloat(imgByte, width * height * 4);
+        }
 
         if (WRITE) {//Writes the init image on the temporal folder
             dout << "Saving Original image " << endl;
             ImageManager::writeImage((char*) "images/SDF/CurrentRun/Original.png", arr_img_in, FIF_PNG, width, height);
         }
 
-        //        arr_img_phi = createRGBAMask(width, height, maskPos[0], maskPos[1], maskPos[2], maskPos[3]);
-        arr_buf_mask = new float[width * height];
-        createRGBAMask(width, height, maskPos[0], maskPos[1], maskPos[2], maskPos[3], arr_buf_mask);
+        //createRGBAMask(width, height, maskPos[0], maskPos[1], maskPos[2], maskPos[3], arr_buf_mask);
 
         clMan.getDeviceInfo(0); // Prints device info
 
@@ -179,8 +193,7 @@ void ActiveContours::loadProgram(int SDFmethod, char* inputFile, char* outputFil
 
         // Gets the group size from the with and height of the image and the mas number of threads per group
         CLManager::getGroupSize(max_warp_size, width, height, grp_size_x, grp_size_y, tot_grps_x, tot_grps_y, WRITE);
-
-
+        cout << "Delete. At END of loadProgram size is: (" << width << "," << height << ")" << endl;
     } catch (cl::Error ex) {
         clMan.printError(ex);
         return;
@@ -188,8 +201,8 @@ void ActiveContours::loadProgram(int SDFmethod, char* inputFile, char* outputFil
 }
 
 void ActiveContours::runSDF() {
-    //cout << endl << "--------------------Writing images" << endl;
 
+    dout << endl << "--------Running SDF ("<< width << "," << height << ")" << endl;
     try {
         // Create the program from source
         if (!usingOGL) {
@@ -205,6 +218,7 @@ void ActiveContours::runSDF() {
         //        err = queue->enqueueWriteImage(img_mask, CL_FALSE, origin, region, 0, 0, (void*) arr_img_phi, 0, &evImgSegWrt);
 
         char* sdfPath = (char*) "images/SDF/CurrentRun/"; //Path to save SDF images
+
         if (WRITE) {//Writes the original mask
             string fileName = appendStr(sdfPath, (char*) "MASK.png");
             ImageManager::writeGrayScaleImage((char*) fileName.c_str(), arr_buf_mask, FIF_PNG, width, height);
@@ -223,11 +237,13 @@ void ActiveContours::runSDF() {
         evSDF = sdfObj.runSDFBuf(&clMan, SDFmethod, buf_mask, buf_sdf, max_warp_size, width, height, evImgSegWrt, sdfPath);
         vecEvSDF.push_back(evSDF);
 
-        if (WRITE) {// Saves the SDF result as an image
+        if (true) {// Saves the SDF result as an image
             cout << "Saving SDF result..." << endl;
             string fileName = appendStr(sdfPath, (char*) "SDFResult.png");
 
+			//Reads from buf_sdf (GPU) and writes to arr_img_out (Host)
             res = queue->enqueueReadBuffer(buf_sdf, CL_TRUE, 0, sizeof (float) *width*height, (void*) arr_img_out, &vecEvSDF, 0);
+			// Prints image into png file
             ImageManager::writeGrayScaleImage((char*) fileName.c_str(), arr_img_out, FIF_PNG, width, height);
             if (PRINT_IMG_VAL) {
                 ImageManager::printImage(width, height, arr_img_out, 1);
@@ -267,6 +283,7 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
                 vecCopyTextBuf.push_back(evCopyInGlToIn);
 
                 if (WRITE) {//Writes the init image on the temporal folder
+                //if (true) {//Writes the init image on the temporal folder
                     res = queue->enqueueReadBuffer(buf_img_in, CL_TRUE, 0,
                             sizeof (float) *width*height*4, (void*) arr_img_out, &vecCopyTextBuf, 0);
 
@@ -283,6 +300,7 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
                 vecCopyTextBuf.push_back(evCopyBufToImg);
                 cout << "After buf_img_in -> img_in" << endl;
 
+                //Copying the result from the SDF to the initial phi
                 evCopyBufToPhi = this->copyBufToImg(buf_sdf, img_phi, vecCopyTextBuf, false);
                 vecCopyTextBuf.push_back(evCopyBufToPhi);
                 cout << "After buf_sdf-> img_phi" << endl;
@@ -413,14 +431,16 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
 
             vecEvSmPhi.push_back(evSmoothPhi);
 
-            //            if (currIter % ITER == 1) {
+            //Print image every time it enters (remove at the end)
             if (WRITE) {
-                res = queue->enqueueReadImage(img_phi,
-                        CL_TRUE, origin, region, 0, 0, (void*) arr_img_out,
-                        &vecEvSmPhi, 0);
+                if (currIter % ITER == 1) {
+                    res = queue->enqueueReadImage(img_phi,
+                            CL_TRUE, origin, region, 0, 0, (void*) arr_img_out,
+                            &vecEvSmPhi, 0);
 
-                string name = to_string<int>((char*) "images/temp_results/newphi", currIter, (char*) ".png");
-                ImageManager::writeImage((char*) name.c_str(), arr_img_out, FIF_PNG, width, height);
+                    string name = to_string<int>((char*) "images/temp_results/newphi", currIter, (char*) ".png");
+                    ImageManager::writeImage((char*) name.c_str(), arr_img_out, FIF_PNG, width, height);
+                }
             }
 
             vecEvPrevAvgInOut.clear();
@@ -471,6 +491,12 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
 
 }
 
+/**
+ * This function reads data from the current segmentation (img_phi)
+ * and the input image (img_in_gl) and merge the values
+ * to draw the contour of the segmentation into img_phi_gl
+ * Depending on the 'threshold' is what we take as contour
+ */
 void ActiveContours::copySegToText() {
     if (WRITE) {
         cout << "----------- Copying current segmentation------------" << endl;
@@ -1039,32 +1065,38 @@ cl::Event ActiveContours::compImgMaxReduction(cl::Image2D& img, vector<cl::Event
 }
 
 void ActiveContours::createRGBAMask(int width, int height, int xstart, int xend,
-        int ystart, int yend, float* mask) {
+        int ystart, int yend) {
+
+    arr_buf_mask = new float[width * height];
+
+    //Update local width and height of the image
+    width = width;
+    height = height;
 
     int size = width * height;
     int indx = 0;
 
-    cout << "--------------------- Creating mask ----------" << endl;
+    cout << "--------------------- Creating mask (" << width << "," << height << ") ----------" << endl;
     dout << "xmin: " << xstart << " xmax: " << xend << endl;
-    dout << "ymin: " << ystart << " ymin: " << yend << endl;
+    dout << "ymin: " << ystart << " ymax: " << yend << endl;
 
     //Initialize to 0
     for (int i = 0; i < size; i++) {
-        mask[i] = 0; // Red value
+        arr_buf_mask[i] = 0; // Red value
     }
 
     //Set the internal mask to 255
     for (int i = ystart; i < yend; i++) {
         for (int j = xstart; j < xend; j++) {
             indx = ImageManager::indxFromCoord(width, i, j, 1);
-            mask[indx] = 255; //R
+            arr_buf_mask[indx] = 255; //R
         }
     }
 
-    //    if (PRINT_IMG_VAL) {
-    //        cout << "Mask (just after creating it)" << endl;;
-    //        ImageManager::printImage(width, height, mask, 1);
-    //    }
+   //if (PRINT_IMG_VAL) {
+        //cout << "Mask (just after creating it)" << endl;;
+        //ImageManager::printImage(width, height, arr_buf_mask, 1);
+    //}
 }
 
 /*

@@ -37,16 +37,16 @@ public:
             float alpha, float dt, int* maskPos);
 
     void loadProgram(int SDFmethod, char* inputFile, char* outputFile, int iter,
-            float alpha, float dt, int* maskPos);
+            float alpha, float dt, int width, int height);
 
     void iterate(int numIterations, bool useAllBands);
     void initImagesArraysAndBuffers(GLuint& gl_text_input, GLuint& gl_text_output);
     void runSDF(); 
+    void createRGBAMask(int width, int height, int xstart, int xend,
+            int ystart, int yend);
 private:
     //    float* createRGBAMask(int width, int height, int xstart, int xend,
     //            int ystart, int yend);
-    void createRGBAMask(int width, int height, int xstart, int xend,
-            int ystart, int yend, float* mask);
 
     int SDFoz(CLManager cl, cl::Context context, cl::CommandQueue queue, cl::Program program);
     int SDFVoro(CLManager cl, cl::Context context, cl::CommandQueue queue, cl::Program program);

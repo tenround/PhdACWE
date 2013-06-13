@@ -18,7 +18,7 @@ SOURCES += ../SignedDistanceFunction/SignedDistFunc.h
 SOURCES += ../SignedDistanceFunction/SignedDistFunc.cpp
 #SOURCES += ../SignedDistanceFunction/**.cl
 
-HEADERS += *.h
+#HEADERS += *.h
 FORMS += *.ui
 
 TARGET = RunActiveContoursQt
@@ -28,3 +28,6 @@ TARGET = RunActiveContoursQt
 CONFIG += qt debug
 
 QT +=core gui opengl
+
+#After changing something do
+# make clean
