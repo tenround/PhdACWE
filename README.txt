@@ -4,6 +4,7 @@ Comment HEADERS+=*.h
 
 
 With shortcuts
+make clean
 qm
 mk
 ./RunActiveContoursQt
