@@ -27,6 +27,7 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionFile"/>
     <addaction name="actionQuit"/>
    </widget>
    <addaction name="menuFile"/>
@@ -38,6 +39,11 @@
    </property>
    <property name="shortcut">
     <string>Q</string>
+   </property>
+  </action>
+  <action name="actionFile">
+   <property name="text">
+    <string>Open File</string>
    </property>
   </action>
  </widget>

@@ -24,6 +24,7 @@ protected:
 
 private slots:
 	void on_actionQuit_activated();
+	void on_actionFile_activated();
 
 private:
 	Ui::MainWindow ui;

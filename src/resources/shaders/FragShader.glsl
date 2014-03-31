@@ -7,7 +7,7 @@ out vec4 outputColor;
 
 //This part is for the textures
 in vec2 colorCoord; //This is the texture coordinate
-uniform sampler2D textSampler;// Sample to specify how to apply texture
+uniform sampler2D textSampler;// Used to specify how to apply texture
 
 void main()
 {

@@ -36,8 +36,9 @@ public:
     void init(int SDFmethod, char* inputFile, char* outputFile, int iter,
             float alpha, float dt, int* maskPos);
 
-    void loadProgram(int SDFmethod, char* inputFile, char* outputFile, int iter,
-            float alpha, float dt, int width, int height);
+    void loadProgram(int SDFmethod, int iter, float alpha, float dt);
+
+	void loadImage(char* inputFile,char* outputFile, int width, int height);
 
     void iterate(int numIterations, bool useAllBands);
     void initImagesArraysAndBuffers(GLuint& gl_text_input, GLuint& gl_text_output);

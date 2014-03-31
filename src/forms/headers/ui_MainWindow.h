@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'MainWindow.ui'
 **
-** Created: Mon Mar 24 16:25:05 2014
+** Created: Mon Mar 31 17:57:39 2014
 **      by: Qt User Interface Compiler version 4.8.4
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
@@ -27,6 +27,7 @@ class Ui_MainWindow
 {
 public:
     QAction *actionQuit;
+    QAction *actionFile;
     QWidget *centralwidget;
     QMenuBar *menubar;
     QMenu *menuFile;
@@ -39,6 +40,8 @@ public:
         MainWindow->resize(800, 600);
         actionQuit = new QAction(MainWindow);
         actionQuit->setObjectName(QString::fromUtf8("actionQuit"));
+        actionFile = new QAction(MainWindow);
+        actionFile->setObjectName(QString::fromUtf8("actionFile"));
         centralwidget = new QWidget(MainWindow);
         centralwidget->setObjectName(QString::fromUtf8("centralwidget"));
         MainWindow->setCentralWidget(centralwidget);
@@ -53,6 +56,7 @@ public:
         MainWindow->setStatusBar(statusbar);
 
         menubar->addAction(menuFile->menuAction());
+        menuFile->addAction(actionFile);
         menuFile->addAction(actionQuit);
 
         retranslateUi(MainWindow);
@@ -65,6 +69,7 @@ public:
         MainWindow->setWindowTitle(QApplication::translate("MainWindow", "MainWindow", 0, QApplication::UnicodeUTF8));
         actionQuit->setText(QApplication::translate("MainWindow", "Quit", 0, QApplication::UnicodeUTF8));
         actionQuit->setShortcut(QApplication::translate("MainWindow", "Q", 0, QApplication::UnicodeUTF8));
+        actionFile->setText(QApplication::translate("MainWindow", "Open File", 0, QApplication::UnicodeUTF8));
         menuFile->setTitle(QApplication::translate("MainWindow", "File", 0, QApplication::UnicodeUTF8));
     } // retranslateUi
 

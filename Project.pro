@@ -33,7 +33,7 @@ OBJECTS_DIR = build
 DESTDIR = dist
 MOC_DIR = build/moc
 
-#DEFINES += DEBUG
+DEFINES += DEBUG
 
 #CONFIG += qt debug
 CONFIG += qt debug

@@ -87,6 +87,7 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
     modelMatrix = glm::mat4x4(1.0f);
 
     //Offset for the objects, in this case is only one object without offset
+	// it is the 'rectangle' holding the image
     offsets[0] = glm::vec3(0.0f, 0.0f, 0.0f);
 
     tbo_in = 0; //Texture buffer object
@@ -94,19 +95,21 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
     sampler = 0;
     textUnit = 0;
 
-    maxActCountIter = 12000;
-    currIter = 0;
-    iterStep = 5;
+    maxActCountIter = 12000;// Maximum number of ACWE iterations
+    currIter = 0; // Current ACWE iteration
+    iterStep = 5; //Number of ACWE iterations before retrieving result back to CPU
     acIterate = false;
     //Cool: 12, 13, 2, 6
     acExample = 1; //Example 7 is 128x128
-    useAllBands = true;
+    useAllBands = true; // Use all bands as an average for the ACWE algorithm
 
     mask = new int[4];
 
-    imageSelected = false;
+    imageSelected = false;//Indicates if the image has already been selected
     newMask = false;
     displaySegmentation = false;
+
+	firstTimeImageSelected = true;
 
     //	SelectImage();
 }
@@ -116,12 +119,23 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
  * segmentation and reloads everything.
  * TODO use exceptions or something similar to avoid returning ints
  */
-int GLWidget::SelectImage() {
-    //QString fileName = QFileDialog::getOpenFileName(this, tr("Select an image"), "", tr("Files (*.*)"));
+void GLWidget::SelectImage() {
+//    QString fileName = QFileDialog::getOpenFileName(this, tr("Select an image"), "/home", tr("Files (*.png *.jpg *.bmp)"));
+
     //QString fileName = "/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/images/RectTest1.png";
     //QString fileName = "/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/images/Ft.png";
     //QString fileName = "/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/images/Min.png";
-    QString fileName = "./images/planet1.jpg";
+//	QString fileName = "./images/planet1.jpg";
+	QString fileName;
+	
+	 QFileDialog dialog(this);
+	 dialog.setFileMode(QFileDialog::AnyFile);
+	 dialog.setViewMode(QFileDialog::List);
+	 QStringList fileNames;
+	 if (dialog.exec()){
+		 fileNames = dialog.selectedFiles();
+		 fileName = fileNames[0];
+	 }
 
     if (!fileName.isNull()) {
         inputImage = new char[fileName.length() + 1];
@@ -145,11 +159,11 @@ int GLWidget::SelectImage() {
         // the 'segmentation' until a new ROI is selected
         // TODO clear ROI
         displaySegmentation = false;
-        return 1;
+		init();
+		firstTimeImageSelected = false;
     } else {
         //TODO display a dialog informing the following text.
         cout << "The image haven't been selected. " << endl;
-        return 0;
     }
 }
 
@@ -178,17 +192,19 @@ void GLWidget::InitActiveCountours() {
     float alpha = 0.5;
     float def_dt = .5;
 
-    cout << "Delete. At InitActiveCountours size is: (" << width << "," << height << ")" << endl;
-    switch (method) {
-        case 1:
-            clObj.loadProgram(SDFOZ, (char*) inputImage, (char*) outputImage,
-                    maxActCountIter, alpha, def_dt, width, height);
-            break;
-        case 2://Current
-            clObj.loadProgram(SDFVORO, (char*) inputImage, (char*) outputImage,
-                    maxActCountIter, alpha, def_dt, width, height);
-            break;
-    }
+	if(firstTimeImageSelected){
+		switch (method) {
+			case 1:
+				clObj.loadProgram(SDFOZ, maxActCountIter, alpha, def_dt );
+				break;
+			case 2://Current
+				clObj.loadProgram(SDFVORO, maxActCountIter, alpha, def_dt);
+				break;
+		}
+	}
+
+	clObj.loadImage( (char*) inputImage, (char*) outputImage,
+						 width, height);
 }
 
 void GLWidget::InitializeSimpleVertexBuffer() {
@@ -198,6 +214,17 @@ void GLWidget::InitializeSimpleVertexBuffer() {
 
     GLManager::CreateElementBuffer(ebo, vertexIndexes, sizeof (vertexIndexes), GL_STATIC_DRAW);
 }
+
+/**
+ * This method should clean any buffer (. 
+ */
+void GLWidget::DeleteBuffers(){
+	glDeleteBuffers(1,&vbo_pos);
+	glDeleteBuffers(1,&vbo_color);
+	glDeleteBuffers(1,&vbo_tcord);
+	glDeleteBuffers(1,&ebo);
+}
+
 /**
  * This function initializes the vertex positions. In this
  * case we simply have a big square that has the size of the window
@@ -239,24 +266,14 @@ void GLWidget::InitializeVertexBuffer() {
 
 void GLWidget::InitTextures() {
 
-    //inputImage = "images/planet1.jpg";
-    //inputImage = "/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/images/planet1.jpg";
     BYTE* imageTemp = ImageManager::loadImageByte(inputImage, width, height);
     float* image = ImageManager::byteToFloatNorm(imageTemp, width * height * 4);
 
     dout << "Size of byte: " << sizeof (BYTE) << endl;
     dout << "Size of char: " << sizeof (char) << endl;
 
-    //cout << "Delete. At InitTextures size is: (" << width << "," << height << ")" << endl;
-
-    //for(int i=1; i<100; i++){
-    //    dout << (float)image[i]*255 << endl;
-    //}
-
     GLManager::Create2DTexture(tbo_in, image, width, height, GL_FLOAT, GL_RGBA16, GL_LINEAR, GL_LINEAR);
     GLManager::Create2DTexture(tbo_out, NULL, width, height, GL_FLOAT, GL_RGBA16, GL_LINEAR, GL_LINEAR);
-
-    //float div = 3;
 
     delete[] image;
 }
@@ -310,7 +327,7 @@ void GLWidget::InitializeProgram() {
     g_program.simpleFragProgram = GLManager::CreateProgram(shaderList);
 
     dout << "Simpler Program compiled and linked" << endl;
-    dout << "--------------End of loading things" << endl;
+    dout << "--------------End of loading OpenGL Shaders -----------------" << endl;
 }
 
 /**
@@ -318,20 +335,26 @@ void GLWidget::InitializeProgram() {
  * has been loaded properly. 
  */
 void GLWidget::init() {
+	dout << "------- init()--------" << endl;
 
-    //Create the Vertex Array Object (contains info of vertex, color, coords, and textures)
-    glGenVertexArrays(1, &vaoID); //Generate 1 vertex array
-    glGenVertexArrays(1, &vaoSimpleID); //Generate 1 vertex array
-    glBindVertexArray(vaoID); //First VAO setup (only one this time)
+	if(firstTimeImageSelected){
+		//Create the Vertex Array Object (contains info of vertex, color, coords, and textures)
+		glGenVertexArrays(1, &vaoID); //Generate 1 vertex array
+		glGenVertexArrays(1, &vaoSimpleID); //Generate 1 vertex array
+		glBindVertexArray(vaoID); //First VAO setup (only one this time)
+
+		// Samplers that define how to treat the image on the corners,
+		// and when we zoom in or out to the image
+		CreateSamplers();
+
+		dout << "Initializing Vertex buffers... " << endl;
+		InitializeVertexBuffer(); //Init Vertex buffers
+	}else{
+	}
 
     dout << "Initializing Textures... " << endl;
     InitTextures(); //Init textures
     dout << "Textures initialized!! " << endl;
-    CreateSamplers();
-
-    dout << "Initializing Vertex buffers... " << endl;
-    InitializeVertexBuffer(); //Init Vertex buffers
-
 
     // This should be already after mask 
     dout << "Initializing OpenCL... " << endl;
@@ -348,8 +371,6 @@ void GLWidget::init() {
 
     glBindVertexArray(0); //Unbind any vertex array
 
-    //init() gets called after selecting an image.
-    // TODO when everything works, move after pressing s
     imageSelected = true;
 }
 
@@ -396,10 +417,6 @@ void GLWidget::resizeGL(int w, int h) {
     gluOrtho2D(0, w, 0, h); // set origin to bottom left corner
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-
-    //TODO this should not be here, we need to call it because the 
-    // 'select file' window doesnt' work if it is not called from the constructor
-    //    init();
 }
 
 /**
@@ -587,8 +604,6 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
     dout << "Key = " << (unsigned char) event->key() << endl;
     camera->Keyboard((unsigned char) event->key(), 0, 0);
 
-    int success = 0; //Var used to ensure success of actions
-
     //printMatrix(camera->getCameraMatrix());
     switch (event->key()) {
 
@@ -611,10 +626,7 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
             ts.dumpTimings();
             break;
         case 'S':
-            success = SelectImage();
-            if (success) {
-                init();
-            }
+            SelectImage();
             break;
         case Qt::Key_Escape:
             close();

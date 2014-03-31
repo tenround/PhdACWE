@@ -34,8 +34,10 @@ class GLWidget : public QGLWidget {
 public:
     GLWidget(QWidget *parent = NULL);
     void printMatrix(glm::mat4 matrix);
+    void SelectImage();
 
 protected:
+	void DeleteBuffers();
     void initializeGL();
     void resizeGL(int w, int h);
     void paintGL();
@@ -50,7 +52,6 @@ protected:
     void InitializeSimpleVertexBuffer();
     void InitActiveCountours();
     void CreateSamplers();
-    int SelectImage();
 
 private:
     GLuint modelToCameraMatrixUnif;
@@ -90,6 +91,7 @@ private:
     bool imageSelected;
     bool newMask;
     bool displaySegmentation;
+	bool firstTimeImageSelected; //Indicates if it is the first time an image has been selected
 
     //Mask selection
     bool updatingROI;
@@ -121,6 +123,7 @@ private:
 
     QGLShaderProgram *shaderProg;
     QGLShader *vertexShader, *fragmentShader;
+
 };
 
 #endif  /* _GLWIDGET_H */

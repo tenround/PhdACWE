@@ -135,23 +135,14 @@ void ActiveContours::initImagesArraysAndBuffers(GLuint& tbo_in, GLuint& tbo_out)
 void ActiveContours::init(int SDFmethod, char* inputFile, char* outputFile,
         int iter, float alpha, float def_dt, int* maskPos) {
     usingOGL = false;
-    this->loadProgram(SDFmethod, inputFile, outputFile, iter, alpha, def_dt,  -1, -1);
+    this->loadProgram(SDFmethod, iter, alpha, def_dt );
+	this->loadImage(inputFile, outputFile, -1, -1);
     createRGBAMask(width, height, maskPos[0], maskPos[1], maskPos[2], maskPos[3]);
 }
 
-void ActiveContours::loadProgram(int SDFmethod, char* inputFile, char* outputFile, int iter,
-        float alpha, float dt, int locwidth, int locheight) {
+void ActiveContours::loadProgram(int SDFmethod, int iter, float alpha, float dt) {
 
-    //Important! here is where we set the width and height
-    width = locwidth;
-    height = locheight;
-
-    cout << "Delete. At loadProgram size is: (" << locwidth << "," << locheight << ")" << endl;
-    cout << "Delete. At loadProgram size is: (" << width << "," << height << ")" << endl;
-
-    this->outputFile = outputFile;
     this->totalIterations = iter;
-    this->currIter = 0;
     this->alpha = alpha;
     this->SDFmethod = SDFmethod;
 
@@ -172,6 +163,21 @@ void ActiveContours::loadProgram(int SDFmethod, char* inputFile, char* outputFil
         queue = clMan.getQueue();
         program = clMan.getProgram();
 
+    } catch (cl::Error ex) {
+        clMan.printError(ex);
+        return;
+    }
+}
+
+void ActiveContours::loadImage(char* inputFile, char* outputFile, int locwidth, int locheight){
+
+    this->currIter = 0;
+    this->outputFile = outputFile;
+    //Important! here is where we set the width and height
+    width = locwidth;
+    height = locheight;
+
+    try {
         //If we are not receiving the width and height then we need to 
         //read the image size again
         if( (width == -1) || (height == -1)){
@@ -193,7 +199,6 @@ void ActiveContours::loadProgram(int SDFmethod, char* inputFile, char* outputFil
 
         // Gets the group size from the with and height of the image and the mas number of threads per group
         CLManager::getGroupSize(max_warp_size, width, height, grp_size_x, grp_size_y, tot_grps_x, tot_grps_y, WRITE);
-        cout << "Delete. At END of loadProgram size is: (" << width << "," << height << ")" << endl;
     } catch (cl::Error ex) {
         clMan.printError(ex);
         return;

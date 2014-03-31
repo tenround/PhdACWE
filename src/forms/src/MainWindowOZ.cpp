@@ -49,3 +49,11 @@ void MainWindowOZ::keyPressEvent(QKeyEvent* event) {
 void MainWindowOZ::on_actionQuit_activated(){
 	close();
 }
+
+/**
+ * This function is called when the user presses the 'Open File' button. It 
+ * starts the image selection method
+ */
+void MainWindowOZ::on_actionFile_activated(){
+	glWidget->SelectImage();
+}
