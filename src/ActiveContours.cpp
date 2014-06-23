@@ -335,7 +335,7 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
 
         // -------------------- MAIN Active Countours iteration
         queue->finish(); //Finish everything before the iterations
-        for (currIter; currIter < lastIter; currIter++) {
+        for (; currIter < lastIter; currIter++) {
 
             if (currIter % ITER == 0) {
                 cout << endl << endl << "******************** Iter " << currIter << " ******************** " << endl;
@@ -712,7 +712,8 @@ cl::Event ActiveContours::compAvgInAndOut(cl::Image2D& img_phi, cl::Image2D& img
                     &evStep2Avg);
 
             vecStep2Avg.push_back(evStep2Avg);
-            queue->enqueueWaitForEvents(vecStep2Avg);
+            //queue->enqueueWaitForEvents(vecStep2Avg);
+            //queue->enqueueBarrierWithWaitList(&vecStep2Avg);
             vecStep2Avg.clear();
 
             curr_size = loc_tot_grps_x * loc_tot_grps_y * 2;

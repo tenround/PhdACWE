@@ -5,8 +5,8 @@
 __constant sampler_t def_sampler = CLK_NORMALIZED_COORDS_FALSE |
 								CLK_ADDRESS_CLAMP_TO_EDGE |
 								CLK_FILTER_NEAREST;
-__constant float thresporc = .004;
-__constant float EPS = .00001;
+__constant float thresporc = .004f;
+__constant float EPS = .00001f;
 
 // It computes the curvature of the curve phi close to 0 and
 // also the value of the Force F
@@ -314,7 +314,7 @@ CurvatureAndF(read_only image2d_t phi, read_only image2d_t in,
 
     //This threshold is not only for visualization, it has an impact
     // on the algorithm.
-    float thres = min(width, height) * .01;
+    float thres = min(width, height) * .01f;
     // This is important. The force is basicale been computed in a region
     // close to the contour. If we remove this restriction then the algorithm
     // can segment other regions that are not close to the original mask
@@ -337,7 +337,7 @@ CurvatureAndF(read_only image2d_t phi, read_only image2d_t in,
 		float phi_y = cu.x - dn.x;
 		float phi_xx = rh.x - 2*cu.x + lf.x;
 		float phi_yy = up.x - 2*cu.x + dn.x;
-		float phi_xy = .25 * dr.x -.25 * ur.x + .25 * ul.x - .25 * dl.x ;
+		float phi_xy = .25f * dr.x -.25f * ur.x + .25f * ul.x - .25f * dl.x ;
 		float phi_x2 = phi_x * phi_x;
 		float phi_y2 = phi_y * phi_y;
         /*
@@ -345,13 +345,13 @@ CurvatureAndF(read_only image2d_t phi, read_only image2d_t in,
 		float phi_y = dn.x + up.x;
 		float phi_xx = lf.x - 2*cu.x + rh.x;
 		float phi_yy = dn.x - 2*cu.x + up.x;
-		float phi_xy = .25*dr.x -.25*ur.x + .25*ul.x - .25*dl.x ;
+		float phi_xy = .25f*dr.x -.25f*ur.x + .25f*ul.x - .25f*dl.x ;
 //		float phi_xy = -1*dl.x -1*ur.x + 1*dr.x + 1*ul.x;
 		float phi_x2 = phi_x * phi_x;
 		float phi_y2 = phi_y * phi_y;
         */
 
-		float eps = .001;
+		float eps = .001f;
 //		float curv = ( phi_x2* phi_yy + phi_y2*phi_xx - 2*phi_x*phi_y*phi_xy)/
 //					( powr(phi_x2 + phi_y2 + eps , 3/2)*sqrt(phi_x2 + phi_y2) );
 
@@ -576,5 +576,4 @@ Step2AvgInOut(global float* avgDistInOut, global int* avgCount) {
 			avgCount[indxOut] = countOut;
 		}
 	}
-
 }

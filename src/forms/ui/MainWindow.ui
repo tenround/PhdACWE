@@ -45,6 +45,9 @@
    <property name="text">
     <string>Open File</string>
    </property>
+   <property name="shortcut">
+    <string>S</string>
+   </property>
   </action>
  </widget>
  <resources/>

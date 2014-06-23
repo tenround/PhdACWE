@@ -112,7 +112,7 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
 	firstTimeImageSelected = true;
 
     //	SelectImage();
-}
+}// QGLWidget constructor
 
 /**
  * Opens the 'select image' dialog. Stops all previous
@@ -266,16 +266,21 @@ void GLWidget::InitializeVertexBuffer() {
 
 void GLWidget::InitTextures() {
 
-    BYTE* imageTemp = ImageManager::loadImageByte(inputImage, width, height);
-    float* image = ImageManager::byteToFloatNorm(imageTemp, width * height * 4);
+    BYTE* image = ImageManager::loadImageByte(inputImage, width, height);
+
+    //Warning!!! imageFloat is now only used for displaying the internal values not for OpenGL
+    //float* imageFloat = ImageManager::byteToFloat(imageByte, width * height * 4);
+    
+    //ImageManager::printImageBGRA(width, height, imageFloat);
 
     dout << "Size of byte: " << sizeof (BYTE) << endl;
     dout << "Size of char: " << sizeof (char) << endl;
 
-    GLManager::Create2DTexture(tbo_in, image, width, height, GL_FLOAT, GL_RGBA16, GL_LINEAR, GL_LINEAR);
+    GLManager::Create2DTexture(tbo_in, image, width, height, GL_UNSIGNED_INT_8_8_8_8_REV, GL_RGBA, GL_LINEAR, GL_LINEAR);
+    //GLManager::Create2DTexture(tbo_out, NULL, width, height, GL_UNSIGNED_INT_8_8_8_8_REV, GL_RGBA16, GL_LINEAR, GL_LINEAR);
+    
+    //GLManager::Create2DTexture(tbo_in, image, width, height, GL_FLOAT, GL_RGBA16, GL_LINEAR, GL_LINEAR);
     GLManager::Create2DTexture(tbo_out, NULL, width, height, GL_FLOAT, GL_RGBA16, GL_LINEAR, GL_LINEAR);
-
-    delete[] image;
 }
 
 /**
@@ -337,6 +342,12 @@ void GLWidget::InitializeProgram() {
 void GLWidget::init() {
 	dout << "------- init()--------" << endl;
 
+    //IMPORTANT!!!! The textures need to be initialized before the vertex buffers,
+    //because it is in this function where the size of the images get read
+    dout << "Initializing Textures... " << endl;
+    InitTextures(); //Init textures
+    dout << "Textures initialized!! " << endl;
+
 	if(firstTimeImageSelected){
 		//Create the Vertex Array Object (contains info of vertex, color, coords, and textures)
 		glGenVertexArrays(1, &vaoID); //Generate 1 vertex array
@@ -349,12 +360,7 @@ void GLWidget::init() {
 
 		dout << "Initializing Vertex buffers... " << endl;
 		InitializeVertexBuffer(); //Init Vertex buffers
-	}else{
 	}
-
-    dout << "Initializing Textures... " << endl;
-    InitTextures(); //Init textures
-    dout << "Textures initialized!! " << endl;
 
     // This should be already after mask 
     dout << "Initializing OpenCL... " << endl;

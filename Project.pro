@@ -1,27 +1,32 @@
-CUDA="/usr/local/cuda-5.5"
-OZLIB="/home/olmozavala/Dropbox/OzOpenCL/OZlib/"
+#OPENCL="/opt/AMDAPP/"
+OPENCL="/usr/local/cuda"
 GLM="/home/olmozavala/Dropbox/OzOpenCL/"
-#
-LIBS += -L$${OZLIB}
-LIBS += -lOpenCL -lGL -lGLU -lglut -lGLEW -lX11 -lm -lFileManager
+OZLIB="/home/olmozavala/Dropbox/OzOpenCL/OZlib/"
+#This is used because I was getting the following erro (April 2014)
+# error running a compiled C++ file (uses OpenGL). Error: “Inconsistency detected by ld.so: dl-version.c: 224”
+
+LIBS += -L$${OZLIB} # Adds lib folder (for ozlib)
+
+LIBS += -lGL -lGLU -lglut -lGLEW -lX11 -lm -lFileManager -lOpenCL 
 LIBS +=  -lGLManager -lCLManager -lImageManager -lGordonTimers -lfreeimage
+
+#INCLUDEPATH += $${OZLIB}/.."/khronos"
 
 INCLUDEPATH += $${OZLIB}
 INCLUDEPATH += $${GLM}
-INCLUDEPATH += $${OZLIB}/.."/khronos"
-INCLUDEPATH += "../SignedDistanceFunction"
-INCLUDEPATH += $${CUDA}"/include"
-INCLUDEPATH += "/usr/include/GL"
-INCLUDEPATH += "./src/headers/"
+INCLUDEPATH += $${OPENCL}"/include"
+INCLUDEPATH += "../SignedDistanceFunction/src/headers"
+INCLUDEPATH += "/usr/include/GL" # For glew.h
+INCLUDEPATH += "./src/headers/"  # All headers
+INCLUDEPATH += "./src/forms/headers/"  # All headers
 
 HEADERS += src/headers/*.h
 HEADERS += src/forms/headers/*.h
-HEADERS += ../SignedDistanceFunction/SignedDistFunc.h
+HEADERS += ../SignedDistanceFunction/src/headers/SignedDistFunc.h
 
 SOURCES += src/*.cpp
 SOURCES += src/forms/src/*.cpp
-SOURCES += ../SignedDistanceFunction/SignedDistFunc.cpp
-
+SOURCES += ../SignedDistanceFunction/src/SignedDistFunc.cpp
 
 FORMS += src/forms/ui/*.ui
 MOD_DIR = build/moc
@@ -39,3 +44,4 @@ DEFINES += DEBUG
 CONFIG += qt debug
 
 QT +=core gui opengl
+QMAKE_CXXFLAGS += -w
