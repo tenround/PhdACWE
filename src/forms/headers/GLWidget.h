@@ -94,6 +94,10 @@ private:
     GLuint sampler;
     GLuint textUnit;
 
+	//Normal of billboard
+	GLuint normalUnif; 
+	GLuint normalHandle; 
+
     GLuint samplerID[1];
 
     //GUI

@@ -7,10 +7,22 @@ layout(location = 2) in vec2 inTextCoord;
 
 uniform mat4 perspectiveMatrix;
 uniform mat4 modelMatrix;
+uniform vec3 vertexNormal;
 
 smooth out vec4 theColor;
 
 out vec2 textCoord;//Coordinate of the texture
+
+vec3 computeLightForVertex(vec3 vertexNormal, vec3 color){
+	vec3 ligthVector = vec3(0.0, 100.0, 0.0);//Always same ligth position
+	vec3 ligthColor = vec3(1.0,1.0,1.0);//White
+
+	float difuse = .5; //How much of the ligth will be diffused 
+	// Formula  color = Light*normal*ligth_color*difuse;
+	vec3 newColor = difuse*ligthColor*(ligthVector*vertexNormal);
+	
+	return newColor;
+}
 
 void main(){
 

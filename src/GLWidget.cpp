@@ -338,7 +338,11 @@ void GLWidget::InitShaders() {
     shaderList.push_back(GLManager::CreateShader(GL_VERTEX_SHADER, strVertexShader));
     shaderList.push_back(GLManager::CreateShader(GL_FRAGMENT_SHADER, strSimpleFragmentShader));
 
+	//------------- For lighting ---------
+    normalHandle = glGetUniformLocation(normalUnif, "vertexNormal");
+
     g_program.simpleFragProgram = GLManager::CreateProgram(shaderList);
+
 
     dout << "Simpler Program compiled and linked" << endl;
     dout << "--------------End of loading OpenGL Shaders -----------------" << endl;
@@ -622,7 +626,7 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event) {
         float newX = currX / (float) winWidth;
         float newY = (winHeight - currY) / (float) winHeight;
 
-        dout << currX << "/" << winWidth << "....." << currY << "/" << winHeight << endl;
+//        dout << currX << "/" << winWidth << "....." << currY << "/" << winHeight << endl;
 
         newX = newX*2 -1;
         newY = newY*2 -1;
