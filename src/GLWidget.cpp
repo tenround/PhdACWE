@@ -214,7 +214,9 @@ void GLWidget::InitializeSimpleVertexBuffer() {
  * This method should clean any buffer (. 
  */
 void GLWidget::DeleteBuffers(){
-	glDeleteBuffers(1,&vbo_pos);
+	glDeleteBuffers(1,&vbo_posX);
+	glDeleteBuffers(1,&vbo_posY);
+	glDeleteBuffers(1,&vbo_posZ);
 	glDeleteBuffers(1,&vbo_color);
 	glDeleteBuffers(1,&vbo_tcord);
 	glDeleteBuffers(1,&ebo);
@@ -224,17 +226,63 @@ void GLWidget::DeleteBuffers(){
  * This function initializes the vertex positions. In this
  * case we simply have a big square that has the size of the window
  */
-void GLWidget::InitializeVertexBuffer() {
+void GLWidget::InitializeVertexBufferX() {
 
 	float size = 1;
 	float zval = 0;
-	vertexPositions= glm::mat4(0.0f);
-	vertexPositions[0] = glm::vec4(-size, size, zval, 1.0f);
-	vertexPositions[1] = glm::vec4(size, size, zval, 1.0f);
-	vertexPositions[2] = glm::vec4(size, -size, zval, 1.0f);
-	vertexPositions[3] = glm::vec4(-size, -size, zval, 1.0f);
+	vertexPlaneX= glm::mat4(0.0f);
+	vertexPlaneX[0] = glm::vec4(-size, size, zval, 1.0f);
+	vertexPlaneX[1] = glm::vec4(size, size, zval, 1.0f);
+	vertexPlaneX[2] = glm::vec4(size, -size, zval, 1.0f);
+	vertexPlaneX[3] = glm::vec4(-size, -size, zval, 1.0f);
 
-    GLManager::CreateBuffer(vbo_pos, glm::value_ptr(vertexPositions), sizeof (vertexPositions),
+    GLManager::CreateBuffer(vbo_posX, glm::value_ptr(vertexPlaneX), sizeof (vertexPlaneX),
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
+
+    GLManager::CreateBuffer(vbo_color, vertexColors, sizeof (vertexColors),
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 1, 4, GL_FALSE, 0, 0, GL_FLOAT);
+
+    GLManager::CreateBuffer(vbo_tcord, textCoords, sizeof (textCoords),
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 2, 2, GL_FALSE, 0, 0, GL_FLOAT);
+
+    GLManager::CreateElementBuffer(ebo, vertexIndexes, sizeof (vertexIndexes), GL_STATIC_DRAW);
+
+    //Unbind buffer
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+void GLWidget::InitializeVertexBufferY() {
+
+	float size = 1;
+	vertexPlaneY= glm::mat4(0.0f);
+	vertexPlaneY[0] = glm::vec4(0.0f, size,-size, 1.0f);
+	vertexPlaneY[1] = glm::vec4(0.0f, size, size, 1.0f);
+	vertexPlaneY[2] = glm::vec4(0.0f,-size, size, 1.0f);
+	vertexPlaneY[3] = glm::vec4(0.0f,-size,-size, 1.0f);
+
+    GLManager::CreateBuffer(vbo_posY, glm::value_ptr(vertexPlaneY), sizeof (vertexPlaneY),
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
+
+    GLManager::CreateBuffer(vbo_color, vertexColors, sizeof (vertexColors),
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 1, 4, GL_FALSE, 0, 0, GL_FLOAT);
+
+    GLManager::CreateBuffer(vbo_tcord, textCoords, sizeof (textCoords),
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 2, 2, GL_FALSE, 0, 0, GL_FLOAT);
+
+    GLManager::CreateElementBuffer(ebo, vertexIndexes, sizeof (vertexIndexes), GL_STATIC_DRAW);
+
+    //Unbind buffer
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+void GLWidget::InitializeVertexBufferZ() {
+
+	float size = 1;
+	vertexPlaneZ= glm::mat4(0.0f);
+	vertexPlaneZ[0] = glm::vec4(-size, 0.0f,-size , 1.0f);
+	vertexPlaneZ[1] = glm::vec4( size, 0.0f,-size, 1.0f);
+	vertexPlaneZ[2] = glm::vec4( size, 0.0f, size, 1.0f);
+	vertexPlaneZ[3] = glm::vec4(-size, 0.0f, size, 1.0f);
+
+    GLManager::CreateBuffer(vbo_posZ, glm::value_ptr(vertexPlaneZ), sizeof (vertexPlaneZ),
             GL_ARRAY_BUFFER, GL_STATIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
 
     GLManager::CreateBuffer(vbo_color, vertexColors, sizeof (vertexColors),
@@ -363,16 +411,22 @@ void GLWidget::init() {
 
 	if(firstTimeImageSelected){
 		//Create the Vertex Array Object (contains info of vertex, color, coords, and textures)
-		glGenVertexArrays(1, &vaoID); //Generate 1 vertex array
+		glGenVertexArrays(1, &vaoIdX); //Generate 1 vertex array
+		glGenVertexArrays(1, &vaoIdY); //Generate 1 vertex array
+		glGenVertexArrays(1, &vaoIdZ); //Generate 1 vertex array
 		glGenVertexArrays(1, &vaoSimpleID); //Generate 1 vertex array
-		glBindVertexArray(vaoID); //First VAO setup (only one this time)
 
 		// Samplers that define how to treat the image on the corners,
 		// and when we zoom in or out to the image
 		CreateSamplers();
 
 		dout << "Initializing Vertex buffers... " << endl;
-		InitializeVertexBuffer(); //Init Vertex buffers
+		glBindVertexArray(vaoIdX); //First VAO setup (only one this time)
+		InitializeVertexBufferX(); //Init Vertex buffers
+		glBindVertexArray(vaoIdY); 
+		InitializeVertexBufferY(); 
+		glBindVertexArray(vaoIdZ); 
+		InitializeVertexBufferZ(); 
 	}
 
     // This should be already after mask 
@@ -405,7 +459,9 @@ void GLWidget::initializeGL() {
 
     glDisable(GL_CULL_FACE); //Cull ('desechar') one or more faces of polygons
 //    glCullFace(GL_BACK); // Hide the 'back' face
-//    glFrontFace(GL_CW); //Which face is 'front' face, defindes as Clock Wise
+//    glFrontFace(GL_CW); //Which face is 'front' face, defines as Clock Wise
+	glEnable(GL_DEPTH_TEST);//Enables depth buffer
+	glDepthFunc(GL_LEQUAL);//Indicates the depth function to use
 
     Timer tm_oclogl_init(ts, "OCLinit");
     tm_oclogl_init.start();
@@ -443,6 +499,7 @@ void GLWidget::resizeGL(int w, int h) {
 void GLWidget::paintGL() {
     glFlush();
 
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     //Check if we already have an image selected, if not nothing should be done
     if (imageSelected) {
         //        dout << "Painting........... " << endl;
@@ -478,7 +535,6 @@ void GLWidget::paintGL() {
 
         glUseProgram(g_program.theProgram);
 
-        glBindVertexArray(vaoID); //First VAO setup (only one this time)
 
         modelMatrix = camera->getModelMatrix();
 
@@ -492,6 +548,13 @@ void GLWidget::paintGL() {
         glBindTexture(GL_TEXTURE_2D, tbo_in);
         glBindSampler(textUnit, samplerID[0]);
 
+        glBindVertexArray(vaoIdX); //First VAO setup (only one this time)
+        glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
+
+        glBindVertexArray(vaoIdY); 
+        glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
+
+        glBindVertexArray(vaoIdZ); 
         glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
 
 		//This is displaying the results of the segmentation (from a texture

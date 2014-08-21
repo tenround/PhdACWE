@@ -53,7 +53,9 @@ protected:
     void init();
     void InitShaders();
     void InitTextures();
-    void InitializeVertexBuffer();
+    void InitializeVertexBufferX();
+    void InitializeVertexBufferY();
+    void InitializeVertexBufferZ();
     void InitializeSimpleVertexBuffer();
     void InitActiveCountours();
     void CreateSamplers();
@@ -71,7 +73,9 @@ private:
     ProgramData g_program;
     glm::vec3 offsets[1];
 
-	glm::mat4 vertexPositions;
+	glm::mat4 vertexPlaneX;
+	glm::mat4 vertexPlaneY;
+	glm::mat4 vertexPlaneZ;
 	glm::mat4 vertexPosSelection;
 
     //float textCoords[];
@@ -80,13 +84,17 @@ private:
     float z;
     float hsize;
 
-    GLuint vbo_pos;
+    GLuint vbo_posX;
+    GLuint vbo_posY;
+    GLuint vbo_posZ;
     GLuint vbo_tcord;
     GLuint vbo_color;
     GLuint ebo; //Element buffer object
     GLuint vbo_selection;
 
-    GLuint vaoID;
+    GLuint vaoIdX;
+    GLuint vaoIdY;
+    GLuint vaoIdZ;
     GLuint vaoSimpleID;//Just used to display ROI
 
     GLuint tbo_in; //Texture buffer object

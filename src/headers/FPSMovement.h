@@ -36,8 +36,12 @@ private:
     bool rotating; //Indicates if the primary button is pressed and the model will be rotated
     bool translating; //Indicates if the world is being translated by Ctrl+Mouse rather than rotated
 
+	glm::mat4 prevRot;
+
     //TODO this value should be related with the width and height of the window
     float movementSpeed = .005;//It simply indicates how fast to move
+
+    void printGLMmatrix(glm::mat4 matrix);
 };
 
 #endif	/* FPSMovement_H */
