@@ -1,4 +1,4 @@
-#version 330
+#version 400
 
 //This one makes the interpolation 'smooth' it can be 'flat' or 'noperspective'
 // but it needs to be the same as in the vertex shader

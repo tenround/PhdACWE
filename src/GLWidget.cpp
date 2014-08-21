@@ -39,7 +39,6 @@ float vertexColors[] = {
     1.0f, 1.0f, 0.0f, 1.0f
 };
 
-
 float textCoords[] = {
     0.0f, 1.0f, //0
     1.0f, 1.0f, //1
@@ -47,26 +46,12 @@ float textCoords[] = {
     0.0f, 0.0f, //2
 };
 
-const float size = .9;
-const float zval = 1; //Bigger the number farther away
 
-//Positions of a square that the user
-// is drawing
-float vertexPosSelection[] = {
-    -0, 0, zval-.01, 1.0f, //Upper left
-    0, 0, zval-.01, 1.0f, //Upper right
-    0, -0, zval-.01, 1.0f, // Lower right
-    -0, -0, zval-.01, 1.0f //Lower left
-};
-
+const float size = 1;
+const float zval = 0; //Smaller or negative the number farther away
+const float zvalROI = 0.01; //Slightly in front of the default billboard
 
 //Positions of a square
-float vertexPositions[] = {
-    -size, size, zval, 1.0f, //Upper left
-    size, size, zval, 1.0f, //Upper right
-    size, -size, zval, 1.0f, // Lower right
-    -size, -size, zval, 1.0f //Lower left
-};
 
 //Indexes of the elements of an array
 unsigned int vertexIndexes[] = {0, 1, 2, 3};
@@ -83,8 +68,6 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
 
     z = 1; // Default depth to show the pictures
     hsize = .9; // Default size for the 'square' to show the picture
-
-    modelMatrix = glm::mat4x4(1.0f);
 
     //Offset for the objects, in this case is only one object without offset
 	// it is the 'rectangle' holding the image
@@ -209,7 +192,19 @@ void GLWidget::InitActiveCountours() {
 
 void GLWidget::InitializeSimpleVertexBuffer() {
 
-    GLManager::CreateBuffer(vbo_selection, vertexPosSelection, sizeof (vertexPosSelection),
+	float size = 0;//Starts empty
+	float zval = 0.1;
+	//Initializes the ROI with all 0's
+	vertexPosSelection= glm::mat4(0.0f);
+
+	vertexPosSelection[0] = glm::vec4(-size, size, zval, 1.0f);
+	vertexPosSelection[1] = glm::vec4(size, size, zval, 1.0f);
+	vertexPosSelection[2] = glm::vec4(size, -size, zval, 1.0f);
+	vertexPosSelection[3] = glm::vec4(-size, -size, zval, 1.0f);
+
+	printGLMmatrix(vertexPosSelection);
+	
+    GLManager::CreateBuffer(vbo_selection, glm::value_ptr(vertexPosSelection), sizeof(vertexPosSelection),
             GL_ARRAY_BUFFER, GL_STREAM_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
 
     GLManager::CreateElementBuffer(ebo, vertexIndexes, sizeof (vertexIndexes), GL_STATIC_DRAW);
@@ -231,25 +226,15 @@ void GLWidget::DeleteBuffers(){
  */
 void GLWidget::InitializeVertexBuffer() {
 
-    dout << "At InitializeVertexBuffer size is: (" << width << "," << height << ")" << endl;
-    int maxDim = max(width, height);
-    //Top left
-    vertexPositions[0] = (float) -width / maxDim;
-    vertexPositions[1] = (float) height / maxDim;
+	float size = 1;
+	float zval = 0;
+	vertexPositions= glm::mat4(0.0f);
+	vertexPositions[0] = glm::vec4(-size, size, zval, 1.0f);
+	vertexPositions[1] = glm::vec4(size, size, zval, 1.0f);
+	vertexPositions[2] = glm::vec4(size, -size, zval, 1.0f);
+	vertexPositions[3] = glm::vec4(-size, -size, zval, 1.0f);
 
-    //Top Right
-    vertexPositions[4] = (float) width / maxDim;
-    vertexPositions[5] = (float) height / maxDim;
-
-    //Bottom Right
-    vertexPositions[8] = (float) width / maxDim;
-    vertexPositions[9] = (float) -height / maxDim;
-
-    //Bottom Left 
-    vertexPositions[12] = (float) -width / maxDim;
-    vertexPositions[13] = (float) -height / maxDim;
-
-    GLManager::CreateBuffer(vbo_pos, vertexPositions, sizeof (vertexPositions),
+    GLManager::CreateBuffer(vbo_pos, glm::value_ptr(vertexPositions), sizeof (vertexPositions),
             GL_ARRAY_BUFFER, GL_STATIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
 
     GLManager::CreateBuffer(vbo_color, vertexColors, sizeof (vertexColors),
@@ -283,11 +268,34 @@ void GLWidget::InitTextures() {
     GLManager::Create2DTexture(tbo_out, NULL, width, height, GL_FLOAT, GL_RGBA16, GL_LINEAR, GL_LINEAR);
 }
 
+void GLWidget::printGLVersions() {
+
+	/*
+	 	GLint nExtensions;
+	glGetIntegerv(GL_NUM_EXTENSIONS, &nExtensions);
+
+	for(int i=0; i<nExtensions; i++){ cout << glGetStringi(GL_EXTENSIONS, i) << endl; }
+*/
+	const GLubyte *renderer = glGetString( GL_RENDER);
+	const GLubyte *vendor= glGetString( GL_VENDOR);
+	const GLubyte *version = glGetString( GL_VERSION);
+	const GLubyte *glsVersion= glGetString( GL_SHADING_LANGUAGE_VERSION);
+
+	cout << "GL Vendor: " << vendor << endl;
+	cout << "GL Version : " << version << endl;
+	cout << "GLS version: " << glsVersion << endl;
+	
+}
+
+
 /**
  * Initializes the shaders for OpenGL. It also
  * initializes the OpenGL program, the camera and the 
  * uniforms */
-void GLWidget::InitializeProgram() {
+void GLWidget::InitShaders() {
+
+	printGLVersions();
+	
     std::vector<GLuint> shaderList;
 
     //Reads the vertex and fragment shaders
@@ -316,7 +324,8 @@ void GLWidget::InitializeProgram() {
     glUseProgram(g_program.theProgram); //Start using the builded program
 
     glUniform1i(textSamplerLoc, textUnit); //Binds the texture uniform with the texture like id
-    glUniformMatrix4fv(g_program.cameraToClipMatrixUnif, 1, GL_FALSE, glm::value_ptr(camera->getCameraMatrix()));
+    glUniformMatrix4fv(g_program.cameraToClipMatrixUnif, 1, GL_FALSE, 
+            glm::value_ptr(camera->getProjectionMatrix() * camera->getViewMatrix()));
     glUseProgram(0);
 
     std::for_each(shaderList.begin(), shaderList.end(), glDeleteShader);
@@ -390,22 +399,22 @@ void GLWidget::initializeGL() {
         fprintf(stderr, "GLEW Error: %s\n", glewGetErrorString(err));
     }
 
-    glEnable(GL_CULL_FACE); //Cull ('desechar') one or more faces of polygons
-    glCullFace(GL_BACK); // Hide the 'back' face
-    glFrontFace(GL_CW); //Which face is 'front' face, defindes as Clock Wise
+    glDisable(GL_CULL_FACE); //Cull ('desechar') one or more faces of polygons
+//    glCullFace(GL_BACK); // Hide the 'back' face
+//    glFrontFace(GL_CW); //Which face is 'front' face, defindes as Clock Wise
 
     Timer tm_oclogl_init(ts, "OCLinit");
     tm_oclogl_init.start();
 
     //Initializes the camera perspective paramteres
-    float fzNear = 1.0f;
+    float fzNear = 0.1f;
     float fzFar = 1000.0f;
     float FOV = 45.0f;
 
     camera = new FPSMovement(fzNear, fzFar, FOV);
 
     dout << "Initializing OpenGL program... " << endl;
-    InitializeProgram();
+    InitShaders();
     dout << "OpenGL program initialized ... " << endl;
 
     tm_oclogl_init.end();
@@ -414,15 +423,14 @@ void GLWidget::initializeGL() {
 void GLWidget::resizeGL(int w, int h) {
     dout << "Resizing GL ......." << endl;
 
-    winWidth = w;
-    winHeight = h;
+    // NEVER TOUCH THIS TWO VALUES ARE NECESSARY
+    winWidth = w;//Updating the width of the window for the ROI
+    winHeight = h;//Updating the height of the window for the ROI
 
-    glViewport(0, 0, w, h);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D(0, w, 0, h); // set origin to bottom left corner
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    camera->Reshape(w,h);
+    glUniformMatrix4fv(g_program.cameraToClipMatrixUnif, 1, GL_FALSE, 
+            glm::value_ptr(camera->getProjectionMatrix() * camera->getViewMatrix()));
+
 }
 
 /**
@@ -468,9 +476,13 @@ void GLWidget::paintGL() {
 
         glBindVertexArray(vaoID); //First VAO setup (only one this time)
 
-        modelMatrix[3] = glm::vec4(offsets[0], 1.0f);
+        modelMatrix = camera->getModelMatrix();
 
-        glUniformMatrix4fv(modelToCameraMatrixUnif, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+        glUniformMatrix4fv(modelToCameraMatrixUnif, 1, 
+                GL_FALSE, glm::value_ptr(modelMatrix));
+
+        glUniformMatrix4fv(g_program.cameraToClipMatrixUnif, 1, GL_FALSE, 
+            glm::value_ptr(camera->getProjectionMatrix() * camera->getViewMatrix()));
 
         glActiveTexture(GL_TEXTURE0 + textUnit);
         glBindTexture(GL_TEXTURE_2D, tbo_in);
@@ -478,6 +490,8 @@ void GLWidget::paintGL() {
 
         glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
 
+		//This is displaying the results of the segmentation (from a texture
+		// computed suing OpenCL)
         if (displaySegmentation) {
             glBindTexture(GL_TEXTURE_2D, tbo_out);
             glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
@@ -489,13 +503,13 @@ void GLWidget::paintGL() {
         glBindVertexArray(0); //Unbind VAO
         glUseProgram(0); //Unbind program
 
+		// This is used to display the ROI that the user is selecting
         if(!displaySegmentation){
             glUseProgram(g_program.simpleFragProgram);
-            glBindVertexArray(vaoSimpleID);
+            glBindVertexArray(vaoSimpleID);//Attach the VAO for displaying ROI
 
-            //vertexPosSelection[0]-=.01;
-            GLManager::CreateBuffer(vbo_selection, vertexPosSelection, sizeof (vertexPosSelection),
-                    GL_ARRAY_BUFFER, GL_STREAM_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
+			GLManager::CreateBuffer(vbo_selection, glm::value_ptr(vertexPosSelection), sizeof(vertexPosSelection),
+					GL_ARRAY_BUFFER, GL_STREAM_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
 
             glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_INT, 0);
         }
@@ -508,68 +522,90 @@ void GLWidget::paintGL() {
 }
 
 void GLWidget::mouseReleaseEvent(QMouseEvent *event) {
-    endXmask = event->x();
-    endYmask = event->y();
+    camera->mouseReleaseEvent(event);
 
-    /*
-    dout << "Updating mask........ " << endl;
-    dout << "Start at: (" << startXmask << "," << startYmask << ")" << endl;
-    dout << "Ends at: (" << endXmask << "," << endYmask << ")" << endl;
+	if( event->button() == GLUT_RIGHT_BUTTON){
+		endXmask = event->x();
+		endYmask = event->y();
 
-    dout << "Image size : (" << width << "," << height << ")" << endl;
-    dout << "Window size : (" << winWidth << "," << winHeight << ")" << endl;
-    */
+		/*
+		dout << "Updating mask........ " << endl;
+		dout << "Start at: (" << startXmask << "," << startYmask << ")" << endl;
+		dout << "Ends at: (" << endXmask << "," << endYmask << ")" << endl;
 
-    mask[0] = (int) ((startXmask * width) / winWidth);
-    mask[1] = (int) ((endXmask * width) / winWidth);
+		dout << "Image size : (" << width << "," << height << ")" << endl;
+		dout << "Window size : (" << winWidth << "," << winHeight << ")" << endl;
+		*/
 
-    mask[2] = height - (int) ((endYmask * height) / winHeight);
-    mask[3] = height - (int) ((startYmask * height) / winHeight);
+		mask[0] = (int) ((startXmask * width) / winWidth);
+		mask[1] = (int) ((endXmask * width) / winWidth);
 
-    dout << "Corresp mask start: (" << mask[0] << "," << mask[2] << ")" << endl;
-    dout << "Corresp mask end: (" << mask[1] << "," << mask[3] << ")" << endl;
+		mask[2] = height - (int) ((endYmask * height) / winHeight);
+		mask[3] = height - (int) ((startYmask * height) / winHeight);
 
-    newMask = true; //Run SDF (start displaying segmentation) 
+		dout << "Corresp mask start: (" << mask[0] << "," << mask[2] << ")" << endl;
+		dout << "Corresp mask end: (" << mask[1] << "," << mask[3] << ")" << endl;
 
-    updatingROI = false; //Stop drawing user ROI, start displaying segmentation
+		newMask = true; //Run SDF (start displaying segmentation) 
+
+		updatingROI = false; //Stop drawing user ROI, start displaying segmentation
+	}
 }
 
 void GLWidget::mousePressEvent(QMouseEvent *event) {
 
-    dout << "************ INIT POS*************" << endl;
-    int currX = event->x();
-    int currY = event->y();
+	cout << "Button: " << event->button() << endl;
+    camera->mousePressEvent(event);
 
-    float newX = currX / (float) winWidth;
-    float newY = (winHeight - currY) / (float) winHeight;
+    //static int PRIMARY = GLUT_LEFT_BUTTON;//Which mouse button will be used for movement
+	if( event->button() == GLUT_RIGHT_BUTTON){
 
-    startXmask = event->x();
-    startYmask = event->y();
+		dout << "************ INIT ROI POS*************" << endl;
 
-    newX = newX*2 - 1;
-    newY = newY*2 - 1;
+		int currX = event->x();
+		int currY = event->y();
 
-    //------ Initialize ROI all into one point ----
-    //Upper left x,y
-    vertexPosSelection[0] = newX;
-    vertexPosSelection[1] = newY;
+		float newX = currX / (float) winWidth;
+		float newY = (winHeight - currY) / (float) winHeight;
 
-    //Upper right x,y
-    vertexPosSelection[4] = newX;
-    vertexPosSelection[5] = newY;
+		startXmask = event->x();
+		startYmask = event->y();
 
-    //Lower right x,y
-    vertexPosSelection[8] = newX;
-    vertexPosSelection[9] = newY;
+		newX = newX*2 - 1;
+		newY = newY*2 - 1;
 
-    //Lower left x,y
-    vertexPosSelection[12] = newX;
-    vertexPosSelection[13] = newY;
+		//------ Initialize ROI all into one point ----
 
-    updatingROI = true;
+		//Upper left x,y
+		vertexPosSelection[0].x = newX;
+		vertexPosSelection[0].y = newY;
 
+		//Upper right x,y
+		vertexPosSelection[1].x = newX;
+		vertexPosSelection[1].y = newY;
+
+		//Lower right x,y
+		vertexPosSelection[2].x = newX;
+		vertexPosSelection[2].y = newY;
+
+		//Lower left x,y
+		vertexPosSelection[3].x = newX;
+		vertexPosSelection[3].y = newY;
+		updatingROI = true;
+	}
 }
 
+/**
+ * Controls the events when the wheel of the mouse is pressed. 
+ * In this case it zooms in and out translating the view matrix 
+ * @param event
+ */
+void GLWidget::wheelEvent(QWheelEvent *event) {
+
+    camera->wheelEvent(event);
+
+	modelMatrix = camera->getModelMatrix();
+}
 /**
  * This function catches the mouse move event. It is used when
  * the user is selecting a ROI. It updates the position of the
@@ -578,6 +614,7 @@ void GLWidget::mousePressEvent(QMouseEvent *event) {
  */
 void GLWidget::mouseMoveEvent(QMouseEvent *event) {
 
+    camera->mouseMoveEvent(event);
     if (updatingROI) {
         int currX = event->x();
         int currY = event->y();
@@ -585,30 +622,33 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event) {
         float newX = currX / (float) winWidth;
         float newY = (winHeight - currY) / (float) winHeight;
 
-        //dout << currX << "/" << winWidth << "....." << currY << "/" << winHeight << endl;
+        dout << currX << "/" << winWidth << "....." << currY << "/" << winHeight << endl;
 
         newX = newX*2 -1;
         newY = newY*2 -1;
 
         //Upper right x,y
-        vertexPosSelection[4] = newX;
+        vertexPosSelection[1].x = newX;
 
         //Lower right x,y
-        vertexPosSelection[8] = newX;
-        vertexPosSelection[9] = newY;
+        vertexPosSelection[2].x = newX;
+        vertexPosSelection[2].y = newY;
 
         //Lower left x,y
-        vertexPosSelection[13] = newY;
+        vertexPosSelection[3].y = newY;
     }
 }
 
+void GLWidget::keyReleaseEvent(QKeyEvent* event) {
+    camera->keyReleaseEvent(event);
+}
 /**
  * Management of all the keyboards pressed.
  */
 void GLWidget::keyPressEvent(QKeyEvent* event) {
 
+    camera->keyPressEvent(event);
     dout << "Key = " << (unsigned char) event->key() << endl;
-    camera->Keyboard((unsigned char) event->key(), 0, 0);
 
     //printMatrix(camera->getCameraMatrix());
     switch (event->key()) {
@@ -649,3 +689,12 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
     //UpdatePerspective();
     //glutPostRedisplay();
 }
+
+void GLWidget::printGLMmatrix(glm::mat4 matrix)
+{
+    printf("%2.2f \t %2.2f \t %2.2f \t %2.2f \n", matrix[0].x, matrix[0].y, matrix[0].z, matrix[0].w);
+    printf("%2.2f \t %2.2f \t %2.2f \t %2.2f \n", matrix[1].x, matrix[1].y, matrix[1].z, matrix[1].w);
+    printf("%2.2f \t %2.2f \t %2.2f \t %2.2f \n", matrix[2].x, matrix[2].y, matrix[2].z, matrix[2].w);
+    printf("%2.2f \t %2.2f \t %2.2f \t %2.2f \n", matrix[3].x, matrix[3].y, matrix[3].z, matrix[3].w);
+}
+

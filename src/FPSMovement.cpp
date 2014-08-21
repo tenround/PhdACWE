@@ -26,57 +26,112 @@ FPSMovement::~FPSMovement()
 {
 }
 
-
-void FPSMovement::MMotion(int x, int y)
+void FPSMovement::mouseMoveEvent(QMouseEvent *event)
 {
-    cout << x << " - " << y << endl;
+    if(rotating){
+        int newX = event->x();
+        int newY = event->y();
+        float movInX = initX - newX;
+        float movInY = initY - newY;
+
+		//make the movement slower
+		movInX = movInX/2;
+		movInY = movInY/2;
+
+//        cout << "Rotating ..." << endl; 
+        modelMatrix = glm::rotate( modelMatrix, (float)-movInX, glm::vec3(0.0f,1.0f,0.0f));
+        modelMatrix = glm::rotate( modelMatrix, (float)-movInY, glm::vec3(1.0f,0.0f,0.0f));
+
+        initX = newX;
+        initY = newY;
+    }
+    if(translating){
+        int newX = event->x();
+        int newY = event->y();
+        int movInX = initX - newX;
+        int movInY = initY - newY;
+
+//        cout << "Translating ..." << endl; 
+        viewMatrix = glm::translate( viewMatrix,
+                glm::vec3(-movInX*movementSpeed,movInY*movementSpeed,0));
+
+        initX = newX;
+        initY = newY;
+    }
 }
 
-void FPSMovement::MButton(int button, int state, int x, int y)
+void FPSMovement::mousePressEvent(QMouseEvent *event)
 {
+    cout << "Inside press event of FPSMovement" << endl;
+    int button = event->button();
     switch(button){
-        case GLUT_LEFT_BUTTON:
+        case PRIMARY:
+            if(event->modifiers().testFlag(Qt::ControlModifier)){
+                cout << "Will Translate... " << endl;
+                translating = true;
+            }else{
+                cout << "Will Rotate ... " << endl;
+                rotating = true;
+            }
             break;
-        case GLUT_RIGHT_BUTTON:
+    }
+
+    initX = event->x();
+    initY = event->y();
+}
+
+void FPSMovement::wheelEvent(QWheelEvent* event){
+	int movement =  event->delta();
+
+	viewMatrix = glm::translate( viewMatrix,
+			glm::vec3(0,0,movement*movementSpeed));
+	
+}
+
+void FPSMovement::mouseReleaseEvent(QMouseEvent *event)
+{ 
+    cout << "Inside Release Event of FPSMovement" << endl;
+    int button = event->button();
+
+    switch(button){
+        case PRIMARY:
+            translating = false;
+            rotating = false;
             break;
     }
 
 }
 
-void FPSMovement::Keyboard(unsigned char key, int x, int y)
+/* Catches all pressed event keys
+*/
+void FPSMovement::keyPressEvent(QKeyEvent* event)
 {
-    dout << "Keyboard on FPSMovement" << endl;
-    glm::mat4 tempMat(1.0f);
-    switch (key)
-    {
+    unsigned char key = event->key();
 
-        case 97:// Case 'A' go left 
-        case 65:
-            tempMat[3].x = tempMat[3].x + .1;
-            dout << "A" << endl;
-            break;
+    if(!event->isAutoRepeat() ) {    
+        cout << "Keyboard pressed on FPSMovement (not autorepeat)" << endl;
+        glm::mat4 tempMat(1.0f);
 
-        case 100:// Case 'D' go right 
-        case 68:
-            //dout << "D" << endl;
-            tempMat[3].x = tempMat[3].x - .1;
+        switch (key) {
             break;
-
-        case 119:// Case 'W' go forward
-        case 87:
-            tempMat[3].z = tempMat[3].z + .1;
-            //dout << "W" << endl;
-            break;
-
-        case 83:// Case 'S' go back 
-        case 115:
-            tempMat[3].z = tempMat[3].z - .1;
-            //dout << "S" << endl;
-            break;
-            
-        case 27: 
-            glutLeaveMainLoop();
+        }
+        projMatrix = projMatrix*tempMat;
     }
+}
 
-    camMatrix = camMatrix*tempMat;
+/* Catches all release event keys
+*/
+void FPSMovement::keyReleaseEvent(QKeyEvent* event)
+{
+    unsigned char key = event->key();
+
+    if(!event->isAutoRepeat() ) {    
+        cout << "Keyboard released on FPSMovement (not autorepeat)" << endl;
+        glm::mat4 tempMat(1.0f);
+
+        switch (key) {
+            break;
+        }
+        projMatrix = projMatrix*tempMat;
+    }
 }

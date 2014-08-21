@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <math.h>
 
+
 #include "CameraMovement.h"
 #include "FPSMovement.h"
 
@@ -21,6 +22,8 @@
 #include <QtOpenGL/QGLWidget>
 #include <QGLShaderProgram>
 #include <QGLShader>
+
+#include <glm/glm.hpp>
 
 struct ProgramData {
     GLuint theProgram;
@@ -44,14 +47,18 @@ protected:
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
+    void wheelEvent(QWheelEvent *event);
     void keyPressEvent(QKeyEvent *event);
+    void keyReleaseEvent(QKeyEvent *event);
     void init();
-    void InitializeProgram();
+    void InitShaders();
     void InitTextures();
     void InitializeVertexBuffer();
     void InitializeSimpleVertexBuffer();
     void InitActiveCountours();
     void CreateSamplers();
+    void printGLMmatrix(glm::mat4 matrix);
+	void printGLVersions();
 
 private:
     GLuint modelToCameraMatrixUnif;
@@ -64,7 +71,9 @@ private:
     ProgramData g_program;
     glm::vec3 offsets[1];
 
-    //float vertexPositions[];
+	glm::mat4 vertexPositions;
+	glm::mat4 vertexPosSelection;
+
     //float textCoords[];
     //unsigned int vertexIndexes[];
 
