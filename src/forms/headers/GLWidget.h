@@ -61,6 +61,7 @@ protected:
     void CreateSamplers();
     void printGLMmatrix(glm::mat4 matrix);
 	void printGLVersions();
+	void InitVertexData();
 
 private:
     GLuint modelToCameraMatrixUnif;
@@ -106,6 +107,9 @@ private:
 	GLuint normalUnif; 
 	GLuint normalHandle; 
 
+	//Delete Uniform for changing color of the billboards
+	GLuint defColorUnif;
+	
     GLuint samplerID[1];
 
     //GUI

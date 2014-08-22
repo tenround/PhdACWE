@@ -41,6 +41,7 @@ private:
     //TODO this value should be related with the width and height of the window
     float movementSpeed = .005;//It simply indicates how fast to move
 
+	void rotateModel(float radX, float radY, float radZ);
     void printGLMmatrix(glm::mat4 matrix);
 };
 

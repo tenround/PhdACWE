@@ -12,6 +12,8 @@
 
 using namespace std;
 
+#define PI 3.14159265359
+
 FPSMovement::FPSMovement(float fzNear, float fzFar, float FOV) : CameraMovement(fzNear,fzFar, FOV)
 {
 	translating = false;
@@ -29,6 +31,25 @@ FPSMovement::~FPSMovement()
 {
 }
 
+void FPSMovement::rotateModel(float radX, float radY, float radZ){
+		glm::vec4 new_x_axis = prevRot*(glm::vec4(0.0f,1.0f,0.0f,0.0f));
+		glm::vec4 new_y_axis = prevRot*(glm::vec4(1.0f,0.0f,0.0f,0.0f));
+		glm::vec4 new_z_axis = prevRot*(glm::vec4(0.0f,0.0f,1.0f,0.0f));
+
+//        cout << "Rotating ..." << endl; 
+//		printf("%2.2f \t %2.2f \t %2.2f \t %2.2f \n", new_x_axis[0], new_x_axis[1],
+//				new_x_axis[2], new_x_axis[3]);
+
+        modelMatrix = glm::rotate( modelMatrix, radX, glm::vec3(new_x_axis));
+        modelMatrix = glm::rotate( modelMatrix, radY, glm::vec3(new_y_axis));
+        modelMatrix = glm::rotate( modelMatrix, radZ, glm::vec3(new_z_axis));
+
+		//This matrix is used to modify the axis of rotation
+		prevRot = glm::rotate( prevRot, -radX, glm::vec3(0.0f,1.0f,0.0f));
+		prevRot = glm::rotate( prevRot, -radY, glm::vec3(1.0f,0.0f,0.0f));
+		prevRot = glm::rotate( prevRot, -radZ, glm::vec3(0.0f,0.0f,1.0f));
+}
+
 void FPSMovement::mouseMoveEvent(QMouseEvent *event)
 {
     if(rotating){
@@ -41,19 +62,7 @@ void FPSMovement::mouseMoveEvent(QMouseEvent *event)
 		movInX = movInX/2;
 		movInY = movInY/2;
 
-		glm::vec4 new_x_axis = prevRot*(glm::vec4(0.0f,1.0f,0.0f,0.0f));
-		glm::vec4 new_y_axis = prevRot*(glm::vec4(1.0f,0.0f,0.0f,0.0f));
-
-//        cout << "Rotating ..." << endl; 
-//		printf("%2.2f \t %2.2f \t %2.2f \t %2.2f \n", new_x_axis[0], new_x_axis[1],
-//				new_x_axis[2], new_x_axis[3]);
-
-        modelMatrix = glm::rotate( modelMatrix, (float)-movInX, glm::vec3(new_x_axis));
-        modelMatrix = glm::rotate( modelMatrix, (float)-movInY, glm::vec3(new_y_axis));
-
-		//This matrix is used to modify the axis of rotation
-		prevRot = glm::rotate( prevRot, (float)movInX, glm::vec3(0.0f,1.0f,0.0));
-		prevRot = glm::rotate( prevRot, (float)movInY, glm::vec3(1.0f,0.0f,0.0));
+		rotateModel(-movInX, -movInY, 0);
 
         initX = newX;
         initY = newY;
@@ -123,12 +132,23 @@ void FPSMovement::keyPressEvent(QKeyEvent* event)
 
     if(!event->isAutoRepeat() ) {    
         cout << "Keyboard pressed on FPSMovement (not autorepeat)" << endl;
-        glm::mat4 tempMat(1.0f);
 
         switch (key) {
-            break;
+			case '1'://Reset view
+				modelMatrix = glm::mat4(1.0f);
+				prevRot = glm::mat4(1.0f);
+				break;
+			case '2'://set view to look from above
+				modelMatrix = glm::mat4(1.0f);
+				prevRot = glm::mat4(1.0f);
+				rotateModel(90, 0.0f, 0.0f);
+				break;
+			case '3'://set view to look from above
+				modelMatrix = glm::mat4(1.0f);
+				prevRot = glm::mat4(1.0f);
+				rotateModel(0.0f, 90, 0.0f);
+				break;
         }
-        projMatrix = projMatrix*tempMat;
     }
 }
 
@@ -140,12 +160,10 @@ void FPSMovement::keyReleaseEvent(QKeyEvent* event)
 
     if(!event->isAutoRepeat() ) {    
         cout << "Keyboard released on FPSMovement (not autorepeat)" << endl;
-        glm::mat4 tempMat(1.0f);
 
         switch (key) {
             break;
         }
-        projMatrix = projMatrix*tempMat;
     }
 }
 void FPSMovement::printGLMmatrix(glm::mat4 matrix)

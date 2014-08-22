@@ -228,16 +228,10 @@ void GLWidget::DeleteBuffers(){
  */
 void GLWidget::InitializeVertexBufferX() {
 
-	float size = 1;
-	float zval = 0;
-	vertexPlaneX= glm::mat4(0.0f);
-	vertexPlaneX[0] = glm::vec4(-size, size, zval, 1.0f);
-	vertexPlaneX[1] = glm::vec4(size, size, zval, 1.0f);
-	vertexPlaneX[2] = glm::vec4(size, -size, zval, 1.0f);
-	vertexPlaneX[3] = glm::vec4(-size, -size, zval, 1.0f);
-
+	
     GLManager::CreateBuffer(vbo_posX, glm::value_ptr(vertexPlaneX), sizeof (vertexPlaneX),
-            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
+            GL_ARRAY_BUFFER, GL_DYNAMIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
+//            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
 
     GLManager::CreateBuffer(vbo_color, vertexColors, sizeof (vertexColors),
             GL_ARRAY_BUFFER, GL_STATIC_DRAW, 1, 4, GL_FALSE, 0, 0, GL_FLOAT);
@@ -252,13 +246,7 @@ void GLWidget::InitializeVertexBufferX() {
 }
 void GLWidget::InitializeVertexBufferY() {
 
-	float size = 1;
-	vertexPlaneY= glm::mat4(0.0f);
-	vertexPlaneY[0] = glm::vec4(0.0f, size,-size, 1.0f);
-	vertexPlaneY[1] = glm::vec4(0.0f, size, size, 1.0f);
-	vertexPlaneY[2] = glm::vec4(0.0f,-size, size, 1.0f);
-	vertexPlaneY[3] = glm::vec4(0.0f,-size,-size, 1.0f);
-
+	
     GLManager::CreateBuffer(vbo_posY, glm::value_ptr(vertexPlaneY), sizeof (vertexPlaneY),
             GL_ARRAY_BUFFER, GL_STATIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
 
@@ -275,13 +263,7 @@ void GLWidget::InitializeVertexBufferY() {
 }
 void GLWidget::InitializeVertexBufferZ() {
 
-	float size = 1;
-	vertexPlaneZ= glm::mat4(0.0f);
-	vertexPlaneZ[0] = glm::vec4(-size, 0.0f,-size , 1.0f);
-	vertexPlaneZ[1] = glm::vec4( size, 0.0f,-size, 1.0f);
-	vertexPlaneZ[2] = glm::vec4( size, 0.0f, size, 1.0f);
-	vertexPlaneZ[3] = glm::vec4(-size, 0.0f, size, 1.0f);
-
+	
     GLManager::CreateBuffer(vbo_posZ, glm::value_ptr(vertexPlaneZ), sizeof (vertexPlaneZ),
             GL_ARRAY_BUFFER, GL_STATIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
 
@@ -364,6 +346,7 @@ void GLWidget::InitShaders() {
 
     //Gets the uniform for the model to camera matrix (movement of each object)
     modelToCameraMatrixUnif = glGetUniformLocation(g_program.theProgram, "modelMatrix");
+    defColorUnif = glGetUniformLocation(g_program.theProgram, "defaultColor");
     dout << "MatrixUnif: " << modelToCameraMatrixUnif << endl;
 
     GLuint textSamplerLoc = glGetUniformLocation(g_program.theProgram, "textSampler");
@@ -421,6 +404,7 @@ void GLWidget::init() {
 		CreateSamplers();
 
 		dout << "Initializing Vertex buffers... " << endl;
+		InitVertexData();//Initializes all the data for the vertices
 		glBindVertexArray(vaoIdX); //First VAO setup (only one this time)
 		InitializeVertexBufferX(); //Init Vertex buffers
 		glBindVertexArray(vaoIdY); 
@@ -549,12 +533,15 @@ void GLWidget::paintGL() {
         glBindSampler(textUnit, samplerID[0]);
 
         glBindVertexArray(vaoIdX); //First VAO setup (only one this time)
+		glUniform1i(defColorUnif ,1);
         glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
 
         glBindVertexArray(vaoIdY); 
+		glUniform1i(defColorUnif ,2); 
         glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
 
         glBindVertexArray(vaoIdZ); 
+		glUniform1i(defColorUnif ,3); 
         glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
 
 		//This is displaying the results of the segmentation (from a texture
@@ -717,6 +704,8 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
     camera->keyPressEvent(event);
     dout << "Key = " << (unsigned char) event->key() << endl;
 
+	glm::mat4 translateMatrix = glm::mat4(1.0f);
+	float stepSize = 0.2f;
     //printMatrix(camera->getCameraMatrix());
     switch (event->key()) {
 
@@ -744,10 +733,56 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
         case Qt::Key_Escape:
             close();
             break;
+		case 'Z':
+			dout << "Moving billboard at Z = 0" << endl;
+			if(event->modifiers().testFlag(Qt::ShiftModifier)){
+				translateMatrix = glm::translate(translateMatrix, glm::vec3(0.0f, 0.0f, stepSize));
+			}else{
+				translateMatrix = glm::translate(translateMatrix, glm::vec3(0.0f, 0.0f, -stepSize));
+			}
+			vertexPlaneX = translateMatrix*vertexPlaneX;
+			glBindBuffer(GL_ARRAY_BUFFER, vbo_posX);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlaneX),
+					glm::value_ptr(vertexPlaneX), GL_STATIC_DRAW);
+			break;
+		case 'X':
+			dout << "Moving billboard at X = 0" << endl;
+			if(event->modifiers().testFlag(Qt::ShiftModifier)){
+				translateMatrix = glm::translate(translateMatrix, glm::vec3(stepSize, 0.0f, 0.0f));
+			}else{
+				translateMatrix = glm::translate(translateMatrix, glm::vec3(-stepSize, 0.0f,  0.0f));
+			}
+			vertexPlaneY = translateMatrix*vertexPlaneY;
+			glBindBuffer(GL_ARRAY_BUFFER, vbo_posY);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlaneY),
+					glm::value_ptr(vertexPlaneY), GL_STATIC_DRAW);
+			break;
+		case 'C':
+			dout << "Moving billboard at Y = 0" << endl;
+			if(event->modifiers().testFlag(Qt::ShiftModifier)){
+				translateMatrix = glm::translate(translateMatrix, glm::vec3(0.0f, stepSize, 0.0f));
+			}else{
+				translateMatrix = glm::translate(translateMatrix, glm::vec3(0.0f, -stepSize, 0.0f));
+			}
+			vertexPlaneZ = translateMatrix*vertexPlaneZ;
+			glBindBuffer(GL_ARRAY_BUFFER, vbo_posZ);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlaneZ),
+					glm::value_ptr(vertexPlaneZ), GL_STATIC_DRAW);
+			break;
+		case '1':
+		case '2':
+		case '3':
+			InitVertexData();
+			glBindBuffer(GL_ARRAY_BUFFER, vbo_posX);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlaneX), glm::value_ptr(vertexPlaneX), GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo_posY);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlaneY), glm::value_ptr(vertexPlaneY), GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo_posZ);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlaneZ), glm::value_ptr(vertexPlaneZ), GL_STATIC_DRAW);
+			break;
         default:
             event->ignore();
             break;
-
     }
 
     QWidget::keyPressEvent(event);
@@ -755,6 +790,31 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
     updateGL();
     //UpdatePerspective();
     //glutPostRedisplay();
+}
+
+void GLWidget::InitVertexData(){
+
+	float size = 1;
+	float zval = 0;
+
+	vertexPlaneX= glm::mat4(0.0f);
+	vertexPlaneY= glm::mat4(0.0f);
+	vertexPlaneZ= glm::mat4(0.0f);
+
+	vertexPlaneX[0] = glm::vec4(-size, size, zval, 1.0f);
+	vertexPlaneX[1] = glm::vec4(size, size, zval, 1.0f);
+	vertexPlaneX[2] = glm::vec4(size, -size, zval, 1.0f);
+	vertexPlaneX[3] = glm::vec4(-size, -size, zval, 1.0f);
+
+	vertexPlaneY[0] = glm::vec4(0.0f, size,-size, 1.0f);
+	vertexPlaneY[1] = glm::vec4(0.0f, size, size, 1.0f);
+	vertexPlaneY[2] = glm::vec4(0.0f,-size, size, 1.0f);
+	vertexPlaneY[3] = glm::vec4(0.0f,-size,-size, 1.0f);
+
+	vertexPlaneZ[0] = glm::vec4(-size, 0.0f,-size , 1.0f);
+	vertexPlaneZ[1] = glm::vec4( size, 0.0f,-size, 1.0f);
+	vertexPlaneZ[2] = glm::vec4( size, 0.0f, size, 1.0f);
+	vertexPlaneZ[3] = glm::vec4(-size, 0.0f, size, 1.0f);
 }
 
 void GLWidget::printGLMmatrix(glm::mat4 matrix)
