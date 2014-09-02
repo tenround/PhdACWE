@@ -63,7 +63,23 @@ protected:
 	void printGLVersions();
 	void InitVertexData();
 
+	//--------- 3D -------
+	void initTexture3D();
+	void displayPlanes();
+
 private:
+
+	// 3D texturing
+	float* data3d;
+    GLuint tbo_3d; //Texture buffer object
+    GLuint textureId3d;
+
+	GLuint tbo_in; //Texture buffer object
+    GLuint tbo_out; //Texture buffer object
+    GLuint textureId;
+
+	GLuint errCode; //Texture buffer object
+
     GLuint modelToCameraMatrixUnif;
     glm::mat4 modelMatrix;
 
@@ -98,19 +114,14 @@ private:
     GLuint vaoIdZ;
     GLuint vaoSimpleID;//Just used to display ROI
 
-    GLuint tbo_in; //Texture buffer object
-    GLuint tbo_out; //Texture buffer object
-    GLuint sampler;
-    GLuint textUnit;
-
-	//Normal of billboard
+    	//Normal of billboard
 	GLuint normalUnif; 
 	GLuint normalHandle; 
 
 	//Delete Uniform for changing color of the billboards
 	GLuint defColorUnif;
 	
-    GLuint samplerID[1];
+    GLuint samplerID[2];
 
     //GUI
     bool imageSelected;
@@ -145,6 +156,7 @@ private:
     int* mask;
     int width;
     int height;
+	
 
     QGLShaderProgram *shaderProg;
     QGLShader *vertexShader, *fragmentShader;

@@ -7,6 +7,7 @@ layout (location = 0 ) out vec4 outputColor;
 
 //This part is for the textures
 in vec2 textCoord; //This is the texture coordinate
+uniform sampler3D text3DSampler;// Used to specify how to apply texture
 uniform sampler2D textSampler;// Used to specify how to apply texture
 uniform int defaultColor;
 
@@ -17,7 +18,6 @@ vec4 defaultMergeColorAndTexture(vec4 theColor, vec2 textCoord, sampler2D textSa
     //outputColor = 2*halfText; 
 	return outputColor;
 }
-
 
 vec4 mergeCircleColorAndTexture(vec4 firstColor, vec2 textCoord, sampler2D textSampler){
 
@@ -41,9 +41,9 @@ vec4 mergeCircleColorAndTexture(vec4 firstColor, vec2 textCoord, sampler2D textS
 void main()
 {
     vec4 halfColor = 0.5*theColor;
-    vec4 halfText= 0.5*texture(textSampler, textCoord);
+    //vec4 halfText= 0.5*texture(textSampler, textCoord);
     //outputColor = halfText+halfColor; 
-    outputColor = halfText; 
+    //outputColor = halfText; 
 
 	switch(defaultColor){
 		case 1:
@@ -55,13 +55,17 @@ void main()
 		case 3:
 			outputColor = mergeCircleColorAndTexture(vec4(0.0,0.0,1.0,1.0), textCoord, textSampler);
 			break;
+		case 4:
+			/* 3D Version */
+			vec4 tex3dval= texture(text3DSampler, vec3(0.5f,textCoord.x, textCoord.y));
+			outputColor = tex3dval;
+			break;
 		default:
 			outputColor = mergeCircleColorAndTexture(vec4(1.0,0.0,1.0,1.0), textCoord, textSampler);
 			break;
 	}
 	// Default behaviour, merges color and texture
 	//outputColor = defaultMergeColorAndTexture(theColor, textCoord, textSampler);
-
 	//------ Extra example (drawing a circle)--------
 }
 
