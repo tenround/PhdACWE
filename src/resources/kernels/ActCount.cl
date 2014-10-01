@@ -1,6 +1,7 @@
 #define MAXF 1
 #define MAXDPHIDT 2
 
+#pragma OPENCL EXTENSION cl_khr_3d_image_writes : enable
 
 __constant sampler_t def_sampler = CLK_NORMALIZED_COORDS_FALSE |
 								CLK_ADDRESS_CLAMP_TO_EDGE |
@@ -197,21 +198,25 @@ void segmToTexture( read_only image2d_t img_phi, read_only
  * The size of tempValues should always be the height of the image
 */
 __kernel
-void ImgColMax( read_only image2d_t img, __local float* tempValues,
+void ImgColMax( read_only image3d_t img, __local float* tempValues,
 			__global float* result, sampler_t sampler, int layer, int use_abs) {
 
 	int col = get_global_id(0);
-	int group = get_group_id(0);
+	int z = get_global_id(2);
+
 	int height = get_image_height(img);
 	int width = get_image_width(img);
+	int depth = get_image_depth(img);
+
 	int num_of_threads = get_local_size(0);
+	int group = get_group_id(0);
 
 	float value = 0;
 	float colMax = 0;
 
 	if( col < width){
 		for(int row=0; row < height; row++){
-			float4 curr_pix = read_imagef(img, sampler, (int2)(col,row));
+			float4 curr_pix = read_imagef(img, sampler, (int4)(col,row,z,1));
 //			uint4 curr_pix = read_imageui(img, sampler, (int2)(col,row));
 			value = 0;
 			switch(layer){
@@ -376,21 +381,32 @@ int indxFromCoordAC(int width, int height, int row, int col, int dim){
     return width*row*dim + dim*col;
 }
 
-__kernel void textToBuf(read_only image2d_t in, global float* buf, int mult){
+int indxFromCoord3D(int width, int height, int depth,
+							int row, int col, int z, int dim){
+    return width*height*z + width*row + col;
+}
+
+/**
+* Copies a 3D image into a buffer. 
+* The image should only contain one band.
+*/
+__kernel void textToBuf(read_only image3d_t in, global float* buf){
 	int width = get_image_width(in);
 	int height = get_image_height(in);
+	int depth = get_image_depth(in);
 
-    int col = (int)get_global_id(0);
-    int row = (int)get_global_id(1);
+    int oneDidx= (int)get_global_id(0);
 
-	float4 textVal = mult*read_imagef(in, def_sampler, (int2)(col,row));
+/*
+	int buf_size = width*height*depth;
+	int z = ceil(oneDidx/(width*height));//Which depth are we
+	int col = (int) 
+	int row = 
 
-	int currIndx = indxFromCoordAC(width, height, row, col, 1);
+	float4 textVal = read_imagef(in, def_sampler, (int4)(col,row,z,1));
 
-	buf[currIndx*4 ] = textVal.x; 
-	buf[currIndx*4 + 1] = textVal.y; 
-	buf[currIndx*4 + 2] = textVal.z; 
-	buf[currIndx*4 + 3] = textVal.w; 
+	buf[oneDidx] = textVal.x; 
+*/
 }
 
 /**
@@ -428,14 +444,16 @@ __kernel void bufToText(global float* buf, write_only image2d_t out,
 	* for every warp size. It only works for positive values 
 */
 __kernel void
-Step1AvgInOut(read_only image2d_t phi, read_only image2d_t in, 
+Step1AvgInOut(read_only image3d_t phi, read_only image3d_t in, 
 				global float* avgDistInOut, global int* avgCount, int useAllBands) {
 
 	int width = get_image_width(in);
 	int height = get_image_height(in);
+	int depth = get_image_depth(in);
 
     int col = (int)get_global_id(0);
     int row = (int)get_global_id(1);
+    int z = (int)get_global_id(2);
 	int grp_indx = (get_group_id(1) * get_num_groups(0) + get_group_id(0));
 
 	// We will double the group size, setting on the even indexes the inside values
@@ -458,8 +476,8 @@ Step1AvgInOut(read_only image2d_t phi, read_only image2d_t in,
 	}	
 
 	// Read the image values
-	float4 phiPix = read_imagef(phi, def_sampler, (int2)(col,row));
-	float4 inPix = read_imagef(in, def_sampler, (int2)(col,row));
+	float4 phiPix = read_imagef(phi, def_sampler, (int4)(col,row,z,1));
+	float4 inPix = read_imagef(in, def_sampler, (int4)(col,row,z,1));
 
 	// TODO ask in what band we want to compute the average (R G or B) or all of them
 	int value = 0;

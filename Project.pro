@@ -8,7 +8,7 @@ OZLIB="/home/olmozavala/Dropbox/OzOpenCL/OZlib/"
 LIBS += -L$${OZLIB} # Adds lib folder (for ozlib)
 
 LIBS += -lGL -lGLU -lglut -lGLEW -lX11 -lm -lFileManager -lOpenCL 
-LIBS +=  -lGLManager -lCLManager -lImageManager -lGordonTimers -lfreeimage
+LIBS +=  -lGLManager -lCLManager -lImageManager -lGordonTimers -lfreeimage -lniftiio
 
 #INCLUDEPATH += $${OZLIB}/.."/khronos"
 
@@ -17,6 +17,7 @@ INCLUDEPATH += $${GLM}
 INCLUDEPATH += $${OPENCL}"/include"
 INCLUDEPATH += "../SignedDistanceFunction/src/headers"
 INCLUDEPATH += "/usr/include/GL" # For glew.h
+INCLUDEPATH += "/usr/include/nifti" # For nifti library
 INCLUDEPATH += "./src/headers/"  # All headers
 INCLUDEPATH += "./src/forms/headers/"  # All headers
 

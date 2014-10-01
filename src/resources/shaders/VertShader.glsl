@@ -2,7 +2,7 @@
 
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec4 color;
-layout(location = 2) in vec2 inTextCoord;
+layout(location = 2) in vec3 inTextCoord;
 
 
 uniform mat4 perspectiveMatrix;
@@ -10,8 +10,7 @@ uniform mat4 modelMatrix;
 uniform vec3 vertexNormal;
 
 smooth out vec4 theColor;
-
-out vec2 textCoord;//Coordinate of the texture
+out vec3 textCoord;//Coordinate of the texture
 
 vec3 computeLightForVertex(vec3 vertexNormal, vec3 color){
 	vec3 ligthVector = vec3(0.0, 100.0, 0.0);//Always same ligth position

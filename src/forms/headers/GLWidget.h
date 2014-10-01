@@ -56,6 +56,7 @@ protected:
     void InitializeVertexBufferX();
     void InitializeVertexBufferY();
     void InitializeVertexBufferZ();
+    void initTextureCoords();
     void InitializeSimpleVertexBuffer();
     void InitActiveCountours();
     void CreateSamplers();
@@ -65,14 +66,11 @@ protected:
 
 	//--------- 3D -------
 	void initTexture3D();
-	void displayPlanes();
 
 private:
 
 	// 3D texturing
 	float* data3d;
-    GLuint tbo_3d; //Texture buffer object
-    GLuint textureId3d;
 
 	GLuint tbo_in; //Texture buffer object
     GLuint tbo_out; //Texture buffer object
@@ -94,6 +92,13 @@ private:
 	glm::mat4 vertexPlaneY;
 	glm::mat4 vertexPlaneZ;
 	glm::mat4 vertexPosSelection;
+
+	glm::mat4x3  textCoordsPlane1;
+	glm::mat4x3  textCoordsPlane2;
+	glm::mat4x3  textCoordsPlane3;
+    GLuint vbo_tcord1;
+    GLuint vbo_tcord2;
+    GLuint vbo_tcord3;
 
     //float textCoords[];
     //unsigned int vertexIndexes[];
@@ -156,6 +161,11 @@ private:
     int* mask;
     int width;
     int height;
+    int depth;
+
+	float cubeWidth;//This variable represent the with of the cube (always 1)
+	float cubeHeight;// Height of the cube. Proportional to width
+	float cubeDepth;// Depth of the cube. Proportional to width
 	
 
     QGLShaderProgram *shaderProg;

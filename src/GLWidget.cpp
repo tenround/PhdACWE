@@ -11,6 +11,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <sstream>
+#include <nifti1_io.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -40,7 +41,7 @@ float vertexColors[] = {
     1.0f, 1.0f, 0.0f, 1.0f
 };
 
-float textCoords[] = {
+float textCoordsPlane1[] = {
     0.0f, 1.0f, //0
     1.0f, 1.0f, //1
     1.0f, 0.0f, //3
@@ -66,20 +67,18 @@ using namespace std;
 GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
     setMouseTracking(true);
     setFocusPolicy(Qt::StrongFocus);
-
+	
     z = 1; // Default depth to show the pictures
     hsize = .9; // Default size for the 'square' to show the picture
-
+	
     //Offset for the objects, in this case is only one object without offset
 	// it is the 'rectangle' holding the image
     offsets[0] = glm::vec3(0.0f, 0.0f, 0.0f);
-
+	
     tbo_in = 0; //Texture buffer object
     tbo_out = 0; //Texture buffer object
-	tbo_3d = 0;
     textureId = 0;
-    textureId3d = 1;
-
+	
     maxActCountIter = 12000;// Maximum number of ACWE iterations
     currIter = 0; // Current ACWE iteration
     iterStep = 5; //Number of ACWE iterations before retrieving result back to CPU
@@ -87,15 +86,15 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
     //Cool: 12, 13, 2, 6
     acExample = 1; //Example 7 is 128x128
     useAllBands = true; // Use all bands as an average for the ACWE algorithm
-
-    mask = new int[4];
-
+	
+    mask = new int[6];//These are the 6 points of the ROI as a cube
+	
     imageSelected = false;//Indicates if the image has already been selected
     newMask = false;
     displaySegmentation = false;
-
+	
 	firstTimeImageSelected = true;
-
+	
     //	SelectImage();
 }// QGLWidget constructor
 
@@ -105,41 +104,41 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
  * TODO use exceptions or something similar to avoid returning ints
  */
 void GLWidget::SelectImage() {
-//    QString fileName = QFileDialog::getOpenFileName(this, tr("Select an image"), "/home", tr("Files (*.png *.jpg *.bmp)"));
-
+	//    QString fileName = QFileDialog::getOpenFileName(this, tr("Select an image"), "/home", tr("Files (*.png *.jpg *.bmp)"));
+	
     //QString fileName = "/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/images/RectTest1.png";
     //QString fileName = "/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/images/Ft.png";
     //QString fileName = "/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/images/Min.png";
-//	QString fileName = "./images/planet1.jpg";
+	//	QString fileName = "./images/planet1.jpg";
 	QString fileName;
 	
-	 QFileDialog dialog(this);
-	 dialog.setFileMode(QFileDialog::AnyFile);
-	 dialog.setViewMode(QFileDialog::List);
-	 QStringList fileNames;
-	 if (dialog.exec()){
-		 fileNames = dialog.selectedFiles();
-		 fileName = fileNames[0];
-	 }
-
+	QFileDialog dialog(this);
+	dialog.setFileMode(QFileDialog::AnyFile);
+	dialog.setViewMode(QFileDialog::List);
+	QStringList fileNames;
+	if (dialog.exec()){
+		fileNames = dialog.selectedFiles();
+		fileName = fileNames[0];
+	}
+	
     if (!fileName.isNull()) {
         inputImage = new char[fileName.length() + 1];
         outputImage = new char[fileName.length() + 9];
-
+		
         strcpy(inputImage, fileName.toLatin1().constData());
         dout << "Input image: " << inputImage << endl;
-
+		
         fileName = fileName.replace(QString("."), QString("_result."));
         strcpy(outputImage, fileName.toLatin1().constData());
         dout << "Output image: " << outputImage << endl;
-
+		
         //Clear selection of mask
         updatingROI = false;
         startXmask = -1;
         startYmask = -1;
         endXmask = -1;
         endYmask = -1;
-
+		
         //When we select a new image we stop showing
         // the 'segmentation' until a new ROI is selected
         // TODO clear ROI
@@ -155,63 +154,53 @@ void GLWidget::SelectImage() {
 void GLWidget::CreateSamplers() {
     int num_samplers = 2;
     glGenSamplers(num_samplers, &samplerID[0]);
-
+	
     for (int i = 0; i < num_samplers; i++) {
         //Defines the Wraping parameter for all the samplers as GL_REPEAT
         glSamplerParameteri(samplerID[i], GL_TEXTURE_WRAP_S, GL_REPEAT);
         glSamplerParameteri(samplerID[i], GL_TEXTURE_WRAP_T, GL_REPEAT);
         glSamplerParameteri(samplerID[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glSamplerParameteri(samplerID[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
+		
 		glSamplerParameteri(samplerID[i], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glSamplerParameteri(samplerID[i], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     }
-
+	
     //    Using GL_LINEAR interpolation for the sampler
     //glSamplerParameteri(samplerID[0], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     //glSamplerParameteri(samplerID[0], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//    glSamplerParameteri(samplerID[0], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//    glSamplerParameteri(samplerID[0], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//    glSamplerParameteri(samplerID[0], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//    glSamplerParameteri(samplerID[0], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
 void GLWidget::InitActiveCountours() {
     cout << "InitActiveCountours" << endl;
-    int method = 2; //1 for OZ 2 for Voronoi
     float alpha = 0.5;
     float def_dt = .5;
-
+	
 	if(firstTimeImageSelected){
-		switch (method) {
-			case 1:
-				clObj.loadProgram(SDFOZ, maxActCountIter, alpha, def_dt );
-				break;
-			case 2://Current
-				clObj.loadProgram(SDFVORO, maxActCountIter, alpha, def_dt);
-				break;
-		}
+		clObj.loadProgram(maxActCountIter, alpha, def_dt);
 	}
-
-	clObj.loadImage( (char*) inputImage, (char*) outputImage,
-						 width, height);
+	
 }
 
 void GLWidget::InitializeSimpleVertexBuffer() {
-
+	
 	float size = 0;//Starts empty
 	float zval = 0.1;
 	//Initializes the ROI with all 0's
 	vertexPosSelection= glm::mat4(0.0f);
-
+	
 	vertexPosSelection[0] = glm::vec4(-size, size, zval, 1.0f);
 	vertexPosSelection[1] = glm::vec4(size, size, zval, 1.0f);
 	vertexPosSelection[2] = glm::vec4(size, -size, zval, 1.0f);
 	vertexPosSelection[3] = glm::vec4(-size, -size, zval, 1.0f);
-
+	
 	printGLMmatrix(vertexPosSelection);
 	
     GLManager::CreateBuffer(vbo_selection, glm::value_ptr(vertexPosSelection), sizeof(vertexPosSelection),
             GL_ARRAY_BUFFER, GL_STREAM_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
-
+	
     GLManager::CreateElementBuffer(ebo, vertexIndexes, sizeof (vertexIndexes), GL_STATIC_DRAW);
 }
 
@@ -223,7 +212,9 @@ void GLWidget::DeleteBuffers(){
 	glDeleteBuffers(1,&vbo_posY);
 	glDeleteBuffers(1,&vbo_posZ);
 	glDeleteBuffers(1,&vbo_color);
-	glDeleteBuffers(1,&vbo_tcord);
+	glDeleteBuffers(1,&vbo_tcord1);
+	glDeleteBuffers(1,&vbo_tcord2);
+	glDeleteBuffers(1,&vbo_tcord3);
 	glDeleteBuffers(1,&ebo);
 }
 
@@ -232,98 +223,119 @@ void GLWidget::DeleteBuffers(){
  * case we simply have a big square that has the size of the window
  */
 void GLWidget::InitializeVertexBufferX() {
-
+	
 	
     GLManager::CreateBuffer(vbo_posX, glm::value_ptr(vertexPlaneX), sizeof (vertexPlaneX),
             GL_ARRAY_BUFFER, GL_DYNAMIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
-//            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
-
+	//            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
+	
     GLManager::CreateBuffer(vbo_color, vertexColors, sizeof (vertexColors),
             GL_ARRAY_BUFFER, GL_STATIC_DRAW, 1, 4, GL_FALSE, 0, 0, GL_FLOAT);
-
-    GLManager::CreateBuffer(vbo_tcord, textCoords, sizeof (textCoords),
-            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 2, 2, GL_FALSE, 0, 0, GL_FLOAT);
-
+	
+    GLManager::CreateBuffer(vbo_tcord1, glm::value_ptr(textCoordsPlane1), sizeof (textCoordsPlane1),
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 2, 3, GL_FALSE, 0, 0, GL_FLOAT);
+	
     GLManager::CreateElementBuffer(ebo, vertexIndexes, sizeof (vertexIndexes), GL_STATIC_DRAW);
-
+	
     //Unbind buffer
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 void GLWidget::InitializeVertexBufferY() {
-
+	
 	
     GLManager::CreateBuffer(vbo_posY, glm::value_ptr(vertexPlaneY), sizeof (vertexPlaneY),
             GL_ARRAY_BUFFER, GL_STATIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
-
+	
     GLManager::CreateBuffer(vbo_color, vertexColors, sizeof (vertexColors),
             GL_ARRAY_BUFFER, GL_STATIC_DRAW, 1, 4, GL_FALSE, 0, 0, GL_FLOAT);
-
-    GLManager::CreateBuffer(vbo_tcord, textCoords, sizeof (textCoords),
-            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 2, 2, GL_FALSE, 0, 0, GL_FLOAT);
-
+	
+    GLManager::CreateBuffer(vbo_tcord2, glm::value_ptr(textCoordsPlane2), sizeof (textCoordsPlane1),
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 2, 3, GL_FALSE, 0, 0, GL_FLOAT);
+	
     GLManager::CreateElementBuffer(ebo, vertexIndexes, sizeof (vertexIndexes), GL_STATIC_DRAW);
-
+	
     //Unbind buffer
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 void GLWidget::InitializeVertexBufferZ() {
-
+	
 	
     GLManager::CreateBuffer(vbo_posZ, glm::value_ptr(vertexPlaneZ), sizeof (vertexPlaneZ),
             GL_ARRAY_BUFFER, GL_STATIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
-
+	
     GLManager::CreateBuffer(vbo_color, vertexColors, sizeof (vertexColors),
             GL_ARRAY_BUFFER, GL_STATIC_DRAW, 1, 4, GL_FALSE, 0, 0, GL_FLOAT);
-
-    GLManager::CreateBuffer(vbo_tcord, textCoords, sizeof (textCoords),
-            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 2, 2, GL_FALSE, 0, 0, GL_FLOAT);
-
+	
+    GLManager::CreateBuffer(vbo_tcord3, glm::value_ptr(textCoordsPlane3), sizeof (textCoordsPlane1),
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 2, 3, GL_FALSE, 0, 0, GL_FLOAT);
+	
     GLManager::CreateElementBuffer(ebo, vertexIndexes, sizeof (vertexIndexes), GL_STATIC_DRAW);
-
+	
     //Unbind buffer
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+void GLWidget::initTextureCoords(){
+	
+	dout << "************* Initializing 3D texture coordinates...." << endl;
+	
+	textCoordsPlane1 = glm::mat4x3(0.0f);
+	textCoordsPlane2 = glm::mat4x3(0.0f);
+	textCoordsPlane3 = glm::mat4x3(0.0f);
+	
+	textCoordsPlane1[0] = glm::vec3(0.0f, 1.0f, 0.5f);
+	textCoordsPlane1[1] = glm::vec3(1.0f, 1.0f, 0.5f);
+	textCoordsPlane1[2] = glm::vec3(1.0f, 0.0f, 0.5f);
+	textCoordsPlane1[3] = glm::vec3(0.0f, 0.0f, 0.5f);
+	
+	textCoordsPlane2[0] = glm::vec3(0.5f, 1.0f, 0.0f);
+	textCoordsPlane2[1] = glm::vec3(0.5f, 1.0f, 1.0f);
+	textCoordsPlane2[2] = glm::vec3(0.5f, 0.0f, 1.0f);
+	textCoordsPlane2[3] = glm::vec3(0.5f, 0.0f, 0.0f);
+	
+	textCoordsPlane3[0] = glm::vec3(0.0f, 0.5f, 0.0f);
+	textCoordsPlane3[1] = glm::vec3(1.0f, 0.5f, 0.0f);
+	textCoordsPlane3[2] = glm::vec3(1.0f, 0.5f, 1.0f);
+	textCoordsPlane3[3] = glm::vec3(0.0f, 0.5f, 1.0f);
+	
+}
+
 void GLWidget::initTexture3D(){
-	//Simulating an image of size 8x8x8x3(rgb)
-
 	dout << "************* Initializing 3D texture...." << endl;
-	int width, height, depth; 
-	width = height = depth = 4;
-
-	int size = width*height*depth*3;//RGB
-
-	dout << "Size of 3D texture: " << size << endl;
-
-	data3d = new float[size];
-	int idx = 0;
-	for(int i=0; i< width; i++){
-		for(int j=0; j< height; j++){
-			for(int k=0; k< depth; k++){
-				if(k == 0){//First level It should be green
-					data3d[idx] = 0; //Red
-					idx++;
-				}else{ //Other levels should be green + red
-					data3d[idx] = 255; 
-					idx++;
-				}
-				data3d[idx] = 255; //Green
-				idx++;
-				data3d[idx] = 0; //Blue
-				idx++;
-			}
-		}
+	if(is_nifti_file(inputImage)){
+		cout << inputImage<< " is a Niftifile" << endl;
+	}else{
+		cout << inputImage << " is NOT a Niftifile" << endl;
 	}
 	
+	bool readData = true;
+	nifti_image* image = nifti_image_read(inputImage, readData);
+	
+	width = image->dim[1];
+	height = image->dim[2];
+	depth = image->dim[3];
+	
+	int size = image->nvox;
+	
+	data3d = new float[size];
+	data3d = (float*)image->data;
+	
+    dout << "Size of byte: " << sizeof (BYTE) << endl;
+    dout << "Size of char: " << sizeof (char) << endl;
 	cout << "Size of float: " << sizeof(float) << endl;
 	cout << "Size of byte: " << sizeof(BYTE) << endl;
 	
+	dout << "Width : " << width << endl;
+	dout << "Height: " << height << endl;
+	dout << "Depth : " << depth << endl;
+	dout << "Size of 3D texture: " << size << endl;
+	
 	GLint test;
 	glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE,&test);
-	eout << "Max 3d Texture size " << test << endl;
+	dout << "Max 3d Texture size " << test << endl;
 	
-    glGenTextures(1, &tbo_3d);
-    glBindTexture(GL_TEXTURE_3D, tbo_3d);
+    glGenTextures(1, &tbo_in);
+    glBindTexture(GL_TEXTURE_3D, tbo_in);
 	
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -331,62 +343,36 @@ void GLWidget::initTexture3D(){
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
 	
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, width, height, depth, 0, 
-			GL_RGB, GL_FLOAT, data3d);
-	//			GL_RGB, GL_UNSIGNED_BYTE, data3d);
-	//		GL_RGB, GL_UNSIGNED_INT_8_8_8_8_REV, data3d);
+/*	GLenum target,
+ 	GLint level,
+ 	GLint internalFormat,
+ 	GLsizei width,
+ 	GLsizei height,
+ 	GLsizei depth,
+ 	GLint border,
+ 	GLenum format,
+ 	GLenum type,
+ 	const GLvoid * data*/
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_R8, width, height, depth, 0, 
+			GL_RED, GL_FLOAT, data3d);
 	
-	
-	
-    glActiveTexture(GL_TEXTURE0+tbo_3d);
+    glActiveTexture(GL_TEXTURE0+tbo_in);
 }
-
-void GLWidget::displayPlanes() {
-	
-	/* 3D Version */
-	glEnable(GL_TEXTURE_3D);
-    glActiveTexture(GL_TEXTURE0 + textureId3d);
-	glBindTexture(GL_TEXTURE_3D, tbo_3d);
-	glBindSampler(textureId3d, samplerID[0]);
-	/* 3D Version */
-	/* 2D Version */
-	/*glActiveTexture(GL_TEXTURE0 + textureId3d);
-	 glBindSampler(textureId3d, samplerID[0]);
-	 glBindTexture(GL_TEXTURE_2D, tbo_3d);
-	 */
-	/* 2D Version */
-	
-	glBindVertexArray(vaoIdZ); 
-	glUniform1i(defColorUnif ,4); 
-	glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
-}
-
 
 void GLWidget::InitTextures() {
 	
-    BYTE* image = ImageManager::loadImageByte(inputImage, width, height);
-	
-    //Warning!!! imageFloat is now only used for displaying the internal values not for OpenGL
-    //float* imageFloat = ImageManager::byteToFloat(imageByte, width * height * 4);
-    
-    //ImageManager::printImageBGRA(width, height, imageFloat);
-	
-    dout << "Size of byte: " << sizeof (BYTE) << endl;
-    dout << "Size of char: " << sizeof (char) << endl;
-	
-    GLManager::Create2DTexture(tbo_in, image, width, height, GL_UNSIGNED_INT_8_8_8_8_REV, GL_RGBA, GL_LINEAR, GL_LINEAR);
-    
+	initTexture3D();
     GLManager::Create2DTexture(tbo_out, NULL, width, height, GL_FLOAT, GL_RGBA16, GL_LINEAR, GL_LINEAR);
 }
 
 void GLWidget::printGLVersions() {
 	
 	/*
-	 GLint nExtensions;
-	 glGetIntegerv(GL_NUM_EXTENSIONS, &nExtensions);
-	 
-	 for(int i=0; i<nExtensions; i++){ cout << glGetStringi(GL_EXTENSIONS, i) << endl; }
-	 */
+     GLint nExtensions;
+     glGetIntegerv(GL_NUM_EXTENSIONS, &nExtensions);
+     
+     for(int i=0; i<nExtensions; i++){ cout << glGetStringi(GL_EXTENSIONS, i) << endl; }
+     */
 	const GLubyte *renderer = glGetString( GL_RENDER);
 	const GLubyte *vendor= glGetString( GL_VENDOR);
 	const GLubyte *version = glGetString( GL_VERSION);
@@ -431,16 +417,12 @@ void GLWidget::InitShaders() {
 	Tools::validateGLlocations(modelToCameraMatrixUnif, "modelMatrix");
 	Tools::validateGLlocations(defColorUnif, "defaultColor");
 	
-    GLuint textSampler3DUniform = glGetUniformLocation(g_program.theProgram, "text3DSampler");
     GLuint textSamplerUniform = glGetUniformLocation(g_program.theProgram, "textSampler");
 	Tools::validateGLlocations(textSamplerUniform, "textSampler");
-	Tools::validateGLlocations(textSampler3DUniform, "text3DSampler");
-	
 	
     glUseProgram(g_program.theProgram); //Start using the builded program
 	
     glUniform1i(textSamplerUniform, textureId); //Binds the texture with the sampler
-    glUniform1i(textSampler3DUniform, textureId3d); //Binds the texture with the sampler
 	
     glUniformMatrix4fv(g_program.cameraToClipMatrixUnif, 1, GL_FALSE, 
             glm::value_ptr(camera->getProjectionMatrix() * camera->getViewMatrix()));
@@ -479,8 +461,6 @@ void GLWidget::init() {
     InitTextures(); //Init textures
     dout << "Textures initialized!! " << endl;
 	
-	initTexture3D();
-	
 	if(firstTimeImageSelected){
 		//Create the Vertex Array Object (contains info of vertex, color, coords, and textures)
 		glGenVertexArrays(1, &vaoIdX); //Generate 1 vertex array
@@ -494,6 +474,7 @@ void GLWidget::init() {
 		
 		dout << "Initializing Vertex buffers... " << endl;
 		InitVertexData();//Initializes all the data for the vertices
+		initTextureCoords();
 		glBindVertexArray(vaoIdX); //First VAO setup (only one this time)
 		InitializeVertexBufferX(); //Init Vertex buffers
 		glBindVertexArray(vaoIdY); 
@@ -504,10 +485,10 @@ void GLWidget::init() {
 	
     // This should be already after mask 
     dout << "Initializing OpenCL... " << endl;
-    InitActiveCountours();
+	InitActiveCountours();
 	
     dout << "Initializing images, arrays and buffers (CL)!! " << endl;
-    clObj.initImagesArraysAndBuffers(tbo_in, tbo_out);
+	clObj.initImagesArraysAndBuffers(tbo_in, tbo_out, width, height, depth);
 	
     dout << "Init SUCCESSFUL................" << endl;
 	
@@ -533,6 +514,7 @@ void GLWidget::initializeGL() {
     glDisable(GL_CULL_FACE); //Cull ('desechar') one or more faces of polygons
 	//    glCullFace(GL_BACK); // Hide the 'back' face
 	//    glFrontFace(GL_CW); //Which face is 'front' face, defines as Clock Wise
+	glEnable(GL_BLEND);//Enables depth buffer
 	glEnable(GL_DEPTH_TEST);//Enables depth buffer
 	glEnable(GL_TEXTURE_3D);//Enables depth buffer
 	glDepthFunc(GL_LEQUAL);//Indicates the depth function to use
@@ -584,7 +566,20 @@ void GLWidget::paintGL() {
             Timer tm_ocl_sdf(ts, "SDF");
 			
             tm_ocl_sdf.start();
-            clObj.createRGBAMask(width, height, mask[0], mask[1], mask[2], mask[3]);
+			//TODO obtain this parameters form the GUI using OpenGL
+			int maskWidthSize= floor(width/4);
+			int maskHeightSize= floor(height/4);
+			int maskDepthSize= floor(depth/4);
+			mask[0] = floor(width/2-maskWidthSize);//colStart
+			mask[1] = floor(width/2+maskWidthSize);//colEnd
+			mask[2] = floor(height/2-maskHeightSize);//rowStart 
+			mask[3] = floor(height/2+maskHeightSize);//rowEnd
+			mask[4] = floor(depth/2-maskDepthSize);//depthStart 
+			mask[5] = floor(depth/2+maskDepthSize);//depthStart 
+
+            clObj.create3DMask(width, height, depth, mask[0], mask[1],
+					mask[2], mask[3], mask[4], mask[5]);
+
             clObj.runSDF();
             tm_ocl_sdf.end();
 			
@@ -618,8 +613,9 @@ void GLWidget::paintGL() {
         glUniformMatrix4fv(g_program.cameraToClipMatrixUnif, 1, GL_FALSE, 
 				glm::value_ptr(camera->getProjectionMatrix() * camera->getViewMatrix()));
 		
+		glEnable(GL_TEXTURE_3D);
         glActiveTexture(GL_TEXTURE0 + textureId);
-        glBindTexture(GL_TEXTURE_2D, tbo_in);
+        glBindTexture(GL_TEXTURE_3D, tbo_in);
         glBindSampler(textureId, samplerID[0]);
 		
         glBindVertexArray(vaoIdX); //First VAO setup (only one this time)
@@ -630,11 +626,12 @@ void GLWidget::paintGL() {
 		glUniform1i(defColorUnif ,2); 
         glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
 		
-		//        glBindVertexArray(vaoIdZ); 
-		//		glUniform1i(defColorUnif ,3); 
-		//        glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(vaoIdZ); 
+		glUniform1i(defColorUnif ,3); 
+		glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
 		
-		displayPlanes();
+		glDisable(GL_TEXTURE_3D);
+		
 		//This is displaying the results of the segmentation (from a texture
 		// computed suing OpenCL)
         if (displaySegmentation) {
@@ -671,7 +668,6 @@ void GLWidget::paintGL() {
     update();
 }
 
-
 void GLWidget::mouseReleaseEvent(QMouseEvent *event) {
     camera->mouseReleaseEvent(event);
 	
@@ -680,13 +676,13 @@ void GLWidget::mouseReleaseEvent(QMouseEvent *event) {
 		endYmask = event->y();
 		
 		/*
-		 dout << "Updating mask........ " << endl;
-		 dout << "Start at: (" << startXmask << "," << startYmask << ")" << endl;
-		 dout << "Ends at: (" << endXmask << "," << endYmask << ")" << endl;
-		 
-		 dout << "Image size : (" << width << "," << height << ")" << endl;
-		 dout << "Window size : (" << winWidth << "," << winHeight << ")" << endl;
-		 */
+         dout << "Updating mask........ " << endl;
+         dout << "Start at: (" << startXmask << "," << startYmask << ")" << endl;
+         dout << "Ends at: (" << endXmask << "," << endYmask << ")" << endl;
+         
+         dout << "Image size : (" << width << "," << height << ")" << endl;
+         dout << "Window size : (" << winWidth << "," << winHeight << ")" << endl;
+         */
 		
 		mask[0] = (int) ((startXmask * width) / winWidth);
 		mask[1] = (int) ((endXmask * width) / winWidth);
@@ -698,7 +694,6 @@ void GLWidget::mouseReleaseEvent(QMouseEvent *event) {
 		dout << "Corresp mask end: (" << mask[1] << "," << mask[3] << ")" << endl;
 		
 		newMask = true; //Run SDF (start displaying segmentation) 
-		
 		updatingROI = false; //Stop drawing user ROI, start displaying segmentation
 	}
 }
@@ -802,7 +797,14 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
     dout << "Key = " << (unsigned char) event->key() << endl;
 	
 	glm::mat4 translateMatrix = glm::mat4(1.0f);
-	float stepSize = 0.2f;
+	float stepSize = 0.02f;
+	
+	//Step size is used to move the planes with the keyboard
+	//This 'if' changes the direction of this shift
+	if(event->modifiers().testFlag(Qt::ShiftModifier)){
+		stepSize *= -1;
+	}
+	
     //printMatrix(camera->getCameraMatrix());
     switch (event->key()) {
 		
@@ -832,50 +834,75 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
             break;
 		case 'Z':
 			dout << "Moving billboard at Z = 0" << endl;
-			if(event->modifiers().testFlag(Qt::ShiftModifier)){
+			if( abs(vertexPlaneX[0][2]+stepSize) <= cubeDepth){
 				translateMatrix = glm::translate(translateMatrix, glm::vec3(0.0f, 0.0f, stepSize));
-			}else{
-				translateMatrix = glm::translate(translateMatrix, glm::vec3(0.0f, 0.0f, -stepSize));
+				vertexPlaneX = translateMatrix*vertexPlaneX;
+				glBindBuffer(GL_ARRAY_BUFFER, vbo_posX);
+				glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlaneX),
+						glm::value_ptr(vertexPlaneX), GL_STATIC_DRAW);
+				glBindBuffer(GL_ARRAY_BUFFER, vbo_tcord1);
+				textCoordsPlane1[0][2] += stepSize/2;
+				textCoordsPlane1[1][2] += stepSize/2;
+				textCoordsPlane1[2][2] += stepSize/2;
+				textCoordsPlane1[3][2] += stepSize/2;
+				glBufferData(GL_ARRAY_BUFFER, sizeof(textCoordsPlane1),
+						glm::value_ptr(textCoordsPlane1), GL_STATIC_DRAW);
 			}
-			vertexPlaneX = translateMatrix*vertexPlaneX;
-			glBindBuffer(GL_ARRAY_BUFFER, vbo_posX);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlaneX),
-					glm::value_ptr(vertexPlaneX), GL_STATIC_DRAW);
 			break;
 		case 'X':
 			dout << "Moving billboard at X = 0" << endl;
-			if(event->modifiers().testFlag(Qt::ShiftModifier)){
+			if( abs(vertexPlaneY[0][0]+stepSize) <= cubeWidth){
 				translateMatrix = glm::translate(translateMatrix, glm::vec3(stepSize, 0.0f, 0.0f));
-			}else{
-				translateMatrix = glm::translate(translateMatrix, glm::vec3(-stepSize, 0.0f,  0.0f));
+				vertexPlaneY = translateMatrix*vertexPlaneY;
+				glBindBuffer(GL_ARRAY_BUFFER, vbo_posY);
+				glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlaneY),
+						glm::value_ptr(vertexPlaneY), GL_STATIC_DRAW);
+				glBindBuffer(GL_ARRAY_BUFFER, vbo_tcord2);
+				textCoordsPlane2[0][0] += stepSize/2;
+				textCoordsPlane2[1][0] += stepSize/2;
+				textCoordsPlane2[2][0] += stepSize/2;
+				textCoordsPlane2[3][0] += stepSize/2;
+				glBufferData(GL_ARRAY_BUFFER, sizeof(textCoordsPlane2),
+						glm::value_ptr(textCoordsPlane2), GL_STATIC_DRAW);
 			}
-			vertexPlaneY = translateMatrix*vertexPlaneY;
-			glBindBuffer(GL_ARRAY_BUFFER, vbo_posY);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlaneY),
-					glm::value_ptr(vertexPlaneY), GL_STATIC_DRAW);
 			break;
 		case 'C':
 			dout << "Moving billboard at Y = 0" << endl;
-			if(event->modifiers().testFlag(Qt::ShiftModifier)){
+			if( abs(vertexPlaneZ[0][1]+stepSize) <= cubeHeight){
 				translateMatrix = glm::translate(translateMatrix, glm::vec3(0.0f, stepSize, 0.0f));
-			}else{
-				translateMatrix = glm::translate(translateMatrix, glm::vec3(0.0f, -stepSize, 0.0f));
+				vertexPlaneZ = translateMatrix*vertexPlaneZ;
+				glBindBuffer(GL_ARRAY_BUFFER, vbo_posZ);
+				glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlaneZ),
+						glm::value_ptr(vertexPlaneZ), GL_STATIC_DRAW);
+				glBindBuffer(GL_ARRAY_BUFFER, vbo_tcord3);
+				textCoordsPlane3[0][1] += stepSize/2;
+				textCoordsPlane3[1][1] += stepSize/2;
+				textCoordsPlane3[2][1] += stepSize/2;
+				textCoordsPlane3[3][1] += stepSize/2;
+				glBufferData(GL_ARRAY_BUFFER, sizeof(textCoordsPlane3),
+						glm::value_ptr(textCoordsPlane3), GL_STATIC_DRAW);
 			}
-			vertexPlaneZ = translateMatrix*vertexPlaneZ;
-			glBindBuffer(GL_ARRAY_BUFFER, vbo_posZ);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlaneZ),
-					glm::value_ptr(vertexPlaneZ), GL_STATIC_DRAW);
 			break;
 		case '1':
 		case '2':
 		case '3':
 			InitVertexData();
+			initTextureCoords();
 			glBindBuffer(GL_ARRAY_BUFFER, vbo_posX);
 			glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlaneX), glm::value_ptr(vertexPlaneX), GL_STATIC_DRAW);
 			glBindBuffer(GL_ARRAY_BUFFER, vbo_posY);
 			glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlaneY), glm::value_ptr(vertexPlaneY), GL_STATIC_DRAW);
 			glBindBuffer(GL_ARRAY_BUFFER, vbo_posZ);
 			glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlaneZ), glm::value_ptr(vertexPlaneZ), GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo_tcord1);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(textCoordsPlane1),
+					glm::value_ptr(textCoordsPlane1), GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo_tcord2);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(textCoordsPlane2),
+					glm::value_ptr(textCoordsPlane2), GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo_tcord3);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(textCoordsPlane3),
+					glm::value_ptr(textCoordsPlane3), GL_STATIC_DRAW);
 			break;
         default:
             event->ignore();
@@ -891,27 +918,31 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
 
 void GLWidget::InitVertexData(){
 	
-	float size = 1;
 	float zval = 0;
+	
+	//Change the size of the cube depending on widht, heigh and depth
+	cubeWidth = 1;//Using with as the normalized with
+	cubeHeight = (float)height/(float)width;//Using with as the normalized with
+	cubeDepth = (float)depth/(float)width;//Using with as the normalized with
 	
 	vertexPlaneX= glm::mat4(0.0f);
 	vertexPlaneY= glm::mat4(0.0f);
 	vertexPlaneZ= glm::mat4(0.0f);
 	
-	vertexPlaneX[0] = glm::vec4(-size, size, zval, 1.0f);
-	vertexPlaneX[1] = glm::vec4(size, size, zval, 1.0f);
-	vertexPlaneX[2] = glm::vec4(size, -size, zval, 1.0f);
-	vertexPlaneX[3] = glm::vec4(-size, -size, zval, 1.0f);
+	vertexPlaneX[0] = glm::vec4(-cubeWidth, cubeHeight, zval, 1.0f);
+	vertexPlaneX[1] = glm::vec4(cubeWidth, cubeHeight, zval, 1.0f);
+	vertexPlaneX[2] = glm::vec4(cubeWidth, -cubeHeight, zval, 1.0f);
+	vertexPlaneX[3] = glm::vec4(-cubeWidth, -cubeHeight, zval, 1.0f);
 	
-	vertexPlaneY[0] = glm::vec4(0.0f, size,-size, 1.0f);
-	vertexPlaneY[1] = glm::vec4(0.0f, size, size, 1.0f);
-	vertexPlaneY[2] = glm::vec4(0.0f,-size, size, 1.0f);
-	vertexPlaneY[3] = glm::vec4(0.0f,-size,-size, 1.0f);
+	vertexPlaneY[0] = glm::vec4(0.0f, cubeHeight,-cubeDepth, 1.0f);
+	vertexPlaneY[1] = glm::vec4(0.0f, cubeHeight, cubeDepth, 1.0f);
+	vertexPlaneY[2] = glm::vec4(0.0f,-cubeHeight, cubeDepth, 1.0f);
+	vertexPlaneY[3] = glm::vec4(0.0f,-cubeHeight,-cubeDepth, 1.0f);
 	
-	vertexPlaneZ[0] = glm::vec4(-size, 0.0f,-size , 1.0f);
-	vertexPlaneZ[1] = glm::vec4( size, 0.0f,-size, 1.0f);
-	vertexPlaneZ[2] = glm::vec4( size, 0.0f, size, 1.0f);
-	vertexPlaneZ[3] = glm::vec4(-size, 0.0f, size, 1.0f);
+	vertexPlaneZ[0] = glm::vec4(-cubeWidth, 0.0f,-cubeDepth , 1.0f);
+	vertexPlaneZ[1] = glm::vec4( cubeWidth, 0.0f,-cubeDepth, 1.0f);
+	vertexPlaneZ[2] = glm::vec4( cubeWidth, 0.0f, cubeDepth, 1.0f);
+	vertexPlaneZ[3] = glm::vec4(-cubeWidth, 0.0f, cubeDepth, 1.0f);
 }
 
 void GLWidget::printGLMmatrix(glm::mat4 matrix)
