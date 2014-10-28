@@ -104,12 +104,11 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
  * TODO use exceptions or something similar to avoid returning ints
  */
 void GLWidget::SelectImage() {
-	//    QString fileName = QFileDialog::getOpenFileName(this, tr("Select an image"), "/home", tr("Files (*.png *.jpg *.bmp)"));
 	
-    //QString fileName = "/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/images/RectTest1.png";
-    //QString fileName = "/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/images/Ft.png";
-    //QString fileName = "/media/USBSimpleDrive/Olmo/OpenCL_Examples/OZ_OpenCL/ActiveCountoursImg/images/Min.png";
-	//	QString fileName = "./images/planet1.jpg";
+    QString fileName = "/home/olmozavala/Dropbox/OzOpenCL/ActiveCountoursImg/images/nifti/Basics/SmallReal256.nii";
+//    QString fileName = "/home/olmozavala/Dropbox/OzOpenCL/ActiveCountoursImg/images/nifti/Basics/SmallReal16.nii";
+
+	/*
 	QString fileName;
 	
 	QFileDialog dialog(this);
@@ -119,7 +118,7 @@ void GLWidget::SelectImage() {
 	if (dialog.exec()){
 		fileNames = dialog.selectedFiles();
 		fileName = fileNames[0];
-	}
+	}*/
 	
     if (!fileName.isNull()) {
         inputImage = new char[fileName.length() + 1];
@@ -141,10 +140,12 @@ void GLWidget::SelectImage() {
 		
         //When we select a new image we stop showing
         // the 'segmentation' until a new ROI is selected
-        // TODO clear ROI
         displaySegmentation = false;
 		init();
-		firstTimeImageSelected = false;
+	
+		//TODO THis part should not be here is just for testing
+		initMask();
+//		acIterate = true;
     } else {
         //TODO display a dialog informing the following text.
         cout << "The image haven't been selected. " << endl;
@@ -300,6 +301,9 @@ void GLWidget::initTextureCoords(){
 	
 }
 
+/**
+ * Reads the data of the nii file and stores it in a 3D texture
+ */
 void GLWidget::initTexture3D(){
 	dout << "************* Initializing 3D texture...." << endl;
 	if(is_nifti_file(inputImage)){
@@ -322,8 +326,7 @@ void GLWidget::initTexture3D(){
 	
     dout << "Size of byte: " << sizeof (BYTE) << endl;
     dout << "Size of char: " << sizeof (char) << endl;
-	cout << "Size of float: " << sizeof(float) << endl;
-	cout << "Size of byte: " << sizeof(BYTE) << endl;
+	dout << "Size of float: " << sizeof(float) << endl;
 	
 	dout << "Width : " << width << endl;
 	dout << "Height: " << height << endl;
@@ -353,8 +356,10 @@ void GLWidget::initTexture3D(){
  	GLenum format,
  	GLenum type,
  	const GLvoid * data*/
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_R8, width, height, depth, 0, 
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, width, height, depth, 0, 
 			GL_RED, GL_FLOAT, data3d);
+	//The internal format GL_R32F IS REQUIRED FOR the 
+//	enqueueCopyImageToBuffer function to work properly.
 	
     glActiveTexture(GL_TEXTURE0+tbo_in);
 }
@@ -534,6 +539,7 @@ void GLWidget::initializeGL() {
     dout << "OpenGL program initialized ... " << endl;
 	
     tm_oclogl_init.end();
+	SelectImage();
 }
 
 void GLWidget::resizeGL(int w, int h) {
@@ -588,7 +594,9 @@ void GLWidget::paintGL() {
 		
         if ((currIter < maxActCountIter) && acIterate) {
 			
+			iterStep = 1;
             dout << "iterating ....." << currIter << endl;
+            dout << " number of iterations: " << iterStep << endl;
             Timer tm_ocl_ac(ts, "ACont");
             tm_ocl_ac.start();
 			
@@ -668,6 +676,37 @@ void GLWidget::paintGL() {
     update();
 }
 
+/**
+ * Initializes the mask at the center of the 3D cube. 
+ */
+void GLWidget::initMask(){
+	/*
+	 dout << "Updating mask........ " << endl;
+	 dout << "Start at: (" << startXmask << "," << startYmask << ")" << endl;
+	 dout << "Ends at: (" << endXmask << "," << endYmask << ")" << endl;
+	 
+	 dout << "Image size : (" << width << "," << height << ")" << endl;
+	 dout << "Window size : (" << winWidth << "," << winHeight << ")" << endl;
+	 */
+	
+	mask[0] = (int) ((startXmask * width) / winWidth);
+	mask[1] = (int) ((endXmask * width) / winWidth);
+	
+	mask[2] = height - (int) ((endYmask * height) / winHeight);
+	mask[3] = height - (int) ((startYmask * height) / winHeight);
+	
+	dout << "Corresp mask start: (" << mask[0] << "," << mask[2] << ")" << endl;
+	dout << "Corresp mask end: (" << mask[1] << "," << mask[3] << ")" << endl;
+	
+	newMask = true; //Run SDF (start displaying segmentation) 
+	updatingROI = false; //Stop drawing user ROI, start displaying segmentation
+}
+
+/**
+ * This function is called when any button of the mouse has been released.
+ * It is used to initialize the mask, where the user has selected it. 
+ * @param event
+ */
 void GLWidget::mouseReleaseEvent(QMouseEvent *event) {
     camera->mouseReleaseEvent(event);
 	
@@ -675,26 +714,7 @@ void GLWidget::mouseReleaseEvent(QMouseEvent *event) {
 		endXmask = event->x();
 		endYmask = event->y();
 		
-		/*
-         dout << "Updating mask........ " << endl;
-         dout << "Start at: (" << startXmask << "," << startYmask << ")" << endl;
-         dout << "Ends at: (" << endXmask << "," << endYmask << ")" << endl;
-         
-         dout << "Image size : (" << width << "," << height << ")" << endl;
-         dout << "Window size : (" << winWidth << "," << winHeight << ")" << endl;
-         */
-		
-		mask[0] = (int) ((startXmask * width) / winWidth);
-		mask[1] = (int) ((endXmask * width) / winWidth);
-		
-		mask[2] = height - (int) ((endYmask * height) / winHeight);
-		mask[3] = height - (int) ((startYmask * height) / winHeight);
-		
-		dout << "Corresp mask start: (" << mask[0] << "," << mask[2] << ")" << endl;
-		dout << "Corresp mask end: (" << mask[1] << "," << mask[3] << ")" << endl;
-		
-		newMask = true; //Run SDF (start displaying segmentation) 
-		updatingROI = false; //Stop drawing user ROI, start displaying segmentation
+	    initMask();
 	}
 }
 

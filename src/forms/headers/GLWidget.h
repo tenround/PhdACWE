@@ -51,6 +51,7 @@ protected:
     void keyPressEvent(QKeyEvent *event);
     void keyReleaseEvent(QKeyEvent *event);
     void init();
+    void initMask();
     void InitShaders();
     void InitTextures();
     void InitializeVertexBufferX();
