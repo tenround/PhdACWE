@@ -105,8 +105,8 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
  */
 void GLWidget::SelectImage() {
 	
-    QString fileName = "/home/olmozavala/Dropbox/OzOpenCL/ActiveCountoursImg/images/nifti/Basics/SmallReal256.nii";
-//    QString fileName = "/home/olmozavala/Dropbox/OzOpenCL/ActiveCountoursImg/images/nifti/Basics/SmallReal16.nii";
+    QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/SmallReal256.nii";
+    //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/SmallReal16.nii";
 
 	/*
 	QString fileName;

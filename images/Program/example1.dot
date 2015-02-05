@@ -1,0 +1,31 @@
+digraph {
+    node [shape=box, style="rounded, filled", color=black, fillcolor=lightblue]
+
+    step0 [label = "buf_sdf has the mask after SDF"]
+    step1 [label = "QGLWidget (Constructor) \n SelectImage()"]
+    step2 [label = "GLWidget::initializeGL"]
+    step3 [label = "GLWidget::InitializeProgram \n Shaders, Camera, Sampler"]
+
+    step4 [label = "GLWidget::init()"]
+    step5 [label = "GLWidget::InitTextures() \n Loads the image \n inits tbo_in(image) and tbo_out(NULL)"]
+    step6 [label = "GLWidget::InitializeVertexBuffers()"]
+    step7 [label = "GLWidget::InitActiveContours()"]
+
+    node [fillcolor=green]
+    step8 [label = "ActiveContours::initImagesArraysAndBuffers(tbo_in, tbo_out) \n relates cl_images with textures \n intializes empty Image2D and cl_Buffer objects"]
+    step82 [label = "ActiveContours::loadProgram \n Used to call createRGBMask"]
+    step10 [label = "ActiveContours::runSDF()"]
+    step11 [label = "ActiveContours::iterate() \n It stores the result in img_phi"]
+
+    node [fillcolor=lightblue]
+    step9 [label = "paintGL() \n Displays tbo_in from img_phi_gl"]
+
+    subgraph init{
+        color=orange
+        step4->step5->step6->step7->step8->step9
+        step7->step82->step8
+    }
+
+    step1->step2->step3->step4->step9->step10->step11
+
+}
