@@ -51,16 +51,34 @@ protected:
     void keyPressEvent(QKeyEvent *event);
     void keyReleaseEvent(QKeyEvent *event);
     void init();
+    void initMask();
     void InitShaders();
     void InitTextures();
-    void InitializeVertexBuffer();
+    void InitializeVertexBufferX();
+    void InitializeVertexBufferY();
+    void InitializeVertexBufferZ();
+    void initTextureCoords();
     void InitializeSimpleVertexBuffer();
     void InitActiveCountours();
     void CreateSamplers();
     void printGLMmatrix(glm::mat4 matrix);
 	void printGLVersions();
+	void InitVertexData();
+
+	//--------- 3D -------
+	void initTexture3D();
 
 private:
+
+	// 3D texturing
+	float* data3d;
+
+	GLuint tbo_in; //Texture buffer object
+    GLuint tbo_out; //Texture buffer object
+    GLuint textureId;
+
+	GLuint errCode; //Texture buffer object
+
     GLuint modelToCameraMatrixUnif;
     glm::mat4 modelMatrix;
 
@@ -71,8 +89,17 @@ private:
     ProgramData g_program;
     glm::vec3 offsets[1];
 
-	glm::mat4 vertexPositions;
+	glm::mat4 vertexPlaneX;
+	glm::mat4 vertexPlaneY;
+	glm::mat4 vertexPlaneZ;
 	glm::mat4 vertexPosSelection;
+
+	glm::mat4x3  textCoordsPlane1;
+	glm::mat4x3  textCoordsPlane2;
+	glm::mat4x3  textCoordsPlane3;
+    GLuint vbo_tcord1;
+    GLuint vbo_tcord2;
+    GLuint vbo_tcord3;
 
     //float textCoords[];
     //unsigned int vertexIndexes[];
@@ -80,25 +107,24 @@ private:
     float z;
     float hsize;
 
-    GLuint vbo_pos;
+    GLuint vbo_posX;
+    GLuint vbo_posY;
+    GLuint vbo_posZ;
     GLuint vbo_tcord;
     GLuint vbo_color;
     GLuint ebo; //Element buffer object
     GLuint vbo_selection;
 
-    GLuint vaoID;
+    GLuint vaoIdX;
+    GLuint vaoIdY;
+    GLuint vaoIdZ;
     GLuint vaoSimpleID;//Just used to display ROI
 
-    GLuint tbo_in; //Texture buffer object
-    GLuint tbo_out; //Texture buffer object
-    GLuint sampler;
-    GLuint textUnit;
-
-	//Normal of billboard
+    	//Normal of billboard
 	GLuint normalUnif; 
 	GLuint normalHandle; 
 
-    GLuint samplerID[1];
+    GLuint samplerID[2];
 
     //GUI
     bool imageSelected;
@@ -133,6 +159,12 @@ private:
     int* mask;
     int width;
     int height;
+    int depth;
+
+	float cubeWidth;//This variable represent the with of the cube (always 1)
+	float cubeHeight;// Height of the cube. Proportional to width
+	float cubeDepth;// Depth of the cube. Proportional to width
+	
 
     QGLShaderProgram *shaderProg;
     QGLShader *vertexShader, *fragmentShader;

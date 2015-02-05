@@ -9,7 +9,7 @@
 #define MAXDPHIDT 2
 
 // Writes is used to write results to disk
-#define WRITE false 
+#define WRITE true
 //#define WRITE true 
 // PRINT_IMG_VAL is used to print images values (only for very small images)
 #define PRINT_IMG_VAL false 
@@ -21,7 +21,9 @@
 #include "debug.h"
 
 #include <sstream>
+#include <qt4/QtCore/qglobal.h>
 
+// Inline function to cast char* to std:string
 template <class T>
 inline std::string to_string(char* prev, const T& t, char* post) {
     std::stringstream ss;
@@ -29,20 +31,23 @@ inline std::string to_string(char* prev, const T& t, char* post) {
     return ss.str();
 }
 
+// Inline function to append to char* into one std:string
 inline std::string appendStr(char* prev, char* post) {
     std::stringstream ss;
     ss << prev << post;
     return ss.str();
 }
 
+/**
+ *  Constructor of the ActiveCountours class. It mainly
+ * Initializes some variables. 
+ */ 
 ActiveContours::ActiveContours() {
     grp_size_x = 0;
     grp_size_y = 0;
-
+	
     tot_grps_x = 0;
     tot_grps_y = 0;
-
-    usingOGL = true; //By default we set true using openGL (not good)
 }
 
 ActiveContours::ActiveContours(const ActiveContours& orig) {
@@ -57,74 +62,67 @@ ActiveContours::~ActiveContours() {
  * @param {GLuint} tbo_in OpenGL texture pointer to the input image
  * @param {GLuint} tbo_out OpenGL texture pointer to the output maks or segmentation.
  */
-void ActiveContours::initImagesArraysAndBuffers(GLuint& tbo_in, GLuint& tbo_out) {
+void ActiveContours::initImagesArraysAndBuffers(GLuint& tbo_in, GLuint& tbo_out, 
+		int locwidth, int locheight, int locdepth){
+	
+	//Sets the dimensions of the 3D texture
+    width = locwidth;
+    height = locheight;
+    depth = locdepth;
+	
     origin = CLManager::getSizeT(0, 0, 0);
     region = CLManager::getSizeT(width, height, 1);
-
+	
+    this->currIter = 0;
+	
     try {
+		
+        clMan.getDeviceInfo(0); // Prints device info
+		
+		//Max number of work items per group
+        dev_max_work_items = clMan.getMaxWorkGroupSize(0);
+		// Max float elements of a local memory (per group)
+		dev_max_local_mem = (int)clMan.getLocalMemSize(0)/(sizeof(float));
+
+        CLManager::getGroupSize3D(dev_max_work_items, width, height, depth, grp_size_x, 
+				grp_size_y, grp_size_z, tot_grps_x, tot_grps_y, tot_grps_z, true);
+		
         cl::Context* context = clMan.getContext();
-
-        if (usingOGL) {//Assume we use OpenGL
-
-            img_in_gl = cl::Image2DGL(*context, CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, tbo_in, &err);
-            img_phi_gl = cl::Image2DGL(*context, CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, tbo_out, &err);
-
-            //Add the images to the vector of cl::Memory that is used to acquire and release ogl objects
-            cl_textures.push_back(img_in_gl);
-            cl_textures.push_back(img_phi_gl);
-        }
-
-        img_phi = cl::Image2D(*context, CL_MEM_READ_WRITE,
-                cl::ImageFormat(CL_RGBA, CL_FLOAT), (size_t) width, (size_t) height, 0, 0, &err);
-
-        img_in = cl::Image2D(*context, CL_MEM_READ_WRITE,
-                cl::ImageFormat(CL_RGBA, CL_FLOAT), (size_t) width, (size_t) height, 0, 0, &err);
-
-        //Initial segmentation of the object, normally a square
-        img_mask = cl::Image2D(*context, CL_MEM_READ_WRITE,
-                cl::ImageFormat(CL_RGBA, CL_UNSIGNED_INT8), (size_t) width, (size_t) height, 0, 0, &err);
-
-        // Temporal image that holds the new level set segmentation (phi)
-        img_newphi = cl::Image2D(*context, CL_MEM_READ_WRITE,
-                cl::ImageFormat(CL_RGBA, CL_FLOAT), (size_t) width, (size_t) height, 0, 0, &err);
-
-        img_curv_F = cl::Image2D(*context, CL_MEM_READ_WRITE,
-                cl::ImageFormat(CL_RGBA, CL_FLOAT), (size_t) width, (size_t) height, 0, 0, &err);
-
-        img_dphidt = cl::Image2D(*context, CL_MEM_READ_WRITE,
-                cl::ImageFormat(CL_RGBA, CL_FLOAT), (size_t) width, (size_t) height, 0, 0, &err);
-
-
-        dout << "------------- GROUPS -----" << endl;
-        dout << "X = " << tot_grps_x << " Y " << tot_grps_y << endl;
-        int defSize = tot_grps_x * tot_grps_y;
-
-        //-------------------- Initialization of buffers --------------
-
-        // This array will contain the average gray value inside and outside the object (at the end
-        // this two values should be on the first two positions)
-        buf_avg_in_out = cl::Buffer(*context, CL_MEM_READ_WRITE,
-                (size_t) defSize * 2 * sizeof (float), NULL, &err);
+		
+		//Maps the 3D texture of OpenGL to a cl::Image3DGL object 
+		img_in_gl = cl::Image3DGL(*context, CL_MEM_READ_WRITE, GL_TEXTURE_3D, 0, tbo_in, &err);
+		
+		//Add the images to the vector of cl::Memory that is used to acquire and release ogl objects
+		cl_textures.push_back(img_in_gl);
+		
+		buf_avg_in_out = cl::Buffer(*context, CL_MEM_READ_WRITE,
+                (size_t) 4* sizeof (float), NULL, &err);
+		
+		buf_size = width*height*depth;
 
         // Contains the values of F 
-        buf_F = cl::Buffer(*context, CL_MEM_READ_WRITE, (size_t) defSize * sizeof (float), NULL, &err);
-
+        buf_F = cl::Buffer(*context, CL_MEM_READ_WRITE, (size_t) buf_size * sizeof (float), NULL, &err);
+		// Maximum value of F
+        buf_max_F = cl::Buffer(*context, CL_MEM_READ_WRITE, (size_t) 1 * sizeof (float), NULL, &err);
+		
         // Used to compute the maximum value of dphidt
-        buf_max_dphidt = cl::Buffer(*context, CL_MEM_READ_WRITE, (size_t) defSize * sizeof (float), NULL, &err);
+        buf_max_dphidt = cl::Buffer(*context, CL_MEM_READ_WRITE, (size_t) 1 * sizeof (float), NULL, &err);
+		
+        buf_dphidt = cl::Buffer(*context, CL_MEM_READ_WRITE, (size_t) buf_size* sizeof (float), NULL, &err);
 
-        buf_mask = cl::Buffer(*context, CL_MEM_READ_WRITE, width * height * sizeof (unsigned int), NULL, &err);
+        buf_mask = cl::Buffer(*context, CL_MEM_READ_WRITE, buf_size * sizeof (unsigned int), NULL, &err);
+		
+        buf_phi = cl::Buffer(*context, CL_MEM_READ_WRITE,  buf_size * sizeof (float), NULL, &err);
+		
+        buf_smooth_phi = cl::Buffer(*context, CL_MEM_READ_WRITE,  buf_size * sizeof (float), NULL, &err);
 
-        buf_sdf = cl::Buffer(*context, CL_MEM_READ_WRITE, 4 * width * height * sizeof (float), NULL, &err);
+        buf_img_in = cl::Buffer(*context, CL_MEM_READ_WRITE, buf_size * sizeof (float), NULL, &err);
 
-        buf_img_in = cl::Buffer(*context, CL_MEM_READ_WRITE, 4 * width * height * sizeof (float), NULL, &err);
-
+        buf_curvature= cl::Buffer(*context, CL_MEM_READ_WRITE, buf_size * sizeof (float), NULL, &err);
+		
         //--------------- Initialization of arrays ---------------------
-
-        arr_img_out = new float[width * height * 4];
-        arr_max_F = new float[defSize];
-        arr_max_dphidt = new float[defSize];
-        arr_avgInOutByGrp = new float[defSize * 2]; //Is double the normal size because we have in and out
-
+        arr_img_out = new float[buf_size];
+		
     } catch (cl::Error ex) {
         eout << "Error on initialization of images and buffers " << endl;
         clMan.printError(ex);
@@ -132,404 +130,273 @@ void ActiveContours::initImagesArraysAndBuffers(GLuint& tbo_in, GLuint& tbo_out)
     }
 }
 
-void ActiveContours::init(int SDFmethod, char* inputFile, char* outputFile,
-        int iter, float alpha, float def_dt, int* maskPos) {
-    usingOGL = false;
-    this->loadProgram(SDFmethod, iter, alpha, def_dt );
-	this->loadImage(inputFile, outputFile, -1, -1);
-    createRGBAMask(width, height, maskPos[0], maskPos[1], maskPos[2], maskPos[3]);
-}
-
-void ActiveContours::loadProgram(int SDFmethod, int iter, float alpha, float dt) {
-
+void ActiveContours::loadProgram(int iter, float alpha, float dt) {
+	
     this->totalIterations = iter;
     this->alpha = alpha;
-    this->SDFmethod = SDFmethod;
-
+	
     try {
         // Create the program from source
-        clMan.initContext(usingOGL);
-        switch (SDFmethod) {
-            case SDFOZ:
-                clMan.addMultipleSources((char*) "src/resources/kernels/ActCount.cl", (char*) "src/resources/kernels/SDF.cl");
-                break;
-            case SDFVORO:
-                clMan.addMultipleSources((char*) "src/resources/kernels/ActCount.cl", (char*) "src/resources/kernels/SDFVoroBuf.cl");
-                break;
-        }
+        clMan.initContext(true);
+		clMan.addMultipleSources((char*) "src/resources/kernels/ActCount.cl", 
+				(char*) "src/resources/kernels/SDFVoroBuf3D.cl");
         clMan.initQueue();
-
+		
         context = clMan.getContext();
         queue = clMan.getQueue();
         program = clMan.getProgram();
-
+		
     } catch (cl::Error ex) {
         clMan.printError(ex);
         return;
     }
 }
 
-void ActiveContours::loadImage(char* inputFile, char* outputFile, int locwidth, int locheight){
-
-    this->currIter = 0;
-    this->outputFile = outputFile;
-    //Important! here is where we set the width and height
-    width = locwidth;
-    height = locheight;
-
-    try {
-        //If we are not receiving the width and height then we need to 
-        //read the image size again
-        if( (width == -1) || (height == -1)){
-            BYTE* imgByte = ImageManager::loadImageByte(inputFile, width, height);
-            arr_img_in = ImageManager::byteToFloat(imgByte, width * height * 4);
-        }
-
-        if (WRITE) {//Writes the init image on the temporal folder
-            dout << "Saving Original image " << endl;
-            ImageManager::writeImage((char*) "images/SDF/CurrentRun/Original.png", arr_img_in, FIF_PNG, width, height);
-        }
-
-        //createRGBAMask(width, height, maskPos[0], maskPos[1], maskPos[2], maskPos[3], arr_buf_mask);
-
-        clMan.getDeviceInfo(0); // Prints device info
-
-        max_warp_size = clMan.getMaxWorkGroupSize(0);
-        //        max_warp_size = 64; //TODO not always work with the obtained max_warp_size (But I am not sure why)
-
-        // Gets the group size from the with and height of the image and the mas number of threads per group
-        CLManager::getGroupSize(max_warp_size, width, height, grp_size_x, grp_size_y, tot_grps_x, tot_grps_y, WRITE);
-    } catch (cl::Error ex) {
-        clMan.printError(ex);
-        return;
-    }
-}
-
+/**
+ * Runs the SDF from the initialized mask. 
+ */
 void ActiveContours::runSDF() {
+	
+	buf_size = width*height*depth;//Local variable of the buffer size
 
-    dout << endl << "--------Running SDF ("<< width << "," << height << ")" << endl;
     try {
-        // Create the program from source
-        if (!usingOGL) {
-            //If we are not using the OpenGL texture, then we write it from the array.
-            err = queue->enqueueWriteImage(img_in, CL_FALSE, origin, region, 0, 0, (void*) arr_img_in, 0, &evImgInWrt);
-        }
-
-        queue->finish();
-
-        //Writes the mask as the original value for 
-        err = queue->enqueueWriteBuffer(buf_mask, 
-                CL_FALSE, 0, sizeof (float) *width*height, (void*) arr_buf_mask, 0, &evImgSegWrt);
-        //        err = queue->enqueueWriteImage(img_mask, CL_FALSE, origin, region, 0, 0, (void*) arr_img_phi, 0, &evImgSegWrt);
-
-        char* sdfPath = (char*) "images/SDF/CurrentRun/"; //Path to save SDF images
-
-        if (WRITE) {//Writes the original mask
-            string fileName = appendStr(sdfPath, (char*) "MASK.png");
-            ImageManager::writeGrayScaleImage((char*) fileName.c_str(), arr_buf_mask, FIF_PNG, width, height);
-            if (PRINT_IMG_VAL) {
-                cout << "Mask: " << endl;
-                ImageManager::printImage(width, height, arr_buf_mask, 1);
-            }
-            cout << "--------------------Computing the SDF..." << endl;
-        }
-
-        vecWriteImage.push_back(evImgSegWrt);
-
+        queue->finish();//We need to finish everything that it was queued before
+		
+        //Writes the mask stored in 'arr_buf_mask' into the cl::Buffer 'buf_mask' 
+        err = queue->enqueueWriteBuffer(buf_mask, CL_FALSE, 0, 
+				sizeof (unsigned char)*buf_size, (void*) arr_buf_mask, 0, &evImgSegWrt);
+		
+        char* sdfPath = (char*) "images/SDF/"; //Path to save SDF images
+		
+//        if (WRITE) {//Writes the original mask
+        if (false) {//Writes the original mask
+			dout << "******** Writing original mask .... " << endl;
+            string folder = appendStr(sdfPath, (char*) "OriginalMask/");
+			ImageManager::write3DImageSDF( (char*) folder.c_str(), arr_buf_mask, width, height, depth);
+		}
+		
         SignedDistFunc sdfObj;
-
-        //        It reads from img_mask the mask, and writes into img_phi the output
-        evSDF = sdfObj.runSDFBuf(&clMan, SDFmethod, buf_mask, buf_sdf, max_warp_size, width, height, evImgSegWrt, sdfPath);
-        vecEvSDF.push_back(evSDF);
-
-        if (true) {// Saves the SDF result as an image
-            cout << "Saving SDF result..." << endl;
-            string fileName = appendStr(sdfPath, (char*) "SDFResult.png");
-
-			//Reads from buf_sdf (GPU) and writes to arr_img_out (Host)
-            res = queue->enqueueReadBuffer(buf_sdf, CL_TRUE, 0, sizeof (float) *width*height, (void*) arr_img_out, &vecEvSDF, 0);
+		
+		dev_max_work_items = 512;
+		dout << "Max warpsize for SDF: " << dev_max_work_items << endl;
+        // It reads from buf_mask the mask, and writes into buf_phi the output
+        evSDF_newPhi = sdfObj.run3DSDFBuf(&clMan, buf_mask, buf_phi, dev_max_work_items, width, 
+				height, depth, evImgSegWrt, sdfPath);
+		
+//        if (WRITE) {// Saves the SDF result as an image
+		if (WRITE) {
+			cout << "--------------------Displaying some values of the SDF..." << endl;
+			vecEvPrevPrinting.clear();
+			vecEvPrevPrinting.push_back(evSDF_newPhi);
+			printBuffer(buf_phi, 10, vecEvPrevPrinting);
+		}
+        if (WRITE) {// Saves the SDF result as an image
+            dout << "Saving SDF result..." << endl;
+            string folder = appendStr(sdfPath, (char*) "SDFOutput/");
+			
+			vecEvPrevPrinting.push_back(evSDF_newPhi);
+			//Reads from buf_phi (GPU) and writes to arr_img_out (Host)
+            res = queue->enqueueReadBuffer(buf_phi, CL_TRUE, 0, sizeof (float) *buf_size, 
+					(void*) arr_img_out, &vecEvPrevPrinting, 0);
 			// Prints image into png file
-            ImageManager::writeGrayScaleImage((char*) fileName.c_str(), arr_img_out, FIF_PNG, width, height);
-            if (PRINT_IMG_VAL) {
-                ImageManager::printImage(width, height, arr_img_out, 1);
-            }
+			ImageManager::write3DImage((char*) folder.c_str(), arr_img_out, width, height, depth, 0);
         }
-
-        queue->finish(); //Be sure we finish
-        dout << "Out of ActiveContours initialization ......." << endl;
-
+		
+		vecEvPrevCurvature.push_back(evSDF_newPhi);
+        dout << "Out of ActiveContours initialization  SDF computed!......." << endl;
+		
     } catch (cl::Error ex) {
         clMan.printError(ex);
         return;
     }
-    //delete[] arr_img_in;
-    //delete[] arr_buf_mask;
 }
 
+/**
+ * Iterates the ACWE for several iterations using 1 or more bands
+ * @param numIterations
+ * @param useAllBands
+ */
 void ActiveContours::iterate(int numIterations, bool useAllBands) {
 
+	//Default origin and region to copy the entire region of the 3D texture
+	dout << "Initializing origin and region with " << width << "," << height << "," << depth << endl;
+	origin.push_back(0); origin.push_back(0); origin.push_back(0);
+	region.push_back(width); region.push_back(height); region.push_back(depth);
+	
     cl::CommandQueue* queue = clMan.getQueue();
     try {
-        vector<cl::Event> vecCopyTextBuf;
-        cl::Event evCopyBufToPhi;
+		err = queue->enqueueAcquireGLObjects(&cl_textures, NULL, &evAcOGL);
+		queue->finish();
+		
+		if (currIter == 0) {
+			//Copying img_in_gl to buf_img_in
+			cl::Event evCopyInGlToIn;
+			
+			dout << "Copying input texture (img_in_gl) to cl_buffer buf_img_in" << endl;
+			vecEvPrevTextToBuffer.push_back(evAcOGL);
+			queue->enqueueCopyImageToBuffer(img_in_gl, buf_img_in, origin, 
+								region, (size_t)0, &vecEvPrevTextToBuffer,&evCopyInGlToIn);
 
-        if (usingOGL) {
-            //err = queue->enqueueAcquireGLObjects(&cl_textures, NULL, &evAcOGL);
-            err = queue->enqueueAcquireGLObjects(&cl_textures, NULL, 0);
-            vecEvPrevAvgInOut.push_back(evAcOGL);
-            queue->finish();
+//			if (WRITE) {//Writes the init image on the temporal folder
+			if (true) {//Writes the init image on the temporal folder
+				vecEvPrevPrinting.push_back(evCopyInGlToIn);
+				res = queue->enqueueReadBuffer(buf_img_in, CL_TRUE, 0,
+						sizeof (float) *width*height*depth, (void*) arr_img_out, &vecEvPrevPrinting, 0);
+				
+				bool normalized_values = 1;
+				dout << "Done copying texture to buffer.... writing result to images/temp_results/InputImage/" << endl;
+				ImageManager::write3DImage((char*) "images/temp_results/InputImage/",
+						arr_img_out, width, height,depth, normalized_values);
 
-            if (currIter == 0) {
-                //Copying img_in_gl to img_in
-                cl::Event evCopyInGlToIn;
-                cl::Event evCopyBufToImg;
+				/* Just to test that the TEXTURE is being copied to img_in_gl correctly*/
+				/*
+				int rowSize = sizeof(float)*width;
+				res = queue->enqueueReadImage(img_in_gl, CL_FALSE, origin, region, (size_t) rowSize ,
+						(size_t)  (rowSize*height), (void*) arr_img_out, &vecEvPrevPrinting, 0);
+				
+				queue->finish(); //Finish everything before the iterations
+				
+				ImageManager::write3DImage((char*) "images/temp_results/3dTexture/",
+						 arr_img_out, width, height,depth,  normalized_values);
 
-                evCopyInGlToIn = this->copyTextToBuf(img_in_gl, buf_img_in, vecCopyTextBuf);
-                vecCopyTextBuf.push_back(evCopyInGlToIn);
+				queue->finish(); //Finish everything before the iterations
+				dout << "Writing done!!!!" << endl;
+				*/
+			}
+			vecEvPrevAvgInOut.push_back(evCopyInGlToIn); //For the first iteration we need to wait to copy the texture
+		}//If iter == 0
 
-                if (WRITE) {//Writes the init image on the temporal folder
-                //if (true) {//Writes the init image on the temporal folder
-                    res = queue->enqueueReadBuffer(buf_img_in, CL_TRUE, 0,
-                            sizeof (float) *width*height*4, (void*) arr_img_out, &vecCopyTextBuf, 0);
-
-                    cout << "Saving buffer image in" << endl;
-                    ImageManager::writeImage((char*) "images/temp_results/InputImageAsBuffer.png",
-																	arr_img_out, FIF_PNG, width, height);
-                    if (PRINT_IMG_VAL) {
-                        cout << "Printing Saving buffer image in" << endl;
-                        ImageManager::printImage(width, height, arr_img_out, 1);
-                    }
-                }
-
-                evCopyBufToImg = this->copyBufToImg(buf_img_in, img_in, vecCopyTextBuf, true);
-                vecCopyTextBuf.push_back(evCopyBufToImg);
-                cout << "After buf_img_in -> img_in" << endl;
-
-                //Copying the result from the SDF to the initial phi
-                evCopyBufToPhi = this->copyBufToImg(buf_sdf, img_phi, vecCopyTextBuf, false);
-                vecCopyTextBuf.push_back(evCopyBufToPhi);
-                cout << "After buf_sdf-> img_phi" << endl;
-
-                if (WRITE) {
-                    res = queue->enqueueReadImage(img_in,
-                            CL_TRUE, origin, region, 0, 0, (void*) arr_img_out, &vecCopyTextBuf, 0);
-
-                    if (PRINT_IMG_VAL) {
-                        cout << "&&&&&     Printing buffer image in" << endl;
-                        ImageManager::printImage(width, height, arr_img_out, 4);
-                    }
-
-                    res = queue->enqueueReadImage(img_phi,
-                            CL_TRUE, origin, region, 0, 0, (void*) arr_img_out, &vecCopyTextBuf, 0);
-
-                    if (PRINT_IMG_VAL) {
-                        cout << "&&&&&     Printing SDF (img_phi)" << endl;
-                        ImageManager::printImage(width, height, arr_img_out, 4);
-                    }
-                }
-            }//If iter == 0
-
-        }
         //Compute the last iteration of this 'round'
         int lastIter = min(currIter + numIterations, totalIterations);
-
+		
         // -------------------- MAIN Active Countours iteration
-        queue->finish(); //Finish everything before the iterations
         for (; currIter < lastIter; currIter++) {
-
+			
             if (currIter % ITER == 0) {
                 cout << endl << endl << "******************** Iter " << currIter << " ******************** " << endl;
             }
-
-            vector<cl::Event> prevEv;
-            evAvgInOut = compAvgInAndOut(img_phi, img_in, prevEv, useAllBands);
-
-            vecEvAvg.push_back(evAvgInOut);
-
+			
+            evAvgInOut_SmoothPhi = compAvgInAndOut(buf_phi, buf_img_in, vecEvPrevAvgInOut);
+			
             if (WRITE) {// Gets the final average values obtained
                 cout << endl << "----------- Final Average  ------------" << endl;
-
-                res = queue->enqueueReadBuffer(buf_avg_in_out,
-                        CL_TRUE, (size_t) 0, (size_t) (sizeof (float) *2),
-                        (void*) arr_avgInOutByGrp, &vecEvAvg, 0);
-
-                cout << "Avg in =" << arr_avgInOutByGrp[0] << " out=" << arr_avgInOutByGrp[1] << endl;
-            }
-
-            //            It computes the curvatue and F values, the curvature is stored on the first layer
+				vecEvPrevPrinting.clear();
+				vecEvPrevPrinting.push_back(evAvgInOut_SmoothPhi);
+				printBuffer(buf_avg_in_out, 2, vecEvPrevPrinting);
+			}
+			
+            //It computes the curvatue and F values, the curvature is stored on the first layer
             //and the F values are stored on the second layer
-            evCurvAndF = compCurvAndF(vecEvAvg, useAllBands);
-            vecEvCurvF.push_back(evCurvAndF);
-
+            evCurvature = compCurvature(vecEvPrevCurvature);
+			
             if (WRITE) {
-                cout << "--------------------Saving the value of F and curvature..." << endl;
-
-                res = queue->enqueueReadImage(img_curv_F,
-                        CL_TRUE, origin, region, 0, 0, (void*) arr_img_out, &vecEvCurvF, 0);
-
-                string name = to_string<int>((char*) "images/temp_results/CurvAndF", currIter, (char*) ".png");
-                ImageManager::writeImage((char*) name.c_str(), arr_img_out, FIF_PNG, width, height);
+                cout << "--------------------Displaying the value of curvature..." << endl;
+				vecEvPrevPrinting.clear();
+				vecEvPrevPrinting.push_back(evCurvature);
+				printBuffer(buf_curvature, 10, vecEvPrevPrinting);
             }
-
+			
             // Computing the maximum F value (max value of:
             // pow( curr_img - avgIn, 2) - pow( curr_img - avgOut, 2))
-            // this is stored on layer number 2
-
-            evMaxF = compImgMaxReduction(img_curv_F, vecEvCurvF,
-                    buf_F, 2, true); // Use abs value 
-
-            vecEvMaxF.push_back(evMaxF);
+            vecEvPrevF.push_back(evAvgInOut_SmoothPhi);//Wait to compute the average in and out
+			evF = compF(vecEvPrevF);
 
             if (WRITE) {
-                float* result = new float[1];
-
-                res = queue->enqueueReadBuffer(buf_F,
-                        CL_TRUE, (size_t) 0, (size_t) (sizeof (float)),
-                        (void*) result, &vecEvMaxF, 0);
-
-                cout << " -- Final Max F value: " << (float) result[0] << endl;
-                delete[] result;
+                cout << "--------------------Displaying the value of F ..." << endl;
+				vecEvPrevPrinting.clear();
+				vecEvPrevPrinting.push_back(evF);
+				printBuffer(buf_F, 10, vecEvPrevPrinting);
             }
 
-            evDphiDt = compDphiDt(vecEvMaxF);
-            vecEvDphiDt.push_back(evDphiDt);
+			//Computing maximum value of F
+            vecEvPrevMaxF.push_back(evF);
+            evMaxF = compReduce(buf_F, buf_max_F, true, vecEvPrevMaxF); // Use abs value 
+			
+            if (WRITE) {
+                cout << "--------------------Displaying max value of F ..." << endl;
+				vecEvPrevPrinting.clear();
+				vecEvPrevPrinting.push_back(evF);
+				printBuffer(buf_max_F, 1, vecEvPrevPrinting);
+            }
+			
+            vecEvPrevDphiDt.push_back(evCurvature);// Wait for curvature
+            vecEvPrevDphiDt.push_back(evMaxF);// Wait for max F -> and F
+            evDphiDt_MaxDphiDt = compDphiDt(vecEvPrevDphiDt);
+			
+            if (WRITE) {
+                cout << "--------------------Displaying values of Dphi/dt ..." << endl;
+				vecEvPrevPrinting.clear();
+				vecEvPrevPrinting.push_back(evDphiDt_MaxDphiDt);
+				printBuffer(buf_dphidt, 10, vecEvPrevPrinting);
+			}
+			
+            vecEvPrevMaxDphiDt.push_back(evDphiDt_MaxDphiDt);
+            evDphiDt_MaxDphiDt = compReduce(buf_dphidt, buf_max_dphidt, true, vecEvPrevMaxDphiDt ); 
 
             if (WRITE) {
-                res = queue->enqueueReadImage(img_dphidt,
-                        CL_TRUE, origin, region, 0, 0, (void*) arr_img_out, &vecEvDphiDt);
-
-                string name = to_string<int>((char*) "images/temp_results/dphidt", currIter, (char*) ".png");
-                ImageManager::writeImage((char*) name.c_str(), arr_img_out, FIF_PNG, width, height);
+				 cout << "--------------------Displaying Max Dphi/dt ..." << endl;
+				vecEvPrevPrinting.clear();
+				vecEvPrevPrinting.push_back(evDphiDt_MaxDphiDt);
+				printBuffer(buf_max_dphidt, 1, vecEvPrevPrinting);
             }
 
-            //Computes maximum dphi/dt value
-            evMaxDphiDt = compImgMaxReduction(img_dphidt, vecEvDphiDt,
-                    buf_max_dphidt, 1, false); // Use abs value 
-
-            vecEvMaxDphiDt.push_back(evMaxDphiDt);
-
+            vecEvPrevNewPhi.push_back(evDphiDt_MaxDphiDt);
+            evSDF_newPhi = compNewPhi(vecEvPrevNewPhi); //This phi without smooth term
+			
             if (WRITE) {
-                float* result = new float[1];
-
-                res = queue->enqueueReadBuffer(buf_max_dphidt,
-                        CL_TRUE, (size_t) 0, (size_t) (sizeof (float)),
-                        (void*) result, &vecEvMaxDphiDt, 0);
-
-                cout << " -- Final Max DphiDt Value: " << (float) result[0] << endl;
-                delete[] result;
+                cout << "--------------------Displaying values of new phi ..." << endl;
+				vecEvPrevPrinting.clear();
+				vecEvPrevPrinting.push_back(evSDF_newPhi);
+				printBuffer(buf_phi, 10, vecEvPrevPrinting);
             }
-
-            evNewPhi = compNewPhi(vecEvMaxDphiDt); //This phi without smooth term
-            vecEvNewPhi.push_back(evNewPhi);
-
+			
+            vecEvPrevSmPhi.push_back(evSDF_newPhi);
+            evAvgInOut_SmoothPhi = smoothPhi(vecEvPrevSmPhi, alpha); //This phi without smooth term
+			
             if (WRITE) {
-                res = queue->enqueueReadImage(img_newphi,
-                        CL_TRUE, origin, region, 0, 0, (void*) arr_img_out,
-                        &vecEvNewPhi, 0);
-
-                string name = to_string<int>((char*) "images/temp_results/newphiwosmoothing", currIter, (char*) ".png");
-                ImageManager::writeImage((char*) name.c_str(), arr_img_out, FIF_PNG, width, height);
+                cout << "--------------------Displaying values of smoothed phi ..." << endl;
+				vecEvPrevPrinting.clear();
+				vecEvPrevPrinting.push_back(evAvgInOut_SmoothPhi);
+				printBuffer(buf_smooth_phi, 10, vecEvPrevPrinting);
             }
-
-
-            evSmoothPhi = smoothPhi(vecEvNewPhi, alpha); //This phi without smooth term
-
-            vecEvSmPhi.push_back(evSmoothPhi);
-
-            //Print image every time it enters (remove at the end)
-            if (WRITE) {
-                if (currIter % ITER == 1) {
-                    res = queue->enqueueReadImage(img_phi,
-                            CL_TRUE, origin, region, 0, 0, (void*) arr_img_out,
-                            &vecEvSmPhi, 0);
-
-                    string name = to_string<int>((char*) "images/temp_results/newphi", currIter, (char*) ".png");
-                    ImageManager::writeImage((char*) name.c_str(), arr_img_out, FIF_PNG, width, height);
-                }
-            }
-
             vecEvPrevAvgInOut.clear();
-            vecEvAvg.clear();
-            vecEvCurvF.clear();
-            vecEvMaxF.clear();
-            vecEvDphiDt.clear();
-            vecEvMaxDphiDt.clear();
-            vecEvNewPhi.clear();
-            vecEvSmPhi.clear();
-
-            vecEvPrevAvgInOut.push_back(evSmoothPhi);
-
+            vecEvPrevAvg.clear();
+            vecEvPrevCurvature.clear();
+            vecEvPrevF.clear();
+            vecEvPrevMaxF.clear();
+            vecEvPrevDphiDt.clear();
+            vecEvPrevMaxDphiDt.clear();
+            vecEvPrevNewPhi.clear();
+            vecEvPrevSmPhi.clear();
+            vecEvPrevSDF.clear();
+            vecEvPrevPrinting.clear();
+            vecEvPrevTextToBuffer.clear();
         }//Main loop
+		
+		cout << "Done ..................." << endl;
 
-        //Copying result to final texture
-        queue->finish();
-        copySegToText();
+		if (WRITE) {
+			cout << "--------------------Writing new PHI as images in images/temp_results/newPhi/" << endl;
 
-        //Only in the last iteration we save the final output and delete the arrays
-//        if (currIter == totalIterations) {
-        if (false){
-
-            cout << "Last iteration, cleaning objects....... " << endl;
-            res = queue->enqueueReadImage(img_phi,
-                    CL_TRUE, origin, region, 0, 0, (void*) arr_img_out, &vecEvPrevAvgInOut, 0);
-
-            ImageManager::writeImage((char*) outputFile, arr_img_out,
-                    FIF_PNG, width, height);
-
-            delete[] arr_img_phi;
-            delete[] arr_buf_mask;
-            delete[] arr_max_F;
-            delete[] arr_avgInOutByGrp;
-        }
-
-        if (usingOGL) {
-            queue->finish(); //Be sure we finish everything
-            err = queue->enqueueReleaseGLObjects(&cl_textures, NULL, 0);
-        }
-
+			vecEvPrevPrinting.push_back(evAvgInOut_SmoothPhi);
+			//Reads from buf_phi (GPU) and writes to arr_img_out (Host)
+            res = queue->enqueueReadBuffer(buf_smooth_phi, CL_TRUE, 0, sizeof (float) *buf_size, 
+					(void*) arr_img_out, &vecEvPrevPrinting, 0);
+			// Prints image into png file
+			ImageManager::write3DImage((char*) "images/temp_results/newPhi/", arr_img_out, width, height, depth, 0);
+		}
+		queue->finish(); //Be sure we finish everything
+		exit(0);
+		err = queue->enqueueReleaseGLObjects(&cl_textures, NULL, 0);
+		
     } catch (cl::Error ex) {
         cout << "EXCEPTION" << endl;
         clMan.printError(ex);
         return;
     }
-
-
 }
 
-/**
- * This function reads data from the current segmentation (img_phi)
- * and the input image (img_in_gl) and merge the values
- * to draw the contour of the segmentation into img_phi_gl
- * Depending on the 'threshold' is what we take as contour
- */
-void ActiveContours::copySegToText() {
-    if (WRITE) {
-        cout << "----------- Copying current segmentation------------" << endl;
-    }
-    try {
-        cl::CommandQueue* queue = clMan.getQueue();
-        cl::Program* program = clMan.getProgram();
-
-        cl::Kernel kernelBufToText(*program, (char*) "segmToTexture");
-        kernelBufToText.setArg(0, img_phi);
-        kernelBufToText.setArg(1, img_in_gl);
-        kernelBufToText.setArg(2, img_phi_gl);
-
-        // Do the work
-        queue->enqueueNDRangeKernel(
-                kernelBufToText,
-                cl::NullRange,
-                cl::NDRange((size_t) width, (size_t) height),
-                cl::NDRange((size_t) grp_size_x, (size_t) grp_size_y),
-                NULL,
-                NULL);
-
-    } catch (cl::Error ex) {
-        clMan.printError(ex);
-    }
-}
-
-cl::Event ActiveContours::copyBufToImg(cl::Buffer& buf, cl::Image2D& img, vector<cl::Event> vecEvPrev, bool bufHasAllBands) {
+cl::Event ActiveContours::copyBufToImg(cl::Buffer& buf, cl::Image3D& img, vector<cl::Event> vecEvPrev, bool bufHasAllBands) {
     if (WRITE) {
         cout << "----------- Copying buffer to image------------" << endl;
     }
@@ -537,7 +404,7 @@ cl::Event ActiveContours::copyBufToImg(cl::Buffer& buf, cl::Image2D& img, vector
     try {
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
-
+		
         cl::Kernel kernelBufToText(*program, (char*) "bufToText");
         kernelBufToText.setArg(0, buf);
         kernelBufToText.setArg(1, img);
@@ -546,44 +413,60 @@ cl::Event ActiveContours::copyBufToImg(cl::Buffer& buf, cl::Image2D& img, vector
 		//If false, then we assume the buffer only contains one band and we copy
 		//it to the rest of the channels.
         kernelBufToText.setArg(4, (int)bufHasAllBands);
-
+		
         // Do the work
         queue->enqueueNDRangeKernel(
-                kernelBufToText,
+		kernelBufToText,
                 cl::NullRange,
                 cl::NDRange((size_t) width, (size_t) height),
                 cl::NDRange((size_t) grp_size_x, (size_t) grp_size_y),
                 &vecEvPrev,
                 &evBufToText);
-
+		
     } catch (cl::Error ex) {
         clMan.printError(ex);
     }
     return evBufToText;
 }
 
-cl::Event ActiveContours::copyTextToBuf(cl::Image2DGL& text, cl::Buffer& buf, vector<cl::Event> vecEvPrev) {
-    if (WRITE) {
-        cout << "----------- Copying texture to buffer ------------" << endl;
-    }
+/**
+ * This function simply prints the current NDRanges that are being used
+ */
+void ActiveContours::printNDRanges(int cols, int rows, int z, 
+								int grp_cols, int grp_rows, int grp_z){
+	dout << "NDRange = " << cols << " \t " << rows << " \t " << z << endl;
+	dout << "NDGrps= " << grp_cols << " \t " << grp_rows << " \t " <<  grp_z << endl;
+}
+/**
+ * Copies a 3D texture into a buffer
+ */
+cl::Event ActiveContours::copyTextToBuf(cl::Image3DGL& text, cl::Buffer& buf, vector<cl::Event> vecEvPrev) {
+
     cl::Event evBufToText;
     try {
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
-
+		
         cl::Kernel kernelBufToText(*program, (char*) "textToBuf");
         kernelBufToText.setArg(0, text);
         kernelBufToText.setArg(1, buf);
-        kernelBufToText.setArg(2, 255); //Multiply each value by 255 TODO (put as parameter)
+		
+		dout << "Copying 3D Image to buffer (copyTextToBuf)" << endl;
+
+		while(buf_size % dev_max_work_items != 0){
+			dev_max_work_items--;
+		}
+
+		printNDRanges(buf_size, 0, 0, dev_max_work_items, 0, 0);
 
         queue->enqueueNDRangeKernel(
-                kernelBufToText,
+		kernelBufToText,
                 cl::NullRange,
-                cl::NDRange((size_t) width, (size_t) height),
-                cl::NDRange((size_t) grp_size_x, (size_t) grp_size_y),
+                cl::NDRange((size_t) buf_size),
+                cl::NDRange((size_t) dev_max_work_items),
                 &vecEvPrev,
                 &evBufToText);
-
+		
     } catch (cl::Error ex) {
         clMan.printError(ex);
     }
@@ -593,138 +476,56 @@ cl::Event ActiveContours::copyTextToBuf(cl::Image2DGL& text, cl::Buffer& buf, ve
 /**
  * This method obtains the average pixel value of the input image for the pixels
  * 'outside' and 'inside' the mask.
- * @param img_mask cl::Image2D& Reference to the mask image
- * @param img_in   cl::Image2D& Reference to the input image
+ * @param buf_phi cl::Buffer& Reference to the SDF buffer
+ * @param buf_img_in  cl::Buffer& Reference to the input image buffer
  * @param vecPrevEvents vector<cl::Event> List of events that need to be finished before start
  * @return cl::Event Last event required to compute the averages.
  */
-cl::Event ActiveContours::compAvgInAndOut(cl::Image2D& img_phi, cl::Image2D& img_in,
-        vector<cl::Event> vecPrevEvents, bool useAllBands) {
+cl::Event ActiveContours::compAvgInAndOut(cl::Buffer& buf_phi, cl::Buffer& buf_img_in,
+        vector<cl::Event> vecPrevEvents) {
+	
+	dout << "Computing average pixel value for Phi > 0 and Phi < 0 ......" << endl;
 
-    if (WRITE) {
-        cout << "Computing average pixel value for Phi > 0 and Phi < 0 ......" << endl;
-    }
-
-    cl::Event evStep2Avg;
+	cl::Event evAvgInOut_SmoothPhi;
     try {
-        int initSize = tot_grps_x * tot_grps_y * 2; //
-
-
-        cl::Context* context = clMan.getContext();
+		// We are doing the average using just one Group. 
+		// The threads on that group will change the memory they use to compute the avg
+		
+		//If we want to fill the local memory how many cells can a work item compute
+		int cellsPerWorkItem = floor(dev_max_local_mem/dev_max_work_items);
+		
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
+		
+        cl::Kernel kernelAVGcolor(*program, (char*) "avgInOut");
+        kernelAVGcolor.setArg(0, buf_phi);//SDF
+        kernelAVGcolor.setArg(1, buf_img_in);//Texture data
+        kernelAVGcolor.setArg(2, buf_avg_in_out);//Output variable
+        kernelAVGcolor.setArg(3, buf_size);//Total number of values 
+        kernelAVGcolor.setArg(4, cellsPerWorkItem);//Cells to compute in each iteration
+		
+		//We need to create an artificial increased size to get perfect fit
+		int incSize = dev_max_work_items*(ceil(buf_size/dev_max_work_items));
 
-        // This array will be used to count the pixel of each local sum
-        int* arr_avg_count = new int[initSize];
-        cl::Buffer buf_avg_count = cl::Buffer(*context, CL_MEM_READ_WRITE,
-                (size_t) initSize * sizeof (int), NULL, &err);
+		dout << "Max work items per group: " << dev_max_work_items << endl; 
+		dout << "Size: " << buf_size << endl; 
+		dout << "incSize: " << incSize << endl; 
+		dout << "Cells to compute per work item:" << cellsPerWorkItem << endl;
+		dout << "buf_avg_in_out size: " << 4 << endl;
 
-
-        cl::Kernel kernelAVGcolor(*program, (char*) "Step1AvgInOut");
-        kernelAVGcolor.setArg(0, img_phi);
-        kernelAVGcolor.setArg(1, img_in);
-        kernelAVGcolor.setArg(2, buf_avg_in_out);
-        kernelAVGcolor.setArg(3, buf_avg_count);
-        kernelAVGcolor.setArg(4, (int)useAllBands);
-
-        cl::Event evStep1Avg;
         queue->enqueueNDRangeKernel(
-                kernelAVGcolor,
+		kernelAVGcolor,
                 cl::NullRange,
-                cl::NDRange((size_t) width, (size_t) height),
-                cl::NDRange((size_t) grp_size_x, (size_t) grp_size_y),
+                cl::NDRange((size_t) dev_max_work_items),
+                cl::NDRange((size_t) dev_max_work_items),
                 &vecPrevEvents,
-                &evStep1Avg);
-
-
-        vector<cl::Event> vecStep1Avg;
-        vecStep1Avg.push_back(evStep1Avg);
-
-        int curr_size = tot_grps_x * tot_grps_y * 2;
-
-        int loc_tot_grps_x = 0;
-        int loc_tot_grps_y = 0;
-
-        int loc_grp_size_x = 0;
-        int loc_grp_size_y = 0;
-
-        cl::Kernel kernelAVGcolorStep2(*program, (char*) "Step2AvgInOut");
-        kernelAVGcolorStep2.setArg(0, buf_avg_in_out);
-        kernelAVGcolorStep2.setArg(1, buf_avg_count);
-
-        //Set the events for the second kernel
-        vector<cl::Event> vecStep2Avg;
-        vecStep2Avg.push_back(evStep1Avg);
-
-        do {
-            // Updating the dimensions
-            clMan.getGroupSize(max_warp_size, curr_size, 1,
-                    loc_grp_size_x, loc_grp_size_y, loc_tot_grps_x, loc_tot_grps_y, false);
-
-            if (WRITE) {
-                cout << endl << "----------- Current Size: " << curr_size << "------------" << endl;
-                cl::Event evReadAvg;
-                cl::Event evReadCount;
-
-                res = queue->enqueueReadBuffer(buf_avg_in_out,
-                        CL_TRUE, (size_t) 0, (size_t) (sizeof (float) *curr_size),
-                        (void*) arr_avgInOutByGrp, &vecStep2Avg, &evReadAvg);
-
-                res = queue->enqueueReadBuffer(buf_avg_count,
-                        CL_TRUE, (size_t) 0, (size_t) (sizeof (float) *curr_size),
-                        (void*) arr_avg_count, &vecStep2Avg, &evReadCount);
-
-                //				vecReadBuf.push_back(evReadAvg);
-                //				vecReadBuf.push_back(evReadCount);
-                //                queue->enqueueWaitForEvents(vecReadBuf);
-
-                float countIn = 0;
-                float countOut = 0;
-
-                float avgIn = 0;
-                float avgOut = 0;
-
-                for (int j = 0; j < curr_size - 1; j += 2) {
-                    //					cout << arr_avgInOutByGrp[j] << "\t" << arr_avgInOutByGrp[j+1] << endl;
-                    if (arr_avg_count[j] != 0) {
-                        avgIn += arr_avgInOutByGrp[j];
-                        countIn += arr_avg_count[j];
-                    }
-                    if (arr_avg_count[j + 1] != 0) {
-                        avgOut += arr_avgInOutByGrp[j + 1];
-                        countOut += arr_avg_count[j + 1];
-                    }
-                }
-                cout << "Sum in =" << avgIn << " Sum out=" << avgOut << endl;
-                cout << "Count in =" << countIn << " Count out=" << countOut << endl;
-
-                avgIn = avgIn / countIn;
-                avgOut = avgOut / countOut;
-                cout << "Avg in =" << avgIn << " out=" << avgOut << endl;
-            }
-
-            queue->enqueueNDRangeKernel(
-                    kernelAVGcolorStep2,
-                    cl::NullRange,
-                    cl::NDRange((size_t) curr_size, (size_t) 1),
-                    cl::NDRange((size_t) loc_grp_size_x, (size_t) loc_grp_size_y),
-                    &vecStep2Avg,
-                    &evStep2Avg);
-
-            vecStep2Avg.push_back(evStep2Avg);
-            //queue->enqueueWaitForEvents(vecStep2Avg);
-            //queue->enqueueBarrierWithWaitList(&vecStep2Avg);
-            vecStep2Avg.clear();
-
-            curr_size = loc_tot_grps_x * loc_tot_grps_y * 2;
-        } while (loc_tot_grps_x * loc_tot_grps_y > 1);
-
-
+                &evAvgInOut_SmoothPhi);
+		
     } catch (cl::Error ex) {
         cout << "Error at compAvgInandOut" << endl;
         clMan.printError(ex);
     }
-    return evStep2Avg;
+    return evAvgInOut_SmoothPhi;
 }
 
 cl::Event ActiveContours::smoothPhi(vector<cl::Event> vecEvPrev, float alpha) {
@@ -735,21 +536,31 @@ cl::Event ActiveContours::smoothPhi(vector<cl::Event> vecEvPrev, float alpha) {
     try {
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
-
+		
         cl::Kernel kernelSmoothPhi(*program, (char*) "smoothPhi");
-        kernelSmoothPhi.setArg(0, img_newphi);
-        kernelSmoothPhi.setArg(1, img_phi);
+        kernelSmoothPhi.setArg(0, buf_phi);
+        kernelSmoothPhi.setArg(1, buf_smooth_phi);
         kernelSmoothPhi.setArg(2, alpha);
-
+        kernelSmoothPhi.setArg(3, width);
+        kernelSmoothPhi.setArg(4, height);
+        kernelSmoothPhi.setArg(5, depth);
+	
+		int threads = height*depth;
+		int threadsPerGroup = dev_max_work_items;
+		while( threads % threadsPerGroup != 0){
+			threadsPerGroup --;
+		}
+		dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
+	
         // Do the work
         queue->enqueueNDRangeKernel(
-                kernelSmoothPhi,
+		kernelSmoothPhi,
                 cl::NullRange,
-                cl::NDRange((size_t) width, (size_t) height),
-                cl::NDRange((size_t) grp_size_x, (size_t) grp_size_y),
+                cl::NDRange((size_t) threads),
+                cl::NDRange((size_t) threadsPerGroup),
                 &vecEvPrev,
                 &evSmooth);
-
+		
     } catch (cl::Error ex) {
         clMan.printError(ex);
     }
@@ -760,101 +571,115 @@ cl::Event ActiveContours::compNewPhi(vector<cl::Event> vecEvPrev) {
     if (WRITE) {
         cout << "----------- Computing new phi ------------" << endl;
     }
-    cl::Event evNewPhi;
+    cl::Event evSDF_newPhi;
     try {
-        cl::Context* context = clMan.getContext();
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
-
-        cl::Sampler sampler(*context, CL_FALSE,
-                CL_ADDRESS_REPEAT, CL_FILTER_NEAREST, &err);
-
+		
         cl::Kernel kernelDphiDt(*program, (char*) "newphi");
-        kernelDphiDt.setArg(0, img_phi);
-        kernelDphiDt.setArg(1, img_dphidt);
-        kernelDphiDt.setArg(2, img_newphi);
-        kernelDphiDt.setArg(3, sampler);
-        kernelDphiDt.setArg(4, buf_max_dphidt);
+        kernelDphiDt.setArg(0, buf_phi);
+        kernelDphiDt.setArg(1, buf_dphidt);
+        kernelDphiDt.setArg(2, buf_max_dphidt);
+        kernelDphiDt.setArg(3, width);
+        kernelDphiDt.setArg(4, height);
+
+		int threads = height*depth;
+		int threadsPerGroup = dev_max_work_items;
+		while( threads % threadsPerGroup != 0){
+			threadsPerGroup --;
+		}
+		dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
 
         // Do the work
         queue->enqueueNDRangeKernel(
-                kernelDphiDt,
+		kernelDphiDt,
                 cl::NullRange,
-                cl::NDRange((size_t) width, (size_t) height),
-                cl::NDRange((size_t) grp_size_x, (size_t) grp_size_y),
+                cl::NDRange((size_t) threads),
+                cl::NDRange((size_t) threadsPerGroup),
                 &vecEvPrev,
-                &evNewPhi);
-
+                &evSDF_newPhi);
+		
     } catch (cl::Error ex) {
         clMan.printError(ex);
     }
-    return evNewPhi;
+    return evSDF_newPhi;
 }
 
 cl::Event ActiveContours::compDphiDt(vector<cl::Event> vecEvPrev) {
     cl::Event evCompDphiDt;
     try {
-        cl::Context* context = clMan.getContext();
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
-
-        cl::Sampler sampler(*context, CL_FALSE,
-                CL_ADDRESS_REPEAT, CL_FILTER_NEAREST, &err);
-
+		
         cl::Kernel kernelDphiDt(*program, (char*) "dphidt");
-        kernelDphiDt.setArg(0, img_phi);
-        kernelDphiDt.setArg(1, img_curv_F);
-        kernelDphiDt.setArg(2, img_dphidt);
-        kernelDphiDt.setArg(3, buf_F);
-        kernelDphiDt.setArg(4, sampler);
-        kernelDphiDt.setArg(5, alpha);
+        kernelDphiDt.setArg(0, buf_curvature);
+        kernelDphiDt.setArg(1, buf_F);
+        kernelDphiDt.setArg(2, buf_max_F);
+        kernelDphiDt.setArg(3, buf_dphidt);
+        kernelDphiDt.setArg(4, alpha);
+        kernelDphiDt.setArg(5, width);
+        kernelDphiDt.setArg(6, height);
 
-        // Do the work
+		int threads = height*depth;
+		int threadsPerGroup = dev_max_work_items;
+		while( threads % threadsPerGroup != 0){
+			threadsPerGroup --;
+		}
+		dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
+
         queue->enqueueNDRangeKernel(
-                kernelDphiDt,
+		kernelDphiDt,
                 cl::NullRange,
-                cl::NDRange((size_t) width, (size_t) height),
-                cl::NDRange((size_t) grp_size_x, (size_t) grp_size_y),
+                cl::NDRange((size_t) threads),
+                cl::NDRange((size_t) threadsPerGroup),
                 &vecEvPrev,
                 &evCompDphiDt);
-
+		
     } catch (cl::Error ex) {
         clMan.printError(ex);
     }
     return evCompDphiDt;
 }
 
-cl::Event ActiveContours::compCurvAndF(vector<cl::Event> vecEvPrev, bool useAllBands) {
-
+/**
+ * Computes the curvature of phi (buf_phi). Each thread computes a row of the image
+ * Input buf_phi
+ * Output buf_curvature
+ * @param vecEvPrev Events that are required to finish befor computing the curvature 
+ * 					It depends on the previous computation of buf_phi
+ * @return 
+ */
+cl::Event ActiveContours::compCurvature(vector<cl::Event> vecEvPrev) {
+	
     cl::Event evCurvF;
-    if (WRITE) {
-        cout << endl << " ----------------- Computing Curvature and F ---------" << endl;
-    }
+	dout << endl << " ----------------- Computing Curvature ---------" << endl;
+
     try {
-        cl::Context* context = clMan.getContext();
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
-
-        cl::Sampler sampler(*context, CL_FALSE,
-                CL_ADDRESS_REPEAT, CL_FILTER_NEAREST, &err);
-
-        cl::Kernel kernelCurvAndF(*program, (char*) "CurvatureAndF");
-        kernelCurvAndF.setArg(0, img_phi);
-        kernelCurvAndF.setArg(1, img_in);
-        kernelCurvAndF.setArg(2, img_curv_F);
-        kernelCurvAndF.setArg(3, sampler);
-        kernelCurvAndF.setArg(4, buf_avg_in_out); // TODO SEND just a subbuffer
-        kernelCurvAndF.setArg(5, (int)useAllBands); // TODO SEND just a subbuffer
-
+		
+        cl::Kernel kernelCurvature(*program, (char*) "curvature");
+        kernelCurvature.setArg(0, buf_phi);
+        kernelCurvature.setArg(1, buf_curvature);
+        kernelCurvature.setArg(2, width);
+        kernelCurvature.setArg(3, height);
+        kernelCurvature.setArg(4, depth);
+		
+		int threads = height*depth;
+		int threadsPerGroup = dev_max_work_items;
+		while( threads % threadsPerGroup != 0){
+			threadsPerGroup --;
+		}
+		dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
 
         queue->enqueueNDRangeKernel(
-                kernelCurvAndF,
+		kernelCurvature,
                 cl::NullRange,
-                cl::NDRange((size_t) width, (size_t) height),
-                cl::NDRange((size_t) grp_size_x, (size_t) grp_size_y),
+                cl::NDRange((size_t) threads),
+                cl::NDRange((size_t) threadsPerGroup),
                 &vecEvPrev,
                 &evCurvF);
-
+		
     } catch (cl::Error ex) {
         clMan.printError(ex);
     }
@@ -862,123 +687,46 @@ cl::Event ActiveContours::compCurvAndF(vector<cl::Event> vecEvPrev, bool useAllB
 }
 
 /**
- * Computes the maximum value of a float array. 
- * 
- * @param buf_in
- * @param curr_size
- * @param absVal
+ * Computes the force of image formation (I-u)^2 - (I-v)^2
+ * @param vecEvPrev Depends on the computation of the average in and out
  * @return 
  */
-cl::Event ActiveContours::compArrMaxReduction(cl::Buffer& buf_in, int curr_size, bool absVal,
-        vector<cl::Event> vecPrev) {
+cl::Event ActiveContours::compF(vector<cl::Event> vecEvPrev) {
+	
+    cl::Event evCompF;
+	dout << endl << " ----------------- Computing F ---------" << endl;
 
-    //Block size is the number of cells that each tread is going to check 
-    int maxBlockSize = 128; //TODO set this as a global variable (think best option)
+    try {
+        cl::CommandQueue* queue = clMan.getQueue();
+        cl::Program* program = clMan.getProgram();
+		
+        cl::Kernel kernelCurvature(*program, (char*) "compF");
+        kernelCurvature.setArg(0, buf_avg_in_out);
+        kernelCurvature.setArg(1, buf_img_in);
+        kernelCurvature.setArg(2, buf_F);
+        kernelCurvature.setArg(3, width);
+        kernelCurvature.setArg(4, height);
+        kernelCurvature.setArg(5, depth);
+		
+		int threads = height*depth;
+		int threadsPerGroup = dev_max_work_items;
+		while( threads % threadsPerGroup != 0){
+			threadsPerGroup --;
+		}
+		dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
 
-    int block = min(curr_size, maxBlockSize);
-
-    while (curr_size % block != 0) {
-        block--;
+        queue->enqueueNDRangeKernel(
+		kernelCurvature,
+                cl::NullRange,
+                cl::NDRange((size_t) threads),
+                cl::NDRange((size_t) threadsPerGroup),
+                &vecEvPrev,
+                &evCompF);
+		
+    } catch (cl::Error ex) {
+        clMan.printError(ex);
     }
-
-    if (WRITE) {
-        cout << "----- Computing maximum of an array ------------" << endl;
-        //        cout << " Final block size: " << block << endl;
-    }
-
-    int loc_tot_grps_x = 0;
-    int loc_tot_grps_y = 0;
-
-    int loc_grp_size_x = 0;
-    int loc_grp_size_y = 0;
-
-    cl::CommandQueue* queue = clMan.getQueue();
-    cl::Program* program = clMan.getProgram();
-
-    cl::Kernel kernelArrMax(*program, (char*) "ArrMaxFloat");
-    kernelArrMax.setArg(0, buf_in);
-    kernelArrMax.setArg(1, block);
-    kernelArrMax.setArg(2, curr_size);
-    kernelArrMax.setArg(3, absVal ? 1 : 0);
-
-    //Set the events for the second kernel
-
-    cl::Event evMaxEven;
-    cl::Event evMaxOdd;
-    cl::Event evLast;
-
-    vector<cl::Event> vecEvMaxEven = vecPrev; // Used for even iterations
-    vector<cl::Event> vecEvMaxOdd; // Used for odd iterations
-    vector<cl::Event> vecLast; // Always used
-
-    int iter = 0;
-
-    int num_threads = curr_size / block; //Number of threads to use
-
-    while (curr_size > 1) {
-
-        clMan.getGroupSize(max_warp_size, num_threads, 1,
-                loc_grp_size_x, loc_grp_size_y, loc_tot_grps_x, loc_tot_grps_y, false);
-
-        if (iter % 2 == 0) {//This will be run at the first iteration
-            queue->enqueueNDRangeKernel(
-                    kernelArrMax,
-                    cl::NullRange,
-                    cl::NDRange((size_t) num_threads, (size_t) 1),
-                    cl::NDRange((size_t) loc_grp_size_x, (size_t) loc_grp_size_y),
-                    &vecEvMaxEven,
-                    &evMaxEven);
-
-            evLast = evMaxEven;
-            vecEvMaxOdd.clear();
-            vecEvMaxOdd.push_back(evMaxEven);
-
-            vecLast.clear();
-            vecLast.push_back(evMaxEven);
-        } else {
-            queue->enqueueNDRangeKernel(
-                    kernelArrMax,
-                    cl::NullRange,
-                    cl::NDRange((size_t) num_threads, (size_t) 1),
-                    cl::NDRange((size_t) loc_grp_size_x, (size_t) loc_grp_size_y),
-                    &vecEvMaxOdd,
-                    &evMaxOdd);
-
-            evLast = evMaxOdd;
-            vecEvMaxEven.clear();
-            vecEvMaxEven.push_back(evMaxOdd);
-
-            vecLast.clear();
-            vecLast.push_back(evMaxOdd);
-        }
-
-        // TODO verify that this is always correct ( the new size is always
-        // the previous number of threads
-        curr_size = num_threads;
-        block = min(curr_size, maxBlockSize);
-        num_threads = ceil(curr_size / block); //Number of threads to use
-
-        if (WRITE) {
-            float* result = new float[curr_size];
-            res = queue->enqueueReadBuffer(buf_in,
-                    CL_TRUE, (size_t) 0, (size_t) (sizeof (float) *curr_size),
-                    (void*) result, &vecLast, 0);
-
-            float max_value = 0;
-            cout << "---- Current size: " << curr_size << endl;
-            for (int i = 0; i < curr_size; i++) {
-                cout << result[i] << endl;
-                if (result[i] > max_value) {
-                    max_value = result[i];
-                }
-            }
-            cout << "Max value: " << max_value << endl;
-            delete[] result;
-        }
-        iter++;
-    }
-
-    return evLast;
+    return evCompF;
 }
 
 /**
@@ -991,146 +739,116 @@ cl::Event ActiveContours::compArrMaxReduction(cl::Buffer& buf_in, int curr_size,
  * @param absVal
  * @return 
  */
-cl::Event ActiveContours::compImgMaxReduction(cl::Image2D& img, vector<cl::Event> vecEvPrev,
-        cl::Buffer& buf_out, int layer, bool absVal) {
-
+cl::Event ActiveContours::compReduce(cl::Buffer& buf, cl::Buffer& buf_out, 
+						bool absVal, vector<cl::Event> vecEvPrev) {
+	
     if (WRITE) {
-        cout << endl << "--------- Computing maximum value -------------" << endl;
+        cout << endl << "--------- Computing Reduce -------------" << endl;
     }
-
-    cl::Event evRedStep1;
-    cl::Event evRedStep2;
-
-    int local_grp_size_x;
-    int local_grp_size_y;
-    int local_tot_grps_x;
-    int local_tot_grps_y;
-
-    // These part creates groups sizes that will use all the width of the image
-    CLManager::getGroupSize(max_warp_size, width, 1, local_grp_size_x, local_grp_size_y, local_tot_grps_x, local_tot_grps_y, WRITE);
-
-    int size_array = (int) local_tot_grps_x;
-
+    	
+	cl::Event evReduce;
     try {
-        cl::Context* context = clMan.getContext();
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
+		
+		int length = width*height*depth;
+		int threadsPerGroup = min(dev_max_work_items,length);
+		int threads = threadsPerGroup;//We only want one group
 
-        cl::Kernel kernelMaxValue(*program, (char*) "ImgColMax");
+		dout << "Threads: " << threads << 
+				" Threads per group: " << threadsPerGroup << 
+				" Length: " << length << endl;
 
-        cl::Sampler sampler(*context, CL_FALSE,
-                CL_ADDRESS_REPEAT, CL_FILTER_NEAREST, &err);
-
-        kernelMaxValue.setArg(0, img);
-        kernelMaxValue.setArg(1, sizeof (float) * local_grp_size_x, NULL);
+        cl::Kernel kernelMaxValue(*program, (char*) "reduce");
+		
+        kernelMaxValue.setArg(0, buf);
+        kernelMaxValue.setArg(1, sizeof (float) * threadsPerGroup, NULL);
         kernelMaxValue.setArg(2, buf_out);
-        kernelMaxValue.setArg(3, sampler);
-        kernelMaxValue.setArg(4, layer); //Layer 1 'Red', 2 'Green', 3 'Blue', etc.
-        kernelMaxValue.setArg(5, absVal ? 1 : 0); // Don't use absolute value
-
+        kernelMaxValue.setArg(3, length);
+        kernelMaxValue.setArg(4, absVal ? 1 : 0); // Don't use absolute value
+		
         // Do the work
         queue->enqueueNDRangeKernel(
-                kernelMaxValue,
+		kernelMaxValue,
                 cl::NullRange,
-                cl::NDRange((size_t) width, (size_t) 1),
-                cl::NDRange((size_t) local_grp_size_x, (size_t) 1),
+                cl::NDRange((size_t) threads),
+                cl::NDRange((size_t) threadsPerGroup),
                 &vecEvPrev,
-                &evRedStep1);
-
-        vector<cl::Event> vecEvRedStep1;
-        vecEvRedStep1.push_back(evRedStep1);
-
-        if (WRITE) {
-            float* result = new float[size_array];
-            res = queue->enqueueReadBuffer(buf_out,
-                    CL_TRUE, (size_t) 0, (size_t) (sizeof (float) *size_array),
-                    (void*) result, &vecEvRedStep1, 0);
-
-            float max_value = 0;
-            cout << "---- Current size: " << size_array << endl;
-            for (int i = 0; i < size_array; i++) {
-                if (result[i] > max_value) {
-                    max_value = result[i];
-                }
-            }
-            cout << "Max value: " << max_value << endl;
-            delete[] result;
-        }
-
-        if (size_array > 1) {//If there is only one element, then we already have the maximum
-            evRedStep2 = compArrMaxReduction(buf_out, size_array, absVal, vecEvRedStep1);
-        } else {
-            evRedStep2 = evRedStep1; //If we didn't make step 2, then the event to wait is event 1
-        }
-
+                &evReduce);
+		
     } catch (cl::Error ex) {
         clMan.printError(ex);
     }
-
-    return evRedStep2;
+	
+    return evReduce;
 }
 
-void ActiveContours::createRGBAMask(int width, int height, int xstart, int xend,
-        int ystart, int yend) {
-
-    arr_buf_mask = new float[width * height];
-
+/**
+ * Creates a 'cube' mask from a 3D space. The cube is filled with
+ * ones and the rest is filled with 0's
+ * @param width
+ * @param height
+ * @param depth
+ * @param rowStart X start position of the cube 
+ * @param rowEnd Y start position of the cube 
+ * @param colStart Y start position of the cube 
+ * @param colEnd Y end position of the cube 
+ * @param depthStart Z start position of the cube 
+ * @param depthEnd Z end position of the cube 
+ */
+void ActiveContours::create3DMask(int width, int height, int depth,
+		int colStart, int colEnd, int rowStart, int rowEnd, int depthStart, int depthEnd) {
+	
+    arr_buf_mask = new unsigned char[width * height * depth];
+	
     //Update local width and height of the image
     width = width;
     height = height;
-
-    int size = width * height;
+    depth  = depth;
+	
+    int size = width * height * depth;
     int indx = 0;
+	
+    cout << "--------------------- Creating mask (" << width << "," 
+			<< height << "," << depth << ") ----------" << endl;
 
-    cout << "--------------------- Creating mask (" << width << "," << height << ") ----------" << endl;
-    dout << "xmin: " << xstart << " xmax: " << xend << endl;
-    dout << "ymin: " << ystart << " ymax: " << yend << endl;
-
+    dout << "col min: " << colStart << " col max: " << colEnd << endl;
+    dout << "row min: " << rowStart << " row max: " << rowEnd << endl;
+    dout << "depth min: " << depthStart << " depth max: " << depthEnd << endl;
+	
     //Initialize to 0
     for (int i = 0; i < size; i++) {
         arr_buf_mask[i] = 0; // Red value
     }
-
-    //Set the internal mask to 255
-    for (int i = ystart; i < yend; i++) {
-        for (int j = xstart; j < xend; j++) {
-            indx = ImageManager::indxFromCoord(width, i, j, 1);
-            arr_buf_mask[indx] = 255; //R
+	
+    //Set the internal mask to 1
+	for (int z = depthStart; z < depthEnd; z++) {
+		for (int row = colStart; row < colEnd; row++) {
+			indx = ImageManager::indxFromCoord3D(width, height, row, rowStart, z);
+			for (int col = rowStart; col < rowEnd; col++) {
+				arr_buf_mask[indx] = 1; //R
+				indx = indx + 1;
+			}
         }
     }
-
-   //if (PRINT_IMG_VAL) {
-        //cout << "Mask (just after creating it)" << endl;;
-        //ImageManager::printImage(width, height, arr_buf_mask, 1);
-    //}
+	
 }
 
-/*
-   float* ActiveContours::createRGBAMask(int width, int height, int xstart, int xend,
-   int ystart, int yend) {
-   int dim = 4; // RGBA dimension
-   float* mask = new float[width * height * dim];
-   int size = width * height*dim;
-   int indx = 0;
 
-   cout << " Creating mask...." << endl;
-   cout << "xmin: " << xstart << " xmax: " << xend << endl;
-   cout << "ymin: " << ystart << " ymin: " << yend << endl;
+void ActiveContours::printBuffer(cl::Buffer& buf, int size, vector<cl::Event> vecPrev){
+	
+    cl::CommandQueue* queue = clMan.getQueue();
 
-   for (int i = 0; i < size - dim; i += dim) {
-   mask[i] = 0; // Red value
-   mask[i + 1] = 0; //Green value
-   mask[i + 2] = 0; // Blue value
-   mask[i + 3] = 255; // Alpha value
-   }
-
-   for (int i = ystart; i < yend; i++) {
-   for (int j = xstart; j < xend; j++) {
-   indx = ImageManager::indxFromCoord(width, i, j, dim);
-   mask[indx] = 100;
-   }
-   }
-
-   return mask;
-   }
- */
+	float* result = new float[size];
+	dout << "Reading: " << size<< " elements" << endl;
+	res = queue->enqueueReadBuffer(buf,
+			CL_TRUE, (size_t) 0, (size_t) (sizeof(float)*size),
+			(void*) result, &vecPrev, 0);
+	
+	queue->finish();
+	
+	for(int i = 0; i< size; i++){
+		dout << "Value at i: " << i << " = " << result[i] << endl;
+	}
+	
+}

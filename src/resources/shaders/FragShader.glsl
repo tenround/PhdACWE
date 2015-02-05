@@ -6,49 +6,22 @@ smooth in vec4 theColor;
 layout (location = 0 ) out vec4 outputColor;
 
 //This part is for the textures
-in vec2 textCoord; //This is the texture coordinate
-uniform sampler2D textSampler;// Used to specify how to apply texture
+in vec3 textCoord; //This is the texture coordinate
 
-vec4 defaultMergeColorAndTexture(vec4 theColor, vec2 textCoord, sampler2D textSampler){
-    vec4 halfColor = 0.5*theColor;
-    vec4 halfText= 0.5*texture(textSampler, textCoord);
-    outputColor = halfText+halfColor; 
-    //outputColor = 2*halfText; 
-	return outputColor;
-}
-
-
-vec4 mergeCircleColorAndTexture(vec4 theColor, vec2 textCoord, sampler2D textSampler){
-
-	float dx = textCoord.x - 0.5;
-	float dy = textCoord.y - 0.5;
-	float dist = sqrt(dx*dx + dy*dy);
-	vec4 firstColor = vec4(1.0, 0.0, 0.0, 1.0);
-	vec4 secondColor = vec4(0.0, 0.0, 1.0, 1.0);
-	float start = 0;
-	float end = 1;
-
-	vec4 computedColor = mix(firstColor, secondColor, 
-							smoothstep( start, end, dist));
-
-    vec4 halfText= 0.5*texture(textSampler, textCoord);
-	computedColor = computedColor/2;
-    outputColor = halfText+computedColor; 
-	return outputColor;
-}
+uniform sampler3D textSampler;// Used to specify how to apply texture
 
 void main()
 {
-    vec4 halfColor = 0.5*theColor;
-    vec4 halfText= 0.5*texture(textSampler, textCoord);
-    outputColor = halfText+halfColor; 
-    //outputColor = 2*halfText; 
+    vec3 currTextCoord = textCoord;
+    vec4 textColor = texture(textSampler, currTextCoord);
+    vec4 tempcolor = vec4(0);
+    outputColor = vec4(textColor.r,textColor.r,textColor.r,1);
 
-	// Default behaviour, merges color and texture
-	//outputColor = defaultMergeColorAndTexture(theColor, textCoord, textSampler);
-
-	//------ Extra example (drawing a circle)--------
-	outputColor = mergeCircleColorAndTexture(theColor, textCoord, textSampler);
+    for(int i = 1; i < 100; i++){
+        currTextCoord.z = currTextCoord.z + i/200;
+        tempcolor = texture(textSampler, currTextCoord);
+        outputColor.x = outputColor.x + tempcolor;
+    }
 }
 
 
