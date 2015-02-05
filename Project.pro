@@ -1,7 +1,7 @@
 #OPENCL="/opt/AMDAPP/"
 OPENCL="/usr/local/cuda"
 GLM="/home/olmozavala/Dropbox/OzOpenCL/"
-OZLIB="/home/olmozavala/Dropbox/OzOpenCL/OZlib/"
+OZLIB="/home/olmozavala/Dropbox/OzOpenCL/OZlib"
 #This is used because I was getting the following erro (April 2014)
 # error running a compiled C++ file (uses OpenGL). Error: “Inconsistency detected by ld.so: dl-version.c: 224”
 

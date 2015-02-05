@@ -124,9 +124,6 @@ private:
 	GLuint normalUnif; 
 	GLuint normalHandle; 
 
-	//Delete Uniform for changing color of the billboards
-	GLuint defColorUnif;
-	
     GLuint samplerID[2];
 
     //GUI

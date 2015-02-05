@@ -418,9 +418,7 @@ void GLWidget::InitShaders() {
 	
     //Gets the uniform for the model to camera matrix (movement of each object)
     modelToCameraMatrixUnif = glGetUniformLocation(g_program.theProgram, "modelMatrix");
-    defColorUnif = glGetUniformLocation(g_program.theProgram, "defaultColor");
 	Tools::validateGLlocations(modelToCameraMatrixUnif, "modelMatrix");
-	Tools::validateGLlocations(defColorUnif, "defaultColor");
 	
     GLuint textSamplerUniform = glGetUniformLocation(g_program.theProgram, "textSampler");
 	Tools::validateGLlocations(textSamplerUniform, "textSampler");
@@ -627,15 +625,12 @@ void GLWidget::paintGL() {
         glBindSampler(textureId, samplerID[0]);
 		
         glBindVertexArray(vaoIdX); //First VAO setup (only one this time)
-		glUniform1i(defColorUnif ,1);
         glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
 		
         glBindVertexArray(vaoIdY); 
-		glUniform1i(defColorUnif ,2); 
         glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
 		
 		glBindVertexArray(vaoIdZ); 
-		glUniform1i(defColorUnif ,3); 
 		glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, 0);
 		
 		glDisable(GL_TEXTURE_3D);
