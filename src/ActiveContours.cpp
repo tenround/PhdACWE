@@ -9,8 +9,7 @@
 #define MAXDPHIDT 2
 
 // Writes is used to write results to disk
-#define WRITE true
-//#define WRITE true 
+#define WRITE false 
 // PRINT_IMG_VAL is used to print images values (only for very small images)
 #define PRINT_IMG_VAL false 
 
@@ -91,9 +90,11 @@ void ActiveContours::initImagesArraysAndBuffers(GLuint& tbo_in, GLuint& tbo_out,
 		
 		//Maps the 3D texture of OpenGL to a cl::Image3DGL object 
 		img_in_gl = cl::Image3DGL(*context, CL_MEM_READ_WRITE, GL_TEXTURE_3D, 0, tbo_in, &err);
+		img_phi_gl = cl::Image3DGL(*context, CL_MEM_READ_WRITE, GL_TEXTURE_3D, 0, tbo_out, &err);
 		
 		//Add the images to the vector of cl::Memory that is used to acquire and release ogl objects
 		cl_textures.push_back(img_in_gl);
+		cl_textures.push_back(img_phi_gl);
 		
 		buf_avg_in_out = cl::Buffer(*context, CL_MEM_READ_WRITE,
                 (size_t) 4* sizeof (float), NULL, &err);
@@ -203,6 +204,20 @@ void ActiveContours::runSDF() {
         }
 		
 		vecEvPrevCurvature.push_back(evSDF_newPhi);
+
+        // Copying result to GL 3d Texture
+		err = queue->enqueueAcquireGLObjects(&cl_textures, NULL, &evAcOGL);
+		queue->finish();
+
+        dout << "Initializing origin and region with " << width << "," << height << "," << depth << endl;
+        origin.push_back(0); origin.push_back(0); origin.push_back(0);
+        region.push_back(width); region.push_back(height); region.push_back(depth);
+
+        queue->enqueueCopyBufferToImage(buf_phi, img_phi_gl, (size_t)0, origin, 
+                            region,  &vecEvPrevCurvature, &evAcOGL);
+
+		err = queue->enqueueReleaseGLObjects(&cl_textures, NULL, 0);
+
         dout << "Out of ActiveContours initialization  SDF computed!......." << endl;
 		
     } catch (cl::Error ex) {
@@ -237,8 +252,7 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
 			queue->enqueueCopyImageToBuffer(img_in_gl, buf_img_in, origin, 
 								region, (size_t)0, &vecEvPrevTextToBuffer,&evCopyInGlToIn);
 
-//			if (WRITE) {//Writes the init image on the temporal folder
-			if (true) {//Writes the init image on the temporal folder
+			if (WRITE) {//Writes the init image on the temporal folder
 				vecEvPrevPrinting.push_back(evCopyInGlToIn);
 				res = queue->enqueueReadBuffer(buf_img_in, CL_TRUE, 0,
 						sizeof (float) *width*height*depth, (void*) arr_img_out, &vecEvPrevPrinting, 0);
@@ -385,8 +399,11 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
 			// Prints image into png file
 			ImageManager::write3DImage((char*) "images/temp_results/newPhi/", arr_img_out, width, height, depth, 0);
 		}
+
+        vecEvPrevCopyPhiBackToGL.push_back(evAvgInOut_SmoothPhi);
+        queue->enqueueCopyBufferToImage(buf_smooth_phi, img_phi_gl, (size_t)0, origin, 
+                            region, &vecEvPrevCopyPhiBackToGL, &evAcOGL);
 		queue->finish(); //Be sure we finish everything
-		exit(0);
 		err = queue->enqueueReleaseGLObjects(&cl_textures, NULL, 0);
 		
     } catch (cl::Error ex) {

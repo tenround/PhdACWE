@@ -66,7 +66,7 @@ private:
     
 	// Here we are using width*height*depth*8
     cl::Image3DGL img_in_gl;//This is the object that holds the 3D texture of the nii image
-    cl::Image2DGL img_phi_gl;//Output 
+    cl::Image3DGL img_phi_gl;//Output 
     cl::Image3D img_in;
     cl::Image3D img_phi;
     cl::Image3D img_mask;
@@ -147,6 +147,8 @@ private:
     vector<cl::Event> vecEvPrevPrinting;
     vector<cl::Event> vecEvPrevTextToBuffer;
     vector<cl::Event> vecEvPrevCopyBackTexture;
+    vector<cl::Event> vecEvPrevCopyPhiBackToGL;
+
     
 	cl::Event evAcOGL; //Event to aquire the input texture from OpenGL
     cl::Event evImgInWrt; //Event for writing the 'in' image

@@ -54,11 +54,9 @@ protected:
     void initMask();
     void InitShaders();
     void InitTextures();
-    void InitializeVertexBufferX();
-    void InitializeVertexBufferY();
-    void InitializeVertexBufferZ();
+    void initImgVaoBuffer();
     void initTextureCoords();
-    void InitializeSimpleVertexBuffer();
+    void initSegmVaoBuffer();
     void InitActiveCountours();
     void CreateSamplers();
     void printGLMmatrix(glm::mat4 matrix);
@@ -71,11 +69,14 @@ protected:
 private:
 
 	// 3D texturing
-	float* data3d;
+	float* img3DText;
+	float* result3DText;
 
 	GLuint tbo_in; //Texture buffer object
     GLuint tbo_out; //Texture buffer object
-    GLuint textureId;
+    GLuint imgTextId;
+    GLuint segTextId;
+    GLuint displaySegmUnif;
 
 	GLuint errCode; //Texture buffer object
 
@@ -89,17 +90,11 @@ private:
     ProgramData g_program;
     glm::vec3 offsets[1];
 
-	glm::mat4 vertexPlaneX;
-	glm::mat4 vertexPlaneY;
-	glm::mat4 vertexPlaneZ;
+	float vertexPlanes[32];
 	glm::mat4 vertexPosSelection;
 
-	glm::mat4x3  textCoordsPlane1;
-	glm::mat4x3  textCoordsPlane2;
-	glm::mat4x3  textCoordsPlane3;
-    GLuint vbo_tcord1;
-    GLuint vbo_tcord2;
-    GLuint vbo_tcord3;
+	float  txcoor[8*3];
+    GLuint vbo_tcords;
 
     //float textCoords[];
     //unsigned int vertexIndexes[];
@@ -107,17 +102,13 @@ private:
     float z;
     float hsize;
 
-    GLuint vbo_posX;
-    GLuint vbo_posY;
-    GLuint vbo_posZ;
+    GLuint vbo_pos;
     GLuint vbo_tcord;
     GLuint vbo_color;
     GLuint ebo; //Element buffer object
     GLuint vbo_selection;
 
-    GLuint vaoIdX;
-    GLuint vaoIdY;
-    GLuint vaoIdZ;
+    GLuint vaoId;
     GLuint vaoSimpleID;//Just used to display ROI
 
     	//Normal of billboard
