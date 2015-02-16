@@ -115,9 +115,9 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
  */
 void GLWidget::SelectImage() {
 	
-    QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/Box.nii";
+    //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/Box.nii";
     //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/Gradient.nii";
-    //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/SmallReal256.nii";
+    QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/SmallReal256.nii";
     //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/SmallReal16.nii";
 
 	/*
@@ -600,7 +600,7 @@ void GLWidget::paintGL() {
             ts.dumpTimings();
         }
 		
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClearColor(0.33f, 0.33f, 0.33f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 		
         glUseProgram(g_program.theProgram);

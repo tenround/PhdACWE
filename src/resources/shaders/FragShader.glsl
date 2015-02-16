@@ -23,9 +23,9 @@ void main()
     float count = 100;
     float gamma = 3;
     float decay = .5;
-    textColor.r = textColor.r*decay;
-    //textColor.r = textColor.r*(gamma/count);
-    outputColor = vec4(textColor.r, textColor.r, textColor.r, 0);
+    //textColor.r = textColor.r*decay;
+    textColor.r = textColor.r*(gamma/count);
+    outputColor = vec4(textColor.r,textColor.r, textColor.r, 1);
 
     float th= .001;
     //Directions are: (+R-L,+Near-Far,+Down-Up) but are been swapped below
@@ -45,7 +45,7 @@ void main()
 
     dir= finDir.xyz;
     float bthreshold = .1;// This is the threshold of the SDF to be displayed in red
-    vec4 mixVal = vec4(.5,0, 0, 0); 
+    vec4 mixVal = vec4(.005,0, 0, 0); 
     for(int i = 1; i < count; i++){
         currTextCoord = currTextCoord + dir;
         if( any(greaterThan(currTextCoord, maxCoords)) || 
@@ -54,13 +54,13 @@ void main()
         }else{
             //Verify we are not out of bounds
             textColor = texture(imgSampler, currTextCoord);
-            textColor.r = textColor.r*(decay/i);
-            //textColor.r = textColor.r*(gamma/count);
+            //textColor.r = textColor.r*(decay/i);
+            textColor.r = textColor.r*(gamma/count);
             outputColor = outputColor + vec4(textColor.r, textColor.r, textColor.r, 0);
             if(dispSegmentation == 1){
                 textColor = texture(segSampler, currTextCoord);
                 if( (textColor.r <= bthreshold) && (textColor.r <= bthreshold)){
-                    outputColor = mix(outputColor,vec4(textColor.r, 0, 0, 0),mixVal);
+                    outputColor = mix(outputColor,vec4(1, 0, 0, 0),mixVal);
                 }
             }
         }
