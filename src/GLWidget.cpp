@@ -126,9 +126,9 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
  */
 void GLWidget::SelectImage() {
 	
-    //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/Box.nii";
+    QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/Box.nii";
     //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/Gradient.nii";
-    QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/SmallReal256.nii";
+    //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/SmallReal256.nii";
     //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/SmallReal16.nii";
 
 	/*
@@ -186,15 +186,11 @@ void GLWidget::CreateSamplers() {
         glSamplerParameteri(samplerID[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glSamplerParameteri(samplerID[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		
-		glSamplerParameteri(samplerID[i], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glSamplerParameteri(samplerID[i], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glSamplerParameteri(samplerID[i], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glSamplerParameteri(samplerID[i], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		//glSamplerParameteri(samplerID[i], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		//glSamplerParameteri(samplerID[i], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     }
-	
-    //    Using GL_LINEAR interpolation for the sampler
-    //glSamplerParameteri(samplerID[0], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    //glSamplerParameteri(samplerID[0], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	//    glSamplerParameteri(samplerID[0], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//    glSamplerParameteri(samplerID[0], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
 void GLWidget::InitActiveCountours() {
@@ -282,7 +278,7 @@ void GLWidget::initTextureCoords(){
      //Side
     txcoorPlanes[12] = 0.5f; txcoorPlanes[15] = 0.5f; txcoorPlanes[18] = 0.5f; txcoorPlanes[21]  = 0.5f;
 	txcoorPlanes[13] = 0.0f; txcoorPlanes[16] = 1.0f; txcoorPlanes[19] = 1.0f; txcoorPlanes[22] = 0.0f;
-	txcoorPlanes[14] = 0.0f; txcoorPlanes[17] = 0.0f; txcoorPlanes[20] = 1.0f; txcoorPlanes[23] = 1.0f;
+	txcoorPlanes[14] = 1.0f; txcoorPlanes[17] = 1.0f; txcoorPlanes[20] = 0.0f; txcoorPlanes[23] = 0.0f;
     //Horizontal
     txcoorPlanes[24] = 1.0f; txcoorPlanes[27] = 0.0f; txcoorPlanes[30] = 0.0f; txcoorPlanes[33]  = 1.0f;
 	txcoorPlanes[25] = 0.0f; txcoorPlanes[28] = 0.0f; txcoorPlanes[31] = 1.0f; txcoorPlanes[34] = 1.0f;
@@ -328,8 +324,11 @@ void GLWidget::initTexture3D(){
     glGenTextures(1, &tbo_in);
     glBindTexture(GL_TEXTURE_3D, tbo_in);
 	
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
@@ -353,8 +352,11 @@ void GLWidget::initTexture3D(){
     glGenTextures(1, &tbo_out);
     glBindTexture(GL_TEXTURE_3D, tbo_out);
 	
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
@@ -596,12 +598,26 @@ void GLWidget::paintGL() {
             int maskWidthSize= floor(width/4);
             int maskHeightSize= floor(height/4);
             int maskDepthSize= floor(depth/4);
+
+            /*
             mask[0] = floor(width/2-maskWidthSize);//colStart
             mask[1] = floor(width/2+maskWidthSize);//colEnd
             mask[2] = floor(height/2-maskHeightSize);//rowStart 
             mask[3] = floor(height/2+maskHeightSize);//rowEnd
             mask[4] = floor(depth/2-maskDepthSize);//depthStart 
             mask[5] = floor(depth/2+maskDepthSize);//depthStart 
+            */
+
+            mask[0] = 7;//colStart
+            mask[1] = 12;//colEnd
+            mask[2] = 7;//rowStart 
+            mask[3] = 12;//rowEnd
+            mask[4] = 10;//depthStart 
+            mask[5] = 15;//depthStart 
+
+            cout << "Mask cube limits: " << 
+                mask[0] << ',' << mask[1]<< ',' << mask[2]<< ',' 
+                << mask[3]<< ',' << mask[4]<< ',' << mask[5] << ',' << endl;;
 
             clObj.create3DMask(width, height, depth, mask[0], mask[1],
                     mask[2], mask[3], mask[4], mask[5]);
@@ -625,6 +641,8 @@ void GLWidget::paintGL() {
             tm_ocl_ac.end();
             dout << "Current iter: " << currIter << endl;
             ts.dumpTimings();
+
+            acIterate = false;
         }
 
         glClearColor(0.33f, 0.33f, 0.33f, 0.0f);
@@ -686,6 +704,7 @@ void GLWidget::paintGL() {
  * Initializes the mask at the center of the 3D cube. 
  */
 void GLWidget::initMask(){
+    // CURRENTLY NOT BEING USED (in 3d version)
     /*
        dout << "Updating mask........ " << endl;
        dout << "Start at: (" << startXmask << "," << startYmask << ")" << endl;
@@ -693,7 +712,6 @@ void GLWidget::initMask(){
 
        dout << "Image size : (" << width << "," << height << ")" << endl;
        dout << "Window size : (" << winWidth << "," << winHeight << ")" << endl;
-       */
 
     mask[0] = (int) ((startXmask * width) / winWidth);
     mask[1] = (int) ((endXmask * width) / winWidth);
@@ -703,6 +721,7 @@ void GLWidget::initMask(){
 
     dout << "Corresp mask start: (" << mask[0] << "," << mask[2] << ")" << endl;
     dout << "Corresp mask end: (" << mask[1] << "," << mask[3] << ")" << endl;
+       */
 
     newMask = true; //Run SDF (start displaying segmentation) 
     updatingROI = false; //Stop drawing user ROI, start displaying segmentation

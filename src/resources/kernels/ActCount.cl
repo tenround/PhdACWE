@@ -493,7 +493,7 @@ avgInOut(const __global float* phi,const  __global float* img_in,
         for(int i = 0; i < cellsPerWorkItem; i++){
             if(indx < size){
                 value = img_in[indx];
-                if(phi[indx] <= 0){
+                if(phi[indx] > 0){
                     // Pixels outside the mask
                     currSumOut = currSumOut + value;
                     // Count pixels outside the mask
@@ -519,8 +519,8 @@ avgInOut(const __global float* phi,const  __global float* img_in,
     //Adding atomically to the output variable
     atomic_add(&currCountOutAll, currCountOut);
     atomic_add(&currCountInAll, currCountIn);
-    atomic_add(&currSumInAll, (int)currSumOut);
-    atomic_add(&currSumOutAll,(int)currSumIn);
+    atomic_add(&currSumOutAll, (int)currSumOut);
+    atomic_add(&currSumInAll,(int)currSumIn);
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -528,8 +528,10 @@ avgInOut(const __global float* phi,const  __global float* img_in,
     if( get_local_id(0) == 0){
         avg_in_out[0] = (float)currSumOutAll/(float)currCountOutAll;
         avg_in_out[1] = (float)(currSumInAll/(float)currCountInAll);
-        //avg_in_out[0] = currCountOutAll;
-        //avg_in_out[1] = currCountInAll;
+        avg_in_out[2] = (float)currCountOutAll;
+        avg_in_out[3] = (float)currCountInAll;
+        avg_in_out[4] = (float)currSumOutAll;
+        avg_in_out[5] = (float)currSumInAll;
     }
 }
 /**

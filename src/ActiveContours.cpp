@@ -9,7 +9,7 @@
 #define MAXDPHIDT 2
 
 // Writes is used to write results to disk
-#define WRITE false 
+#define WRITE true 
 // PRINT_IMG_VAL is used to print images values (only for very small images)
 #define PRINT_IMG_VAL false 
 
@@ -97,7 +97,7 @@ void ActiveContours::initImagesArraysAndBuffers(GLuint& tbo_in, GLuint& tbo_out,
 		cl_textures.push_back(img_phi_gl);
 		
 		buf_avg_in_out = cl::Buffer(*context, CL_MEM_READ_WRITE,
-                (size_t) 4* sizeof (float), NULL, &err);
+                (size_t) 6* sizeof (float), NULL, &err);
 		
 		buf_size = width*height*depth;
 
@@ -293,10 +293,10 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
             evAvgInOut_SmoothPhi = compAvgInAndOut(buf_phi, buf_img_in, vecEvPrevAvgInOut);
 			
             if (WRITE) {// Gets the final average values obtained
-                cout << endl << "----------- Final Average  ------------" << endl;
+                cout << endl << "----------- Final Average  (avg out, avg in, count out, count in,  sum out, sum in)------------" << endl;
 				vecEvPrevPrinting.clear();
 				vecEvPrevPrinting.push_back(evAvgInOut_SmoothPhi);
-				printBuffer(buf_avg_in_out, 2, vecEvPrevPrinting);
+				printBuffer(buf_avg_in_out, 6, vecEvPrevPrinting);
 			}
 			
             //It computes the curvatue and F values, the curvature is stored on the first layer
@@ -838,6 +838,7 @@ void ActiveContours::create3DMask(int width, int height, int depth,
         arr_buf_mask[i] = 0; // Red value
     }
 	
+    int count = 0;
     //Set the internal mask to 1
 	for (int z = depthStart; z < depthEnd; z++) {
 		for (int row = colStart; row < colEnd; row++) {
@@ -845,10 +846,12 @@ void ActiveContours::create3DMask(int width, int height, int depth,
 			for (int col = rowStart; col < rowEnd; col++) {
 				arr_buf_mask[indx] = 1; //R
 				indx = indx + 1;
+                count++;
 			}
         }
     }
 	
+    dout << "Total one's on mask: " << count << endl;
 }
 
 
