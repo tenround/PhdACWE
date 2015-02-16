@@ -52,7 +52,7 @@ const float zval = 0; //Smaller or negative the number farther away
 const float zvalROI = 0.01; //Slightly in front of the default billboard
 
 //Indexes of the elements of an array
-unsigned int vertexIndexes[] = {
+unsigned int vertexIndexCube[] = {
     //Front
         0, 1, 2, 3,
     // Top
@@ -65,6 +65,16 @@ unsigned int vertexIndexes[] = {
         1, 5, 6, 2,
     // Back
         5, 4, 7, 6
+        };
+
+//Indexes of the elements of an array
+unsigned int vertexIndexPlanes[] = {
+    //Front
+        0, 1, 2, 3,
+    //Side
+        4, 5, 6, 7,
+    //Horizontal
+        8, 9, 10,11 
         };
 
 using namespace std;
@@ -96,6 +106,7 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
     //Cool: 12, 13, 2, 6
     acExample = 1; //Example 7 is 128x128
     useAllBands = true; // Use all bands as an average for the ACWE algorithm
+    drawPlanes= 0; // 1 -> Draws in 'Raycasting mode' 0 -> Draws the 4 planes
 	
     mask = new int[6];//These are the 6 points of the ROI as a cube
 	
@@ -197,24 +208,6 @@ void GLWidget::InitActiveCountours() {
 	
 }
 
-void GLWidget::initSegmVaoBuffer() {
-		
-    GLManager::CreateBuffer(vbo_pos, vertexPlanes, sizeof (vertexPlanes),
-            GL_ARRAY_BUFFER, GL_DYNAMIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
-	
-    GLManager::CreateBuffer(vbo_color, vertexColors, sizeof (vertexColors),
-            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 1, 4, GL_FALSE, 0, 0, GL_FLOAT);
-	
-    GLManager::CreateBuffer(vbo_tcords, txcoor, sizeof (txcoor),
-            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 2, 3, GL_FALSE, 0, 0, GL_FLOAT);
-	
-    GLManager::CreateElementBuffer(ebo, vertexIndexes, sizeof (vertexIndexes), GL_STATIC_DRAW);
-	
-    //Unbind buffer
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-}
-
 /**
  * This method should clean any buffer (. 
  */
@@ -226,21 +219,37 @@ void GLWidget::DeleteBuffers(){
 }
 
 /**
- * This function initializes the vertex positions. In this
- * case we simply have a big square that has the size of the window
+ * This function initializes the vertex positions. 
  */
 void GLWidget::initImgVaoBuffer() {
-	
-    GLManager::CreateBuffer(vbo_pos, vertexPlanes, sizeof (vertexPlanes),
-            GL_ARRAY_BUFFER, GL_DYNAMIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
-	
+	GLManager::CreateBuffer(vbo_pos, verticesCube, sizeof (verticesCube), GL_ARRAY_BUFFER, GL_DYNAMIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT); 
     GLManager::CreateBuffer(vbo_color, vertexColors, sizeof (vertexColors),
             GL_ARRAY_BUFFER, GL_STATIC_DRAW, 1, 4, GL_FALSE, 0, 0, GL_FLOAT);
 	
     GLManager::CreateBuffer(vbo_tcords, txcoor, sizeof (txcoor),
             GL_ARRAY_BUFFER, GL_STATIC_DRAW, 2, 3, GL_FALSE, 0, 0, GL_FLOAT);
 	
-    GLManager::CreateElementBuffer(ebo, vertexIndexes, sizeof (vertexIndexes), GL_STATIC_DRAW);
+    GLManager::CreateElementBuffer(ebo, vertexIndexCube, sizeof (vertexIndexCube), GL_STATIC_DRAW);
+	
+    //Unbind buffer
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+/**
+ * This function initializes the vertex positions for the 3 planes. 
+ * */
+void GLWidget::initPlanesVaoBuffer() {
+	
+    GLManager::CreateBuffer(vbo_pos_planes, verticesPlanes, sizeof (verticesPlanes),
+            GL_ARRAY_BUFFER, GL_DYNAMIC_DRAW, 0, 4, GL_FALSE, 0, 0, GL_FLOAT);
+	
+    GLManager::CreateBuffer(vbo_color, vertexColors, sizeof (vertexColors),
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 1, 4, GL_FALSE, 0, 0, GL_FLOAT);
+	
+    GLManager::CreateBuffer(vbo_tcords_planes, txcoorPlanes, sizeof (txcoorPlanes),
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW, 2, 3, GL_FALSE, 0, 0, GL_FLOAT);
+	
+    GLManager::CreateElementBuffer(ebo_planes, vertexIndexPlanes, sizeof (vertexIndexPlanes), GL_STATIC_DRAW);
 	
     //Unbind buffer
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -250,6 +259,7 @@ void GLWidget::initTextureCoords(){
 	
 	dout << "************* Initializing 3D texture coordinates...." << endl;
 	
+    // Texture coordinates for external cube
     //For each face we need to define the texture coordinates
     // We have 8 vertices with 3 coordinates each one
     //  txcoor[8*3];
@@ -263,6 +273,20 @@ void GLWidget::initTextureCoords(){
     txcoor[12] = 1.0f; txcoor[15] = 0.0f; txcoor[18] = 0.0f; txcoor[21]  = 1.0f;
 	txcoor[13] = 0.0f; txcoor[16] = 0.0f; txcoor[19] = 0.0f; txcoor[22] = 0.0f;
 	txcoor[14] = 1.0f; txcoor[17] = 1.0f; txcoor[20] = 0.0f; txcoor[23] = 0.0f;
+
+    // Texture coordinates for 3 planes
+    //Front
+	txcoorPlanes[0] = 1.0f; txcoorPlanes[3] = 0.0f; txcoorPlanes[6] = 0.0f; txcoorPlanes[9]  = 1.0f;
+	txcoorPlanes[1] = 0.5f; txcoorPlanes[4] = 0.5f; txcoorPlanes[7] = 0.5f; txcoorPlanes[10] = 0.5f;
+	txcoorPlanes[2] = 1.0f; txcoorPlanes[5] = 1.0f; txcoorPlanes[8] = 0.0f; txcoorPlanes[11] = 0.0f;
+     //Side
+    txcoorPlanes[12] = 0.5f; txcoorPlanes[15] = 0.5f; txcoorPlanes[18] = 0.5f; txcoorPlanes[21]  = 0.5f;
+	txcoorPlanes[13] = 0.0f; txcoorPlanes[16] = 1.0f; txcoorPlanes[19] = 1.0f; txcoorPlanes[22] = 0.0f;
+	txcoorPlanes[14] = 0.0f; txcoorPlanes[17] = 0.0f; txcoorPlanes[20] = 1.0f; txcoorPlanes[23] = 1.0f;
+    //Horizontal
+    txcoorPlanes[24] = 1.0f; txcoorPlanes[27] = 0.0f; txcoorPlanes[30] = 0.0f; txcoorPlanes[33]  = 1.0f;
+	txcoorPlanes[25] = 0.0f; txcoorPlanes[28] = 0.0f; txcoorPlanes[31] = 1.0f; txcoorPlanes[34] = 1.0f;
+	txcoorPlanes[26] = 0.5f; txcoorPlanes[29] = 0.5f; txcoorPlanes[32] = 0.5f; txcoorPlanes[35] = 0.5f;
 }
 
 /**
@@ -417,6 +441,9 @@ void GLWidget::InitShaders() {
     displaySegmUnif= glGetUniformLocation(g_program.theProgram, "dispSegmentation");
 	Tools::validateGLlocations(displaySegmUnif, "dispSegmentation");
 
+    drawPlanesUnif = glGetUniformLocation(g_program.theProgram, "drawPlanes");
+	Tools::validateGLlocations(drawPlanesUnif, "drawPlanes");
+
     glUseProgram(g_program.theProgram); //Start using the builded program
 	
     glUniform1i(textSamplerUniform, imgTextId); //Binds the texture with the sampler
@@ -435,16 +462,16 @@ void GLWidget::InitShaders() {
     dout << "-------- Compiling Simple Fragment shader program ----------" << endl;
 	
     //Reads the vertex and fragment shaders
-    string strSimpleFragmentShader = FileManager::readFile("src/resources/shaders/SimpleFragShader.glsl");
+    //string strSimpleFragmentShader = FileManager::readFile("src/resources/shaders/SimpleFragShader.glsl");
 	
-    shaderList.push_back(GLManager::CreateShader(GL_VERTEX_SHADER, strVertexShader));
-    shaderList.push_back(GLManager::CreateShader(GL_FRAGMENT_SHADER, strSimpleFragmentShader));
+    //shaderList.push_back(GLManager::CreateShader(GL_VERTEX_SHADER, strVertexShader));
+    //shaderList.push_back(GLManager::CreateShader(GL_FRAGMENT_SHADER, strSimpleFragmentShader));
 	
 	//------------- For lighting ---------
 	//    normalHandle = glGetUniformLocation(normalUnif, "vertexNormal");
 	//	Tools::validateGLlocations(normalHandle, "vertexNormal");
 	
-    g_program.simpleFragProgram = GLManager::CreateProgram(shaderList);
+    //g_program.simpleFragProgram = GLManager::CreateProgram(shaderList);
 	
     dout << "Simpler Program compiled and linked" << endl;
     dout << "--------------End of loading OpenGL Shaders -----------------" << endl;
@@ -467,7 +494,7 @@ void GLWidget::init() {
 		//Create the Vertex Array Object (contains info of vertex, color, coords, and textures)
         glUseProgram(g_program.theProgram); //Start using the builded program
 		glGenVertexArrays(1, &vaoId); //Generate 1 vertex array
-		glGenVertexArrays(1, &vaoSimpleID); //Generate 1 vertex array
+		glGenVertexArrays(1, &vaoPlanesId); //Generate 1 vertex array
 		
 		// Samplers that define how to treat the image on the corners,
 		// and when we zoom in or out to the image
@@ -490,12 +517,12 @@ void GLWidget::init() {
 	
     dout << "Init SUCCESSFUL................" << endl;
 	
-    //glBindVertexArray(vaoSimpleID); //First VAO setup (only one this time)
-    //initSegmVaoBuffer();
-    dout << "Initializing simple VAO (for ROI)" << endl;
-	
+    dout << "Initializing VAO Planes" << endl;
+    glBindVertexArray(vaoPlanesId); //First VAO setup (only one this time)
+    initPlanesVaoBuffer();
+
     glBindVertexArray(0); //Unbind any vertex array
-	
+
     imageSelected = true;
 }
 
@@ -503,49 +530,49 @@ void GLWidget::init() {
  * This method initializes the state for OpenGL.
  */
 void GLWidget::initializeGL() {
-	
+
     GLenum err = glewInit();
     if (GLEW_OK != err) {
         fprintf(stderr, "GLEW Error: %s\n", glewGetErrorString(err));
     }
-	
+
     //glDisable(GL_CULL_FACE); //Cull ('desechar') one or more faces of polygons
-	//    glCullFace(GL_BACK); // Hide the 'back' face
-	//    glFrontFace(GL_CW); //Which face is 'front' face, defines as Clock Wise
-	glEnable(GL_BLEND);//Enables depth buffer
-	glEnable(GL_DEPTH_TEST);//Enables depth buffer
-	glEnable(GL_TEXTURE_3D);//Enables depth buffer
-	glDepthFunc(GL_LEQUAL);//Indicates the depth function to use
-	
+    //    glCullFace(GL_BACK); // Hide the 'back' face
+    //    glFrontFace(GL_CW); //Which face is 'front' face, defines as Clock Wise
+    glEnable(GL_BLEND);//Enables depth buffer
+    glEnable(GL_DEPTH_TEST);//Enables depth buffer
+    glEnable(GL_TEXTURE_3D);//Enables depth buffer
+    glDepthFunc(GL_LEQUAL);//Indicates the depth function to use
+
     Timer tm_oclogl_init(ts, "OCLinit");
     tm_oclogl_init.start();
-	
+
     //Initializes the camera perspective paramteres
     float fzNear = 0.1f;
     float fzFar = 1000.0f;
     float FOV = 45.0f;
-	
+
     camera = new FPSMovement(fzNear, fzFar, FOV);
-	
+
     dout << "Initializing OpenGL program... " << endl;
     InitShaders();
     dout << "OpenGL program initialized ... " << endl;
-	
+
     tm_oclogl_init.end();
-	SelectImage();
+    SelectImage();
 }
 
 void GLWidget::resizeGL(int w, int h) {
     dout << "Resizing GL ......." << endl;
-	
+
     // NEVER TOUCH THIS TWO VALUES ARE NECESSARY
     winWidth = w;//Updating the width of the window for the ROI
     winHeight = h;//Updating the height of the window for the ROI
-	
+
     camera->Reshape(w,h);
     //glUniformMatrix4fv(g_program.cameraToClipMatrixUnif, 1, GL_FALSE, 
-            //glm::value_ptr(camera->getProjectionMatrix() * camera->getViewMatrix()));
-	
+    //glm::value_ptr(camera->getProjectionMatrix() * camera->getViewMatrix()));
+
 }
 
 /**
@@ -553,71 +580,74 @@ void GLWidget::resizeGL(int w, int h) {
  */
 void GLWidget::paintGL() {
     glFlush();
-	
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     //Check if we already have an image selected, if not nothing should be done
     if (imageSelected) {
         //        dout << "Painting........... " << endl;
-		
+
         if (newMask) {
             cout << "--------------- Initializing mask and making SDF..........." << endl;
-			
+
             Timer tm_ocl_sdf(ts, "SDF");
-			
+
             tm_ocl_sdf.start();
-			//TODO obtain this parameters form the GUI using OpenGL
-			int maskWidthSize= floor(width/4);
-			int maskHeightSize= floor(height/4);
-			int maskDepthSize= floor(depth/4);
-			mask[0] = floor(width/2-maskWidthSize);//colStart
-			mask[1] = floor(width/2+maskWidthSize);//colEnd
-			mask[2] = floor(height/2-maskHeightSize);//rowStart 
-			mask[3] = floor(height/2+maskHeightSize);//rowEnd
-			mask[4] = floor(depth/2-maskDepthSize);//depthStart 
-			mask[5] = floor(depth/2+maskDepthSize);//depthStart 
+            //TODO obtain this parameters form the GUI using OpenGL
+            int maskWidthSize= floor(width/4);
+            int maskHeightSize= floor(height/4);
+            int maskDepthSize= floor(depth/4);
+            mask[0] = floor(width/2-maskWidthSize);//colStart
+            mask[1] = floor(width/2+maskWidthSize);//colEnd
+            mask[2] = floor(height/2-maskHeightSize);//rowStart 
+            mask[3] = floor(height/2+maskHeightSize);//rowEnd
+            mask[4] = floor(depth/2-maskDepthSize);//depthStart 
+            mask[5] = floor(depth/2+maskDepthSize);//depthStart 
 
             clObj.create3DMask(width, height, depth, mask[0], mask[1],
-					mask[2], mask[3], mask[4], mask[5]);
+                    mask[2], mask[3], mask[4], mask[5]);
 
             clObj.runSDF();
             tm_ocl_sdf.end();
-			
+
             newMask = false;
         }
-		
+
         if ((currIter < maxActCountIter) && acIterate) {
-			
-			iterStep = 1;
+
+            iterStep = 1;
             dout << "iterating ....." << currIter << endl;
             dout << " number of iterations: " << iterStep << endl;
             Timer tm_ocl_ac(ts, "ACont");
             tm_ocl_ac.start();
-			
+
             clObj.iterate(iterStep, useAllBands); //Iterate the ActiveCountours n times
             currIter += iterStep;
             tm_ocl_ac.end();
             dout << "Current iter: " << currIter << endl;
             ts.dumpTimings();
         }
-		
+
         glClearColor(0.33f, 0.33f, 0.33f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-		
+
         glUseProgram(g_program.theProgram);
-		
+
         modelMatrix = camera->getModelMatrix();
         // Sets the model matrix
         glUniformMatrix4fv(modelToCameraMatrixUnif, 1, GL_FALSE, glm::value_ptr(modelMatrix));
         // Sets the projection matrix
         glUniformMatrix4fv(g_program.cameraToClipMatrixUnif, 1, GL_FALSE, 
-				glm::value_ptr(camera->getProjectionMatrix() * camera->getViewMatrix()));
+                glm::value_ptr(camera->getProjectionMatrix() * camera->getViewMatrix()));
 
-       // This is used to display the ROI that the user is selecting
-        if(!displaySegmentation){
-            glUniform1i(displaySegmUnif, 1); //Binds the texture with the sampler
+        // This is used to display the ROI that the user is selecting
+        displaySegmentation = 1;
+        if(displaySegmentation){
+            glUniform1i(displaySegmUnif, 1); 
+        }else{
+            glUniform1i(displaySegmUnif, 0); 
         }
-	
-		glEnable(GL_TEXTURE_3D);
+
+        glEnable(GL_TEXTURE_3D);
         glActiveTexture(GL_TEXTURE0 + imgTextId);
         glBindTexture(GL_TEXTURE_3D, tbo_in);
         glBindSampler(imgTextId, samplerID[0]);
@@ -625,10 +655,19 @@ void GLWidget::paintGL() {
         glActiveTexture(GL_TEXTURE0 + segTextId);
         glBindTexture(GL_TEXTURE_3D, tbo_out);
         glBindSampler(segTextId, samplerID[1]);
-	
-        glBindVertexArray(vaoId); //First VAO setup (only one this time)
-        glDrawElements(GL_QUADS, 24, GL_UNSIGNED_INT, 0);
-		
+
+        if(!drawPlanes){
+            glBindVertexArray(vaoPlanesId); //First VAO setup (only one this time)
+            glUniform1i(drawPlanesUnif, 1); // We will display the planes
+            //Draws the cube
+            glDrawElements(GL_QUADS, 12, GL_UNSIGNED_INT, 0);
+        }else{
+            //Draws the cube
+            glUniform1i(drawPlanesUnif, 0); // We will display the planes
+            glBindVertexArray(vaoId); 
+            glDrawElements(GL_QUADS, 24, GL_UNSIGNED_INT, 0);
+        }
+
         //-------- TEXTURES ----------
 
         glDisable(GL_TEXTURE_3D);
@@ -793,6 +832,7 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
     //Step size is used to move the planes with the keyboard
     //This 'if' changes the direction of this shift
     if(event->modifiers().testFlag(Qt::ShiftModifier)){
+        dout << "Shift is pressed" << endl;
         stepSize *= -1;
     }
 
@@ -809,12 +849,16 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
             displaySegmentation = true;
 
             break;
-        case 66:// Case 'B' toggle using all bands or only red band
-        case 98:
+        case 'p':// Case 'B' toggle using all bands or only red band
+        case 'P':
+            drawPlanes= !drawPlanes;
+            break;
+        case 'b':// Case 'B' toggle using all bands or only red band
+        case 'B':
             useAllBands = !useAllBands;
             break;
-        case 116:// Case 'T' shows the timings
-        case 84:
+        case 't':// Case 'T' shows the timings
+        case 'T':
             ts.dumpTimings();
             break;
         case 'S':
@@ -824,89 +868,112 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
             close();
             break;
         case 'Y':
-            //vertexPlanes = translateMatrix*vertexPlanes;
-            vertexPlanes[2] -= .1;
+            //verticesCube = translateMatrix*verticesCube;
+            verticesCube[2] -= .1;
             glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlanes),
-                    vertexPlanes, GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(verticesCube),
+                    verticesCube, GL_STATIC_DRAW);
 
             break;
         case 'y':
-            //vertexPlanes = translateMatrix*vertexPlanes;
-            vertexPlanes[2] += .1;
+            //verticesCube = translateMatrix*verticesCube;
+            verticesCube[2] += .1;
             glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlanes),
-                    vertexPlanes, GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(verticesCube),
+                    verticesCube, GL_STATIC_DRAW);
 
             break;
         case 'Z':
-            dout << "Moving billboard at Z = 0" << endl;
-            /*
-               if( abs(vertexPlanes[0]+stepSize) <= cubeDepth){
-               translateMatrix = glm::translate(translateMatrix, glm::vec3(0.0f, 0.0f, stepSize));
-            //vertexPlanes = translateMatrix*vertexPlanes;
-            glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlanes),
-            vertexPlanes, GL_STATIC_DRAW);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo_tcords);
-            txcoor[0][2] += stepSize/2;
-            txcoor[1][2] += stepSize/2;
-            txcoor[2][2] += stepSize/2;
-            txcoor[3][2] += stepSize/2;
-            glBufferData(GL_ARRAY_BUFFER, sizeof(txcoor),
-            glm::value_ptr(txcoor), GL_STATIC_DRAW);
+            if( abs(verticesPlanes[2]+stepSize) <= cubeDepth &&
+                verticesPlanes[2]+stepSize <= 0){
+                dout << "Moving billboard at Z = 0" << endl;
+                glBindVertexArray(vaoPlanesId); //First VAO setup (only one this time)
+                verticesPlanes[2] += stepSize; 
+                verticesPlanes[6] += stepSize; 
+                verticesPlanes[10] += stepSize; 
+                verticesPlanes[14] += stepSize; 
+                glBindBuffer(GL_ARRAY_BUFFER, vbo_pos_planes);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(verticesPlanes), verticesPlanes, GL_STATIC_DRAW);
+                float coordStepSize = stepSize/cubeDepth;
+                txcoorPlanes[1] +=coordStepSize; 
+                txcoorPlanes[4] +=coordStepSize; 
+                txcoorPlanes[7] +=coordStepSize; 
+                txcoorPlanes[10] +=coordStepSize;
+
+                glBindTexture(GL_TEXTURE_3D, tbo_in);
+                glBindBuffer(GL_ARRAY_BUFFER, vbo_tcords_planes);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(txcoorPlanes), txcoorPlanes, GL_STATIC_DRAW);
+
+                glBindVertexArray(0); //First VAO setup (only one this time)
+            }else{
+                cout << "Plane is in the border, can't move. " << endl;
+                cout << "Current Z val: " << verticesPlanes[2] << endl;
+                cout << "cubeDepth: " << cubeDepth << endl;
             }
-            */
             break;
         case 'X':
-            dout << "Moving billboard at X = 0" << endl;
-            /*
-               if( abs(vertexPlanes[0][0]+stepSize) <= cubeWidth){
-               translateMatrix = glm::translate(translateMatrix, glm::vec3(stepSize, 0.0f, 0.0f));
-               vertexPlanes = translateMatrix*vertexPlanes;
-               glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
-               glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlanes),
-               glm::value_ptr(vertexPlanes), GL_STATIC_DRAW);
-               glBindBuffer(GL_ARRAY_BUFFER, vbo_tcords);
-               txcoor[0][0] += stepSize/2;
-               txcoor[1][0] += stepSize/2;
-               txcoor[2][0] += stepSize/2;
-               txcoor[3][0] += stepSize/2;
-               glBufferData(GL_ARRAY_BUFFER, sizeof(txcoor),
-               glm::value_ptr(txcoor), GL_STATIC_DRAW);
-               }*/
+            if( abs(verticesPlanes[16]+stepSize) <= cubeWidth){
+                dout << "Moving billboard at X = 0" << endl;
+                glBindVertexArray(vaoPlanesId); //First VAO setup (only one this time)
+                verticesPlanes[16] += stepSize; 
+                verticesPlanes[20] += stepSize; 
+                verticesPlanes[24] += stepSize; 
+                verticesPlanes[28] += stepSize; 
+                glBindBuffer(GL_ARRAY_BUFFER, vbo_pos_planes);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(verticesPlanes), verticesPlanes, GL_STATIC_DRAW);
+                float coordStepSize = stepSize/(2*cubeWidth);
+                txcoorPlanes[12] -=coordStepSize; 
+                txcoorPlanes[15] -=coordStepSize; 
+                txcoorPlanes[18] -=coordStepSize; 
+                txcoorPlanes[21] -=coordStepSize;
+
+                glBindTexture(GL_TEXTURE_3D, tbo_in);
+                glBindBuffer(GL_ARRAY_BUFFER, vbo_tcords_planes);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(txcoorPlanes), txcoorPlanes, GL_STATIC_DRAW);
+
+                glBindVertexArray(0); //First VAO setup (only one this time)
+            }else{
+                cout << "Plane is in the border, can't move. " << endl;
+                cout << "Current X val: " << verticesPlanes[16] << endl;
+            }
             break;
         case 'C':
-            dout << "Moving billboard at Y = 0" << endl;
-            /*
-               if( abs(vertexPlanes[0][1]+stepSize) <= cubeHeight){
-               translateMatrix = glm::translate(translateMatrix, glm::vec3(0.0f, stepSize, 0.0f));
-               vertexPlanes = translateMatrix*vertexPlanes;
-               glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
-               glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlanes),
-               glm::value_ptr(vertexPlanes), GL_STATIC_DRAW);
-               glBindBuffer(GL_ARRAY_BUFFER, vbo_tcords);
-               txcoor[0][1] += stepSize/2;
-               txcoor[1][1] += stepSize/2;
-               txcoor[2][1] += stepSize/2;
-               txcoor[3][1] += stepSize/2;
-               glBufferData(GL_ARRAY_BUFFER, sizeof(txcoor),
-               glm::value_ptr(txcoor), GL_STATIC_DRAW);
-               }*/
+            if( abs(verticesPlanes[33]+stepSize) <= cubeHeight){
+                dout << "Moving billboard at Y = 0" << endl;
+                glBindVertexArray(vaoPlanesId); //First VAO setup (only one this time)
+                verticesPlanes[33] += stepSize; 
+                verticesPlanes[37] += stepSize; 
+                verticesPlanes[41] += stepSize; 
+                verticesPlanes[45] += stepSize; 
+                glBindBuffer(GL_ARRAY_BUFFER, vbo_pos_planes);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(verticesPlanes), verticesPlanes, GL_STATIC_DRAW);
+                float coordStepSize = stepSize/(2*cubeHeight);
+                txcoorPlanes[26] +=coordStepSize; 
+                txcoorPlanes[29] +=coordStepSize; 
+                txcoorPlanes[32] +=coordStepSize; 
+                txcoorPlanes[35] +=coordStepSize;
+
+                glBindTexture(GL_TEXTURE_3D, tbo_in);
+                glBindBuffer(GL_ARRAY_BUFFER, vbo_tcords_planes);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(txcoorPlanes), txcoorPlanes, GL_STATIC_DRAW);
+
+                glBindVertexArray(0); //First VAO setup (only one this time)
+            }else{
+                cout << "Plane is in the border, can't move. " << endl;
+                cout << "Current X val: " << verticesPlanes[16] << endl;
+            }
             break;
         case '1':
         case '2':
         case '3':
             InitVertexData();
             initTextureCoords();
-            glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPlanes), vertexPlanes, GL_STATIC_DRAW);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo_tcords);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(txcoor), txcoor, GL_STATIC_DRAW);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo_tcords);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(txcoor), txcoor, GL_STATIC_DRAW);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo_tcords);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(txcoor), txcoor, GL_STATIC_DRAW);
+            // Reset positions of the verices 
+            glBindBuffer(GL_ARRAY_BUFFER, vbo_pos_planes);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(verticesPlanes), verticesPlanes, GL_STATIC_DRAW);
+            // Reset texture coordinates
+            glBindBuffer(GL_ARRAY_BUFFER, vbo_tcords_planes);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(txcoorPlanes), txcoorPlanes, GL_STATIC_DRAW);
             break;
         default:
             event->ignore();
@@ -926,50 +993,119 @@ void GLWidget::InitVertexData(){
     //Change the size of the cube depending on widht, heigh and depth
     cubeWidth = 1;//Using with as the normalized with
     cubeHeight = (float)height/(float)width;//Using with as the normalized with
-    float cubeDepth = -2*((float)depth/(float)width);//Using with as the normalized with
+    //Multiply by 2 because cube Width is for each side.
+    cubeDepth = 2*((float)depth/(float)width);
+
+    // -- Initalizing vertices for each plane --
+    // -- Initalizing vertices for cube sides --
+    float halfDepth = cubeDepth/2;
+    // -- Facing Front plane--
+    // 0 Top left
+    verticesPlanes[0]= -cubeWidth;
+    verticesPlanes[1]= cubeHeight;
+    verticesPlanes[2]= -halfDepth;
+    verticesPlanes[3]= 1.0f;
+    // 1 Top right
+    verticesPlanes[4]= cubeWidth;
+    verticesPlanes[5]= cubeHeight;
+    verticesPlanes[6]= -halfDepth;
+    verticesPlanes[7]= 1.0f;
+    // 2 Bottom right
+    verticesPlanes[8]= cubeWidth;
+    verticesPlanes[9]= -cubeHeight;
+    verticesPlanes[10]= -halfDepth;
+    verticesPlanes[11]= 1.0f;
+    // 3 Bottom left
+    verticesPlanes[12]=-cubeWidth;
+    verticesPlanes[13]=-cubeHeight;
+    verticesPlanes[14]= -halfDepth;
+    verticesPlanes[15]= 1.0f;
+    // -- Side Plane--
+    // 0 Top left
+    verticesPlanes[16]= 0;
+    verticesPlanes[17]= cubeHeight;
+    verticesPlanes[18]= -cubeDepth;
+    verticesPlanes[19]= 1.0f;
+    // 1 Top right
+    verticesPlanes[20]= 0;
+    verticesPlanes[21]= cubeHeight;
+    verticesPlanes[22]= zvalNear;
+    verticesPlanes[23]= 1.0f;
+    // 2 Bottom right
+    verticesPlanes[24]= 0;
+    verticesPlanes[25]= -cubeHeight;
+    verticesPlanes[26]= zvalNear;
+    verticesPlanes[27]= 1.0f;
+    // 3 Bottom left
+    verticesPlanes[28]= 0;
+    verticesPlanes[29]=-cubeHeight;
+    verticesPlanes[30]= -cubeDepth;
+    verticesPlanes[31]= 1.0f;
+    // -- Horizontal plane --
+    // 0 Top left
+    verticesPlanes[32]= -cubeWidth;
+    verticesPlanes[33]= 0;
+    verticesPlanes[34]= -cubeDepth;
+    verticesPlanes[35]= 1.0f;
+    // 1 Top right
+    verticesPlanes[36]= cubeWidth;
+    verticesPlanes[37]= 0;
+    verticesPlanes[38]= -cubeDepth;
+    verticesPlanes[39]= 1.0f;
+    // 2 Bottom right
+    verticesPlanes[40]= cubeWidth;
+    verticesPlanes[41]= 0;
+    verticesPlanes[42]= zvalNear;
+    verticesPlanes[43]= 1.0f;
+    // 3 Bottom left
+    verticesPlanes[44]= -cubeWidth;
+    verticesPlanes[45]= 0;
+    verticesPlanes[46]= zvalNear;
+    verticesPlanes[47]= 1.0f;
+
 
     // First four, the closest one
     // 0 Top left
-    vertexPlanes[0]= -cubeWidth;
-    vertexPlanes[1]= cubeHeight;
-    vertexPlanes[2]= zvalNear;
-    vertexPlanes[3]= 1.0f;
+    verticesCube[0]= -cubeWidth;
+    verticesCube[1]= cubeHeight;
+    verticesCube[2]= zvalNear;
+    verticesCube[3]= 1.0f;
     // 1 Top right
-    vertexPlanes[4]= cubeWidth;
-    vertexPlanes[5]= cubeHeight;
-    vertexPlanes[6]= zvalNear;
-    vertexPlanes[7]= 1.0f;
+    verticesCube[4]= cubeWidth;
+    verticesCube[5]= cubeHeight;
+    verticesCube[6]= zvalNear;
+    verticesCube[7]= 1.0f;
     // 2 Bottom right
-    vertexPlanes[8]= cubeWidth;
-    vertexPlanes[9]= -cubeHeight;
-    vertexPlanes[10]= zvalNear;
-    vertexPlanes[11]= 1.0f;
+    verticesCube[8]= cubeWidth;
+    verticesCube[9]= -cubeHeight;
+    verticesCube[10]= zvalNear;
+    verticesCube[11]= 1.0f;
     // 3 Bottom left
-    vertexPlanes[12]=-cubeWidth;
-    vertexPlanes[13]=-cubeHeight;
-    vertexPlanes[14]= zvalNear;
-    vertexPlanes[15]= 1.0f;
+    verticesCube[12]=-cubeWidth;
+    verticesCube[13]=-cubeHeight;
+    verticesCube[14]= zvalNear;
+    verticesCube[15]= 1.0f;
     // Second four, the far ones
     // 4 Top left far
-    vertexPlanes[16]=-cubeWidth;
-    vertexPlanes[17]= cubeHeight;
-    vertexPlanes[18]= cubeDepth;
-    vertexPlanes[19]= 1.0f;
+    verticesCube[16]=-cubeWidth;
+    verticesCube[17]= cubeHeight;
+    verticesCube[18]= -cubeDepth;
+    verticesCube[19]= 1.0f;
     // 5 Top right
-    vertexPlanes[20]= cubeWidth;
-    vertexPlanes[21]= cubeHeight;
-    vertexPlanes[22]= cubeDepth;
-    vertexPlanes[23]= 1.0f;
+    verticesCube[20]= cubeWidth;
+    verticesCube[21]= cubeHeight;
+    verticesCube[22]= -cubeDepth;
+    verticesCube[23]= 1.0f;
     // 6 Bottom right
-    vertexPlanes[24]= cubeWidth;
-    vertexPlanes[25]=-cubeHeight;
-    vertexPlanes[26]= cubeDepth;
-    vertexPlanes[27]= 1.0f;
+    verticesCube[24]= cubeWidth;
+    verticesCube[25]=-cubeHeight;
+    verticesCube[26]= -cubeDepth;
+    verticesCube[27]= 1.0f;
     // 7 Bottom left
-    vertexPlanes[28]=-cubeWidth;
-    vertexPlanes[29]=-cubeHeight;
-    vertexPlanes[30]= cubeDepth;
-    vertexPlanes[31]= 1.0f;
+    verticesCube[28]=-cubeWidth;
+    verticesCube[29]=-cubeHeight;
+    verticesCube[30]= -cubeDepth;
+    verticesCube[31]= 1.0f;
 }//InitVertexData
 
 void GLWidget::printGLMmatrix(glm::mat4 matrix)

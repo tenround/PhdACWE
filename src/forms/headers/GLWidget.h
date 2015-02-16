@@ -55,6 +55,7 @@ protected:
     void InitShaders();
     void InitTextures();
     void initImgVaoBuffer();
+    void initPlanesVaoBuffer();
     void initTextureCoords();
     void initSegmVaoBuffer();
     void InitActiveCountours();
@@ -78,6 +79,10 @@ private:
     GLuint segTextId;
     GLuint displaySegmUnif;
 
+    // Used to decide if we display the planes or draw using Ray Casting
+    GLuint drawPlanesUnif;
+    int drawPlanes;
+
 	GLuint errCode; //Texture buffer object
 
     GLuint modelToCameraMatrixUnif;
@@ -90,11 +95,13 @@ private:
     ProgramData g_program;
     glm::vec3 offsets[1];
 
-	float vertexPlanes[32];
+	float verticesCube[32];
+	float verticesPlanes[48];
 	glm::mat4 vertexPosSelection;
 
+
 	float  txcoor[8*3];
-    GLuint vbo_tcords;
+	float  txcoorPlanes[12*3];
 
     //float textCoords[];
     //unsigned int vertexIndexes[];
@@ -103,13 +110,16 @@ private:
     float hsize;
 
     GLuint vbo_pos;
-    GLuint vbo_tcord;
+    GLuint vbo_pos_planes;
+    GLuint vbo_tcords_planes;
+    GLuint vbo_tcords;
     GLuint vbo_color;
     GLuint ebo; //Element buffer object
+    GLuint ebo_planes; //Element buffer object for planes
     GLuint vbo_selection;
 
     GLuint vaoId;
-    GLuint vaoSimpleID;//Just used to display ROI
+    GLuint vaoPlanesId;//Just used to display ROI
 
     	//Normal of billboard
 	GLuint normalUnif; 
