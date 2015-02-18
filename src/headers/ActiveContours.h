@@ -44,6 +44,7 @@ private:
     
 	void printNDRanges(int cols, int rows, int z, int grp_cols, int grp_rows, int grp_z);
 	void printBuffer(cl::Buffer& buf, int size, vector<cl::Event> vecPrev);
+	void printBuffer(cl::Buffer& buf, int size, int offset, int width, int height, vector<cl::Event> vecPrev);
     int SDFoz(CLManager cl, cl::Context context, cl::CommandQueue queue, cl::Program program);
     int SDFVoro(CLManager cl, cl::Context context, cl::CommandQueue queue, cl::Program program);
     int iterateAvgInAndOut(int width, int height, int grp_size_x, int grp_size_y, int arraySize);
@@ -122,6 +123,7 @@ private:
 	int dev_max_local_mem;
 	int buf_size;//Size of the whole 3D image
     float alpha;
+    float dt_smooth;
     
     cl_int err;
     cl_int res;

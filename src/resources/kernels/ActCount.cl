@@ -47,52 +47,71 @@ smoothPhi(global float* phi, global float* sm_phi, float dt, int width, int heig
 
     int globId = (int)get_global_id(0);// From 0 to height*depth
 
-	//Obtain current index
-	int slice = width*height;//This is the size of one 'slice'
-	int row = width;//This is the size of one 'slice'
+    //Obtain current index
+    int slice = width*height;//This is the size of one 'slice'
+    int row = width;//This is the size of one 'row'
 
-	// This is the case we are in the middle of the cube, no worries about the
-	// boundaries
-	int curr = globId*width;//Current value
+    int curr = globId*width;//Current value 0, width, 2*width, .. -> init 0 row, init 1 row, init 2 row
 
-	// First 8 neighbors same slice
-	int lf = curr-1;//The value left  (left)
-	int ri = curr+1;//The value right (right) 
-	int dn = curr+row;if( (curr+row) % slice == 0){ dn = curr; }//down value (test if is last row)
-	int dr = dn+1;// (down right)
-	int dl = dn-1;// (down left)
-	int up = curr-row; if(curr % slice == 0){ up = curr; }//up value (test if is first row)
-	int ur = up+1;// (up right)
-	int ul = up-1;// (up left)
-	// Farther 9 neighbors
+    //(test if is last row)
+    bool isLastRow = ( (curr+row) % slice == 0) ? true : false;
+    //(test if is first row)
+    bool isFirstRow =  (curr % slice == 0)? true : false;
 
-	// ----------------- If we are are in the last slice then we can't have a far slice
-	if( curr > (slice*depth-1) ){ slice = 0;}
+    // First 8 neighbors same slice
+    int lf = curr-1;//The value left  (left)
+    int ri = curr+1;//The value right (right) 
+    int dn = isLastRow? curr : curr+row; //down value 
+    int dr = dn+1;// (down right)
+    int dl = dn-1;// (down left)
+    int up = isFirstRow? curr : curr-row; //up value 
+    int ur = up+1;// (up right)
+    int ul = up-1;// (up left)
+    // Farther 9 neighbors
 
-	int fcurr = curr + slice;//(far current) 
-	int flf = fcurr-1;// (far left)
-	int fri = fcurr+1;//(far right) 
-	int fdn = fcurr+row; if( (curr+row) % slice == 0){ fdn = fcurr; }//far down value (test if is last row
-	int fdr = fdn+1;// (far down right)
-	int fdl = fdn-1;// (far down left)
-	int fup = curr-row; if(curr % slice == 0){ fup = fcurr; }//The value above (up)
-	int fur = up+1;// (up right)
-	int ful = up-1;// (up left)
-	
-	// ----------------- If we are are in the first slice then we can't have a closer slice
-	slice = width*height;
-	if( curr < slice ){ slice = 0;}
+    // ----------------- If we are are in the last slice then we can't have a far slice
+    if( curr > (slice*(depth-1) - 1 ) ){ slice = 0;}
 
-	// Closer 9 neighbors
-	int ccurr = curr - slice;//(closer current) 
-	int clf = ccurr-1;// (closer left)
-	int cri = ccurr+1;//(closer right) 
-	int cdn = ccurr+row; if( (curr+row) % slice == 0){ cdn = ccurr; }//far down value (test if is last row
-	int cdr = cdn+1;// (closer down right)
-	int cdl = cdn-1;// (closer down left)
-	int cup = ccurr-row; if(curr % slice == 0){ cup = ccurr; }//The value above (up)
-	int cur = cup+1;// (closer up right)
-	int cul = cup-1;// (closer up left)
+    int fcurr = curr + slice;//(far current) 
+    int flf = fcurr-1;// (far left)
+    int fri = fcurr+1;//(far right) 
+    int fdn = isLastRow? fcurr : fcurr+row; //far down value 
+    int fdr = fdn+1;// (far down right)
+    int fdl = fdn-1;// (far down left)
+    int fup = isFirstRow? fcurr : fcurr-row;//far up value
+    int fur = fup+1;// (up right)
+    int ful = fup-1;// (up left)
+
+    // ----------------- If we are are in the first slice then we can't have a closer slice
+    slice = width*height;
+    if( curr < slice ){ slice = 0;}
+
+    // Closer 9 neighbors
+    int ccurr = curr - slice;//(closer current) 
+    int clf = ccurr-1;// (closer left)
+    int cri = ccurr+1;//(closer right) 
+    int cdn = isLastRow? ccurr : ccurr+row; //close down value 
+    int cdr = cdn+1;// (closer down right)
+    int cdl = cdn-1;// (closer down left)
+    int cup = isFirstRow? ccurr : ccurr-row; //Close up value
+    int cur = cup+1;// (closer up right)
+    int cul = cup-1;// (closer up left)
+
+    //First order
+    float phi_x = 0;
+    float phi_y = 0;
+    float phi_z = 0;
+    //Second order
+    float phi_xx = 0;
+    float phi_yy = 0;
+    float phi_zz = 0;
+    float phi_xy = 0;
+    float phi_xz = 0;
+    float phi_zy = 0;
+    //Squares
+    float phi_x2 = 0;
+    float phi_y2 = 0;
+    float phi_z2 = 0;
 
 	//------------ First column ---------
 	float a = 0; // Backward in x
@@ -117,252 +136,275 @@ smoothPhi(global float* phi, global float* sm_phi, float dt, int width, int heig
 		sm_phi[curr+col] = phi[curr+col] - dt * (phi[curr+col]/sqrt( pow(phi[curr+col],2) + 1)) * dD;
 	}
 
-	a = phi[curr] - phi[lf]; // Backward in x
-	b = 0; // Forward in x
-	c = phi[curr] - phi[dn]; // Backward in y
-	d = phi[up] - phi[curr]; //Forward in y
-	e = phi[curr] - phi[ccurr]; // Backward in z
-	f = phi[fcurr] - phi[curr]; // Forward in z
-
-	dD = temp_dD(a,b,c,d,e,f,phi[curr]);
-	int col = width-1;
-	sm_phi[curr+col] = phi[curr+col] - dt * (phi[curr+col]/sqrt( pow(phi[curr+col],2) + 1)) * dD;
+    int col = width-1;
+    a = phi[curr+col] - phi[lf+col]; // Backward in x
+    b = 0; // Forward in x
+    c = phi[curr+col] - phi[dn+col]; // Backward in y
+    d = phi[up+col] - phi[curr+col]; //Forward in y
+    e = phi[curr+col] - phi[ccurr+col]; // Backward in z
+    f = phi[fcurr+col] - phi[curr+col]; // Forward in z
+    
+    dD = temp_dD(a,b,c,d,e,f,phi[curr]);
+    sm_phi[curr+col] = phi[curr+col] - dt * (phi[curr+col]/sqrt( pow(phi[curr+col],2) + 1)) * dD;
 }
 
 __kernel
 void newphi( __global float* phi, __global float* dphidt,
-			__global float* max_dphidt, int width, int height){
-				
-	float dt = .45/(max_dphidt[0] + EPS);
-    int globId = (int)get_global_id(0);// From 0 to height*depth
-	int curr = globId*width;//Current value
+        __global float* max_dphidt, int width, int height){
 
-	//Iterate over the 'middle' columns
-	for(int col = 0; col < width; col++){
-		phi[curr+col] = phi[curr+col] + dt*dphidt[curr+col];
-	}
+    float dt = .45/(max_dphidt[0] + EPS);
+    int globId = (int)get_global_id(0);// From 0 to height*depth
+    int curr = globId*width;//Current value
+
+    //Iterate over the 'middle' columns
+    for(int col = 0; col < width; col++){
+        phi[curr+col] = phi[curr+col] + dt*dphidt[curr+col];
+    }
 }
 
 __kernel
 void reduce(__global float* buffer,
-            __local float* scratch,
-			__global float* result,
-            __const int length,
-			__const int absVal) {
-	
-	int global_index = get_global_id(0);
-	float maxVal = 0;
-	// Loop sequentially over chunks of input vector
-	while (global_index < length) {
-		float element = buffer[global_index];
-		maxVal = (maxVal > element) ? maxVal : element;
-		global_index += get_global_size(0);
-	}
+        __local float* scratch,
+        __global float* result,
+        __const int length,
+        __const int absVal) {
 
-	// Perform parallel reduction
-	int local_index = get_local_id(0);
-	scratch[local_index] = maxVal;
-	barrier(CLK_LOCAL_MEM_FENCE);
+    int global_index = get_global_id(0);
+    float maxVal = 0;
+    // Loop sequentially over chunks of input vector
+    if( absVal){
+        while (global_index < length) {
+            float element = fabs(buffer[global_index]);
+            maxVal = (maxVal > element) ? maxVal : element;
+            global_index += get_global_size(0);
+        }
+    }else{
+        while (global_index < length) {
+            float element = buffer[global_index];
+            maxVal = (maxVal > element) ? maxVal : element;
+            global_index += get_global_size(0);
+        }
+    }
 
-	for(int offset = get_local_size(0) / 2; offset > 0; offset = offset / 2) {
-		if (local_index < offset) {
-			float other = scratch[local_index + offset];
-			float mine = scratch[local_index];
-			scratch[local_index] = (mine > other) ? mine : other;
-		}
-		barrier(CLK_LOCAL_MEM_FENCE);
-	}
-	if (local_index == 0) {
-		result[get_group_id(0)] = scratch[0];
-	}
+    // Perform parallel reduction
+    int local_index = get_local_id(0);
+    scratch[local_index] = maxVal;
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    for(int offset = get_local_size(0) / 2; offset > 0; offset = offset / 2) {
+        if (local_index < offset) {
+            float other = scratch[local_index + offset];
+            float mine = scratch[local_index];
+            scratch[local_index] = (mine > other) ? mine : other;
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+    if (local_index == 0) {
+        result[get_group_id(0)] = scratch[0];
+    }
 }
 
 
 __kernel void
 dphidt(__global float* curvature, __global float* F,
-		__global float* max_F, __global float* dphidt, float alpha, int width, int height){
+        __global float* max_F, __global float* dphidt, float alpha, int width, int height){
 
     int globId = (int)get_global_id(0);// From 0 to height*depth
-	int curr = globId*width;//Current value
+    int curr = globId*width;//Current value
 
-	float maxF = max_F[0];//Max value of F
+    float maxF = max_F[0];//Max value of F
 
-	//Iterate over the 'middle' columns
-	for(int col = 0; col < width; col++){
-		dphidt[curr+col] = (F[curr+col]/(maxF + EPS)) + alpha*curvature[curr+col];
-	}
+    //Iterate over the 'middle' columns
+    for(int col = 0; col < width; col++){
+        dphidt[curr+col] = (F[curr+col]/(maxF + EPS)) + alpha*curvature[curr+col];
+    }
 
 }
 
 /**
-* Computes the energy force of the Active Contour. It is divided one
-* thread per 'row', so there height*depth total threads. 
-*/
+ * Computes the energy force of the Active Contour. It is divided one
+ * thread per 'row', so there height*depth total threads. 
+ */
 __kernel void
 compF(global float* avg_in_out, global float* I, 
-			global float* F, int width, int height, int depth){
+        global float* F, int width, int height, int depth){
 
     int globId = (int)get_global_id(0);// From 0 to height*depth
 
-	// This is the case we are in the middle of the cube, no worries about the
-	// boundaries
-	int curr = globId*width;//Current value
+    // This is the case we are in the middle of the cube, no worries about the
+    // boundaries
+    int curr = globId*width;//Current value
 
-	// ----------------- If we are are in the last slice then we can't have a far slice
-	float u = avg_in_out[0];
-	float v = avg_in_out[1];
+    // ----------------- If we are are in the last slice then we can't have a far slice
+    float v = avg_in_out[0];// u is interior avg
+    float u = avg_in_out[1];// v is exterior avg
 
-	//Iterate over the 'middle' columns
-	for(int col = 0; col < width; col++){
-		F[curr+col] = pow( (I[curr+col] - u), 2) - pow( (I[curr+col] - v), 2);
-//		F[curr+col] = curr+col;
-	}
+    //Iterate over the 'middle' columns
+    for(int col = 0; col < width; col++){
+        F[curr+col] = pow( (I[curr+col] - u), 2) - pow( (I[curr+col] - v), 2);
+        //		F[curr+col] = curr+col;
+    }
 
 }//compF
 
 
 
 // It computes the curvature of the curve phi. Each thread is in charge of
-// evaluating a 'row' of elements. 
+// evaluating a 'row' of elements. There are a total of 'height*depth' threads
 __kernel void
 curvature(global float* phi, global float* curvature, 
-			int width, int height, int depth){
+        int width, int height, int depth){
 
     int globId = (int)get_global_id(0);// From 0 to height*depth
 
-	//Obtain current index
-	int slice = width*height;//This is the size of one 'slice'
-	int row = width;//This is the size of one 'slice'
+    //Obtain current index
+    int slice = width*height;//This is the size of one 'slice'
+    int row = width;//This is the size of one 'row'
 
-	// This is the case we are in the middle of the cube, no worries about the
-	// boundaries
-	int curr = globId*width;//Current value
+    int curr = globId*width;//Current value 0, width, 2*width, .. -> init 0 row, init 1 row, init 2 row
 
-	// First 8 neighbors same slice
-	int lf = curr-1;//The value left  (left)
-	int ri = curr+1;//The value right (right) 
-	int dn = curr+row;if( (curr+row) % slice == 0){ dn = curr; }//down value (test if is last row)
-	int dr = dn+1;// (down right)
-	int dl = dn-1;// (down left)
-	int up = curr-row; if(curr % slice == 0){ up = curr; }//up value (test if is first row)
-	int ur = up+1;// (up right)
-	int ul = up-1;// (up left)
-	// Farther 9 neighbors
+    //(test if is last row)
+    bool isLastRow = ( (curr+row) % slice == 0) ? true : false;
+    //(test if is first row)
+    bool isFirstRow =  (curr % slice == 0)? true : false;
 
-	// ----------------- If we are are in the last slice then we can't have a far slice
-	if( curr > (slice*depth-1) ){ slice = 0;}
+    // First 8 neighbors same slice
+    int lf = curr-1;//The value left  (left)
+    int ri = curr+1;//The value right (right) 
+    int dn = isLastRow? curr : curr+row; //down value 
+    int dr = dn+1;// (down right)
+    int dl = dn-1;// (down left)
+    int up = isFirstRow? curr : curr-row; //up value 
+    int ur = up+1;// (up right)
+    int ul = up-1;// (up left)
+    // Farther 9 neighbors
 
-	int fcurr = curr + slice;//(far current) 
-	int flf = fcurr-1;// (far left)
-	int fri = fcurr+1;//(far right) 
-	int fdn = fcurr+row; if( (curr+row) % slice == 0){ fdn = fcurr; }//far down value (test if is last row
-	int fdr = fdn+1;// (far down right)
-	int fdl = fdn-1;// (far down left)
-	int fup = curr-row; if(curr % slice == 0){ fup = fcurr; }//The value above (up)
-	int fur = up+1;// (up right)
-	int ful = up-1;// (up left)
-	
-	// ----------------- If we are are in the first slice then we can't have a closer slice
-	slice = width*height;
-	if( curr < slice ){ slice = 0;}
+    // ----------------- If we are are in the last slice then we can't have a far slice
+    if( curr > (slice*(depth-1) - 1) ){ slice = 0;}
 
-	// Closer 9 neighbors
-	int ccurr = curr - slice;//(closer current) 
-	int clf = ccurr-1;// (closer left)
-	int cri = ccurr+1;//(closer right) 
-	int cdn = ccurr+row; if( (curr+row) % slice == 0){ cdn = ccurr; }//far down value (test if is last row
-	int cdr = cdn+1;// (closer down right)
-	int cdl = cdn-1;// (closer down left)
-	int cup = ccurr-row; if(curr % slice == 0){ cup = ccurr; }//The value above (up)
-	int cur = cup+1;// (closer up right)
-	int cul = cup-1;// (closer up left)
+    int fcurr = curr + slice;//(far current) 
+    int flf = fcurr-1;// (far left)
+    int fri = fcurr+1;//(far right) 
+    int fdn = isLastRow? fcurr : fcurr+row; //far down value 
+    int fdr = fdn+1;// (far down right)
+    int fdl = fdn-1;// (far down left)
+    int fup = isFirstRow? fcurr : fcurr-row;//far up value
+    int fur = fup+1;// (up right)
+    int ful = fup-1;// (up left)
 
-	//First order
-	float phi_x = 0;
-	float phi_y = 0;
-	float phi_z = 0;
-	//Second order
-	float phi_xx = 0;
-	float phi_yy = 0;
-	float phi_zz = 0;
-	float phi_xy = 0;
-	float phi_xz = 0;
-	float phi_zy = 0;
-	//Squares
-	float phi_x2 = 0;
-	float phi_y2 = 0;
-	float phi_z2 = 0;
+    curvature[curr] = fcurr;
+    // ----------------- If we are are in the first slice then we can't have a closer slice
+    slice = width*height;
+    if( curr < slice ){ slice = 0;}
 
-	//------------ First column ---------
-	phi_x = phi[ri] - phi[curr];
-	phi_y = phi[up] - phi[dn];
-	phi_z = phi[fcurr] - phi[ccurr];
-	//Second order
-	phi_xx = phi[curr] - 2*phi[curr] + phi[ri];
-	phi_yy = phi[up] - 2*phi[curr] + phi[dn];
-	phi_zz = phi[fcurr] - 2*phi[curr] + phi[ccurr];;
-	phi_xy = -0.25*phi[dr] - 0.25*phi[ur] + .25*phi[dn] + .25*phi[up];
-//		phi_xz = 0;
-//		phi_zy = 0;
-	//Squares
-	phi_x2 = phi_x*phi_x;
-	phi_y2 = phi_y*phi_y;
-	phi_z2 = phi_z*phi_z;
+    // Closer 9 neighbors
+    int ccurr = curr - slice;//(closer current) 
+    int clf = ccurr-1;// (closer left)
+    int cri = ccurr+1;//(closer right) 
+    int cdn = isLastRow? ccurr : ccurr+row; //close down value 
+    int cdr = cdn+1;// (closer down right)
+    int cdl = cdn-1;// (closer down left)
+    int cup = isFirstRow? ccurr : ccurr-row; //Close up value
+    int cur = cup+1;// (closer up right)
+    int cul = cup-1;// (closer up left)
 
-	curvature[curr] =   ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_zz + 
-					phi_z2*phi_xx + phi_z2*phi_yy - 2*phi_x*phi_y*phi_xy + 
-					-2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
-					pow((float)(phi_x2 + phi_y2 + phi_z2 + .001),(float)(3/2));
+    //First order
+    float phi_x = 0;
+    float phi_y = 0;
+    float phi_z = 0;
+    //Second order
+    float phi_xx = 0;
+    float phi_yy = 0;
+    float phi_zz = 0;
+    float phi_xy = 0;
+    float phi_xz = 0;
+    float phi_zy = 0;
+    //Squares
+    float phi_x2 = 0;
+    float phi_y2 = 0;
+    float phi_z2 = 0;
 
-	//Iterate over the 'middle' columns
-	for(int col = 1; col < width-1; col++){
-		//First order
-		phi_x = phi[ri+col] - phi[lf+col];
-		phi_y = phi[up+col] - phi[dn+col];
-		phi_z = phi[fcurr+col] - phi[ccurr+col];
-		//Second order
-		phi_xx = phi[lf+col] - 2*phi[curr] + phi[ri+col];
-		phi_yy = phi[up+col] - 2*phi[curr] + phi[dn+col];
-		phi_zz = phi[fcurr+col] - 2*phi[curr] + phi[ccurr+col];;
-		phi_xy = -0.25*phi[dr+col] - 0.25*phi[ur+col] + .25*phi[dl+col] + .25*phi[ul+col];
-//		phi_xz = 0;
-//		phi_zy = 0;
-		//Squares
-		phi_x2 = phi_x*phi_x;
-		phi_y2 = phi_y*phi_y;
-		phi_z2 = phi_z*phi_z;
+    // !!!! READ THIS !!! Computing for first column (we cant use left ones)
+    // TO VALIDATE WITH MATLAB CHECK COMPUTATION OF INTERNAL LOOP CODE
+    // -- Second order first dervatives
+    phi_x = phi[ri] - phi[curr];//
+    phi_y = phi[up] - phi[dn];
+    phi_z = phi[fcurr] - phi[ccurr];
+    //Second order second derivatives
+    phi_xx = phi[curr] - 2*phi[curr] + phi[ri];
+    phi_yy = phi[dn] - 2*phi[curr] + phi[up];
+    phi_zz = phi[ccurr] - 2*phi[curr] + phi[fcurr];;
+    phi_xy = -0.25*phi[dl] - 0.25*phi[ur] + .25*phi[dr] + .25*phi[up];
+    phi_xz = -0.25*phi[ccurr] - 0.25*phi[fri] + .25*phi[cri] + .25*phi[fcurr];
+    phi_zy = -0.25*phi[cdn] - 0.25*phi[fup] + .25*phi[fdn] + .25*phi[cup];
+    //Squares
+    phi_x2 = phi_x*phi_x;
+    phi_y2 = phi_y*phi_y;
+    phi_z2 = phi_z*phi_z;
 
-		curvature[curr+col] = ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_zz + 
-					phi_z2*phi_xx + phi_z2*phi_yy - 2*phi_x*phi_y*phi_xy + 
-					-2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
-					pow((float)(phi_x2 + phi_y2 + phi_z2 + .001),(float)(3/2));
+    curvature[curr] =   ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_zz + 
+            phi_z2*phi_xx + phi_z2*phi_yy - 2*phi_x*phi_y*phi_xy + 
+            -2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
+        pow((float)(phi_x2 + phi_y2 + phi_z2 + .001),(float)(3/2));
 
-//		curvature[globId] = currCoords.x;
-		//	curvature[globId] = globId*width;
-	}
+    //Iterate over the 'middle' columns
+    for(int col = 1; col < width-1; col++){
+        //First order
+        phi_x = phi[ri+col] - phi[lf+col];
+        phi_y = phi[up+col] - phi[dn+col];
+        phi_z = phi[fcurr+col] - phi[ccurr+col];
+        //Second order
+        phi_xx = phi[lf+col] - 2*phi[curr+col] + phi[ri+col];
+        phi_yy = phi[dn+col] - 2*phi[curr+col] + phi[up+col];
+        phi_zz = phi[ccurr+col] - 2*phi[curr+col] + phi[fcurr+col];;
+        phi_xy = -0.25*phi[dl+col] - 0.25*phi[ur+col] + .25*phi[dr+col] + .25*phi[ul+col];
+        phi_xz = -0.25*phi[clf+col] - 0.25*phi[fri+col] + .25*phi[cri+col] + .25*phi[flf+col];
+        phi_zy = -0.25*phi[cdn+col] - 0.25*phi[fup+col] + .25*phi[fdn+col] + .25*phi[cup+col];
+        //Squares
+        phi_x2 = phi_x*phi_x;
+        phi_y2 = phi_y*phi_y;
+        phi_z2 = phi_z*phi_z;
 
-	//-------------------- Last column ----------------
-	int col = width-1;
-	//First order
-	phi_x = phi[curr+col] - phi[lf+col];
-	phi_y = phi[up+col] - phi[dn+col];
-	phi_z = phi[fcurr+col] - phi[ccurr+col];
-	//Second order
-	phi_xx = phi[lf+col] - 2*phi[curr] + phi[curr+col];
-	phi_yy = phi[up+col] - 2*phi[curr] + phi[dn+col];
-	phi_zz = phi[fcurr+col] - 2*phi[curr] + phi[ccurr+col];;
-	phi_xy = -0.25*phi[dn+col] - 0.25*phi[up+col] + .25*phi[dl+col] + .25*phi[ul+col];
-//		phi_xz = 0;
-//		phi_zy = 0;
-	//Squares
-	phi_x2 = phi_x*phi_x;
-	phi_y2 = phi_y*phi_y;
-	phi_z2 = phi_z*phi_z;
+        curvature[curr+col] =   ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_zz + 
+                phi_z2*phi_xx + phi_z2*phi_yy - 2*phi_x*phi_y*phi_xy + 
+                -2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
+            pow((float)(phi_x2 + phi_y2 + phi_z2 + .001),(float)(3/2));
+        //		curvature[globId] = currCoords.x;
+    }
 
-	curvature[curr+col] = ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_zz + 
-				phi_z2*phi_xx + phi_z2*phi_yy - 2*phi_x*phi_y*phi_xy + 
-				-2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
-				pow((float)(phi_x2 + phi_y2 + phi_z2 + .001),(float)(3/2));
+    //-------------------- Last column (no RIGHT COLUMN VALUES)----------------
+    int col = width-1;
+    //First order
+    phi_x = phi[curr+col] - phi[lf+col];
+    phi_y = phi[up+col] - phi[dn+col];
+    phi_z = phi[fcurr+col] - phi[ccurr+col];
+    //Second order
+    phi_xx = phi[lf+col] - 2*phi[curr+col] + phi[curr+col];
+    phi_yy = phi[dn+col] - 2*phi[curr+col] + phi[up+col];
+    phi_zz = phi[ccurr+col] - 2*phi[curr+col] + phi[fcurr+col];;
+    phi_xy = -0.25*phi[dn+col] - 0.25*phi[up+col] + .25*phi[curr+col] + .25*phi[ul+col];
+    phi_xz = -0.25*phi[clf+col] - 0.25*phi[fcurr+col] + .25*phi[ccurr+col] + .25*phi[flf+col];
+    phi_zy = -0.25*phi[cdn+col] - 0.25*phi[fup+col] + .25*phi[fdn+col] + .25*phi[cup+col];
+    //Squares
+    phi_x2 = phi_x*phi_x;
+    phi_y2 = phi_y*phi_y;
+    phi_z2 = phi_z*phi_z;
+
+    curvature[curr+col] = ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_zz + 
+            phi_z2*phi_xx + phi_z2*phi_yy - 2*phi_x*phi_y*phi_xy + 
+            -2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
+        pow((float)(phi_x2 + phi_y2 + phi_z2 + .001),(float)(3/2));
+
+    /*
+    //Test if it is detecting each border correctly
+    slice = width*height;
+    bool isLastSlide =  curr > (slice*(depth-1) - 1);
+    bool isFirstSlide =  curr < slice;
+    curvature[curr] = isFirstRow;//Working
+    curvature[curr+1] = isFirstSlide;//Working
+    curvature[curr+2] = isLastSlide;
+    curvature[curr+3] = isLastRow;//Working
+    */
 
 }//curvature
 
@@ -371,49 +413,49 @@ int indxFromCoordAC(int width, int height, int row, int col, int dim){
 }
 
 int indxFromCoord3D(int width, int height, int depth,
-							int row, int col, int z, int dim){
+        int row, int col, int z, int dim){
     return width*height*z + width*row + col;
 }
 
 /**
-* Copies a 3D image into a buffer. 
-* The image should only contain one band.
-*/
+ * Copies a 3D image into a buffer. 
+ * The image should only contain one band.
+ */
 __kernel void textToBufNew(write_only image3d_t in, global float* buf){
 
-	int width = get_image_width(in);
-	int height = get_image_height(in);
-	int depth = get_image_depth(in);
+    int width = get_image_width(in);
+    int height = get_image_height(in);
+    int depth = get_image_depth(in);
 
-	int w_by_h = width*height;
+    int w_by_h = width*height;
     int idx = (int)get_global_id(0);
 
-	int z = (int)(idx/w_by_h);
-	int prevCube  = (z-1)*w_by_h;
+    int z = (int)(idx/w_by_h);
+    int prevCube  = (z-1)*w_by_h;
 
-	int row = (int)((idx - prevCube)/width);
-	int col = idx - prevCube - (row-1)*width ;
+    int row = (int)((idx - prevCube)/width);
+    int col = idx - prevCube - (row-1)*width ;
 
-	//write_imagef(in,def_sampler, (int4)(col,row,z,1));
+    //write_imagef(in,def_sampler, (int4)(col,row,z,1));
 }
 
 __kernel void textToBuf(read_only image3d_t in, global float* buf){
-	int width = get_image_width(in);
-	int height = get_image_height(in);
-	int depth = get_image_depth(in);
+    int width = get_image_width(in);
+    int height = get_image_height(in);
+    int depth = get_image_depth(in);
 
     int oneDidx= (int)get_global_id(0);
 
-/*
-	int size = width*height*depth;
-	int z = ceil(oneDidx/(width*height));//Which depth are we
-	int col = (int) 
-	int row = 
+    /*
+       int size = width*height*depth;
+       int z = ceil(oneDidx/(width*height));//Which depth are we
+       int col = (int) 
+       int row = 
 
-	float4 textVal = read_imagef(in, def_sampler, (int4)(col,row,z,1));
+       float4 textVal = read_imagef(in, def_sampler, (int4)(col,row,z,1));
 
-	buf[oneDidx] = textVal.x; 
-*/
+       buf[oneDidx] = textVal.x; 
+       */
 }
 
 /**
@@ -421,41 +463,41 @@ __kernel void textToBuf(read_only image3d_t in, global float* buf){
  * If 'allBands' is true, then the buffer should contain the 4 bands on it.
  * If 'allBands' is false, then the buffer should contain only information
  * in one channel, and it is copied into the 3 channels RGB of the image
-*/
+ */
 __kernel void bufToText(global float* buf, write_only image2d_t out, 
-					int width, int height, int allBands){
+        int width, int height, int allBands){
 
     int col = (int)get_global_id(0);
     int row = (int)get_global_id(1);
 
-	int currIndx = indxFromCoordAC(width, height, row, col, 1);
+    int currIndx = indxFromCoordAC(width, height, row, col, 1);
 
-	float4 textVal;
-	if(allBands){
-		float red = buf[currIndx*4];
-		float green = buf[currIndx*4 + 1];
-		float blue = buf[currIndx*4 + 2];
-		float alpha = buf[currIndx*4 + 3];
+    float4 textVal;
+    if(allBands){
+        float red = buf[currIndx*4];
+        float green = buf[currIndx*4 + 1];
+        float blue = buf[currIndx*4 + 2];
+        float alpha = buf[currIndx*4 + 3];
 
-		textVal = (float4)(red, green, blue, alpha);
-	}else{
-		float val = buf[currIndx];
-		textVal = (float4)(val, val, val, 1);
-	}
+        textVal = (float4)(red, green, blue, alpha);
+    }else{
+        float val = buf[currIndx];
+        textVal = (float4)(val, val, val, 1);
+    }
 
-	write_imagef(out, (int2)(col,row), textVal);
+    write_imagef(out, (int2)(col,row), textVal);
 }
 
 /**
-	* This kernel computes local averages of pixels inside and outside the object
-	* for every warp size. It only works for positive values 
-* How we are doing it is as follows:
-* Each group of will process (LocalMemSize / width) lines each time.
-* @param width
-* @param height 
-* @param depth
-* @param width
-*/
+ * This kernel computes local averages of pixels inside and outside the object
+ * for every warp size. It only works for positive values 
+ * How we are doing it is as follows:
+ * Each group of will process (LocalMemSize / width) lines each time.
+ * @param width
+ * @param height 
+ * @param depth
+ * @param width
+ */
 __kernel void
 avgInOut(const __global float* phi,const  __global float* img_in,
         __global float* avg_in_out, __const int size, 
@@ -489,7 +531,7 @@ avgInOut(const __global float* phi,const  __global float* img_in,
     int iter = 0;
 
     while(indx < size){//Indicates when each thread should stop
-		//This is the number of cells that are computed for each thread
+        //This is the number of cells that are computed for each thread
         for(int i = 0; i < cellsPerWorkItem; i++){
             if(indx < size){
                 value = img_in[indx];
@@ -526,8 +568,8 @@ avgInOut(const __global float* phi,const  __global float* img_in,
 
     // Only thread 1 makes the final computation
     if( get_local_id(0) == 0){
-        avg_in_out[0] = (float)currSumOutAll/(float)currCountOutAll;
-        avg_in_out[1] = (float)(currSumInAll/(float)currCountInAll);
+        avg_in_out[0] = (float)currSumOutAll/((float)currCountOutAll+EPS);
+        avg_in_out[1] = (float)(currSumInAll/((float)currCountInAll+EPS));
         avg_in_out[2] = (float)currCountOutAll;
         avg_in_out[3] = (float)currCountInAll;
         avg_in_out[4] = (float)currSumOutAll;

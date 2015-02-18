@@ -28,6 +28,7 @@ public:
     glm::mat4 getCameraMatrix();//Deprecated
     glm::mat4 getProjectionMatrix();
     glm::mat4 getModelMatrix();
+    void setModelMatrix(glm::mat4 newModelMatrix);
     glm::mat4 getViewMatrix();
     
 
@@ -39,6 +40,8 @@ protected:
 	float fzNear;
 	float fzFar;
 	float FOV;
+    int win_width;
+    int win_height;
 
 private:
     float CalcFrustrumScale(float FOVdeg);

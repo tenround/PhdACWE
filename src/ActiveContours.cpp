@@ -20,6 +20,7 @@
 #include "debug.h"
 
 #include <sstream>
+#include <iomanip>
 #include <qt4/QtCore/qglobal.h>
 
 // Inline function to cast char* to std:string
@@ -135,7 +136,7 @@ void ActiveContours::loadProgram(int iter, float alpha, float dt) {
 	
     this->totalIterations = iter;
     this->alpha = alpha;
-	
+    this->dt_smooth = dt;
     try {
         // Create the program from source
         clMan.initContext(true);
@@ -189,7 +190,8 @@ void ActiveContours::runSDF() {
 			cout << "--------------------Displaying some values of the SDF..." << endl;
 			vecEvPrevPrinting.clear();
 			vecEvPrevPrinting.push_back(evSDF_newPhi);
-			printBuffer(buf_phi, 10, vecEvPrevPrinting);
+			//printBuffer(buf_phi, 10, vecEvPrevPrinting);
+			printBuffer(buf_phi, 400, 0, width, height, vecEvPrevPrinting);
 		}
         if (WRITE) {// Saves the SDF result as an image
             dout << "Saving SDF result..." << endl;
@@ -253,6 +255,8 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
 								region, (size_t)0, &vecEvPrevTextToBuffer,&evCopyInGlToIn);
 
 			if (WRITE) {//Writes the init image on the temporal folder
+                // Sets the precision of cout to 2
+                cout << std::setprecision(3) << endl;
 				vecEvPrevPrinting.push_back(evCopyInGlToIn);
 				res = queue->enqueueReadBuffer(buf_img_in, CL_TRUE, 0,
 						sizeof (float) *width*height*depth, (void*) arr_img_out, &vecEvPrevPrinting, 0);
@@ -307,7 +311,28 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
                 cout << "--------------------Displaying the value of curvature..." << endl;
 				vecEvPrevPrinting.clear();
 				vecEvPrevPrinting.push_back(evCurvature);
-				printBuffer(buf_curvature, 10, vecEvPrevPrinting);
+				//printBuffer(buf_curvature, 10, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, 0, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*2, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*3, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*4, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*5, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*6, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*7, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*8, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*9, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*10, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*11, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*12, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*13, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*14, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*15, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*16, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*17, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*18, width, height, vecEvPrevPrinting);
+                printBuffer(buf_curvature, 400, width*height*19, width, height, vecEvPrevPrinting);
+
             }
 			
             // Computing the maximum F value (max value of:
@@ -319,59 +344,85 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
                 cout << "--------------------Displaying the value of F ..." << endl;
 				vecEvPrevPrinting.clear();
 				vecEvPrevPrinting.push_back(evF);
-				printBuffer(buf_F, 10, vecEvPrevPrinting);
+				//printBuffer(buf_F, 10, vecEvPrevPrinting);
+                //printBuffer(buf_F, 400, 0, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_F, 400, width*height*1, width, height, vecEvPrevPrinting);
             }
 
-			//Computing maximum value of F
+            //Computing maximum value of F
             vecEvPrevMaxF.push_back(evF);
             evMaxF = compReduce(buf_F, buf_max_F, true, vecEvPrevMaxF); // Use abs value 
-			
+
             if (WRITE) {
                 cout << "--------------------Displaying max value of F ..." << endl;
-				vecEvPrevPrinting.clear();
-				vecEvPrevPrinting.push_back(evF);
-				printBuffer(buf_max_F, 1, vecEvPrevPrinting);
+                vecEvPrevPrinting.clear();
+                vecEvPrevPrinting.push_back(evF);
+                printBuffer(buf_max_F, 1, vecEvPrevPrinting);
             }
-			
+
             vecEvPrevDphiDt.push_back(evCurvature);// Wait for curvature
             vecEvPrevDphiDt.push_back(evMaxF);// Wait for max F -> and F
             evDphiDt_MaxDphiDt = compDphiDt(vecEvPrevDphiDt);
-			
-            if (WRITE) {
-                cout << "--------------------Displaying values of Dphi/dt ..." << endl;
-				vecEvPrevPrinting.clear();
-				vecEvPrevPrinting.push_back(evDphiDt_MaxDphiDt);
-				printBuffer(buf_dphidt, 10, vecEvPrevPrinting);
-			}
-			
-            vecEvPrevMaxDphiDt.push_back(evDphiDt_MaxDphiDt);
-            evDphiDt_MaxDphiDt = compReduce(buf_dphidt, buf_max_dphidt, true, vecEvPrevMaxDphiDt ); 
 
             if (WRITE) {
-				 cout << "--------------------Displaying Max Dphi/dt ..." << endl;
-				vecEvPrevPrinting.clear();
-				vecEvPrevPrinting.push_back(evDphiDt_MaxDphiDt);
-				printBuffer(buf_max_dphidt, 1, vecEvPrevPrinting);
+                cout << "--------------------Displaying values of Dphi/dt ..." << endl;
+                vecEvPrevPrinting.clear();
+                vecEvPrevPrinting.push_back(evDphiDt_MaxDphiDt);
+                //printBuffer(buf_dphidt, 10, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, 0, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*1, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*2, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*3, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*4, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*5, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*6, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*7, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*8, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*9, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*10, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*11, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*12, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*13, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*14, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*15, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*16, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*17, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*18, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_dphidt, 400, width*height*19, width, height, vecEvPrevPrinting);
+            }
+
+            vecEvPrevMaxDphiDt.push_back(evDphiDt_MaxDphiDt);
+            evDphiDt_MaxDphiDt = compReduce(buf_dphidt, buf_max_dphidt, false, vecEvPrevMaxDphiDt ); 
+
+            if (WRITE) {
+                cout << "--------------------Displaying Max Dphi/dt ..." << endl;
+                vecEvPrevPrinting.clear();
+                vecEvPrevPrinting.push_back(evDphiDt_MaxDphiDt);
+                printBuffer(buf_max_dphidt, 1, vecEvPrevPrinting);
             }
 
             vecEvPrevNewPhi.push_back(evDphiDt_MaxDphiDt);
             evSDF_newPhi = compNewPhi(vecEvPrevNewPhi); //This phi without smooth term
-			
+
             if (WRITE) {
                 cout << "--------------------Displaying values of new phi ..." << endl;
-				vecEvPrevPrinting.clear();
-				vecEvPrevPrinting.push_back(evSDF_newPhi);
-				printBuffer(buf_phi, 10, vecEvPrevPrinting);
+                vecEvPrevPrinting.clear();
+                vecEvPrevPrinting.push_back(evSDF_newPhi);
+                //printBuffer(buf_phi, 10, vecEvPrevPrinting);
+                //printBuffer(buf_phi, 400, 0, width, height, vecEvPrevPrinting);
+                printBuffer(buf_phi, 400, width*height*10, width, height, vecEvPrevPrinting);
             }
-			
+
             vecEvPrevSmPhi.push_back(evSDF_newPhi);
-            evAvgInOut_SmoothPhi = smoothPhi(vecEvPrevSmPhi, alpha); //This phi without smooth term
-			
+            evAvgInOut_SmoothPhi = smoothPhi(vecEvPrevSmPhi, dt_smooth); //This phi without smooth term
+
             if (WRITE) {
                 cout << "--------------------Displaying values of smoothed phi ..." << endl;
-				vecEvPrevPrinting.clear();
-				vecEvPrevPrinting.push_back(evAvgInOut_SmoothPhi);
-				printBuffer(buf_smooth_phi, 10, vecEvPrevPrinting);
+                vecEvPrevPrinting.clear();
+                vecEvPrevPrinting.push_back(evAvgInOut_SmoothPhi);
+                //printBuffer(buf_smooth_phi, 10, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, 0, width, height, vecEvPrevPrinting);
+                printBuffer(buf_smooth_phi, 400, width*height*10, width, height, vecEvPrevPrinting);
             }
             vecEvPrevAvgInOut.clear();
             vecEvPrevAvg.clear();
@@ -386,26 +437,26 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
             vecEvPrevPrinting.clear();
             vecEvPrevTextToBuffer.clear();
         }//Main loop
-		
-		cout << "Done ..................." << endl;
 
-		if (WRITE) {
-			cout << "--------------------Writing new PHI as images in images/temp_results/newPhi/" << endl;
+        cout << "Done ..................." << endl;
 
-			vecEvPrevPrinting.push_back(evAvgInOut_SmoothPhi);
-			//Reads from buf_phi (GPU) and writes to arr_img_out (Host)
+        if (WRITE) {
+            cout << "--------------------Writing new PHI as images in images/temp_results/newPhi/" << endl;
+
+            vecEvPrevPrinting.push_back(evAvgInOut_SmoothPhi);
+            //Reads from buf_phi (GPU) and writes to arr_img_out (Host)
             res = queue->enqueueReadBuffer(buf_smooth_phi, CL_TRUE, 0, sizeof (float) *buf_size, 
-					(void*) arr_img_out, &vecEvPrevPrinting, 0);
-			// Prints image into png file
-			ImageManager::write3DImage((char*) "images/temp_results/newPhi/", arr_img_out, width, height, depth, 0);
-		}
+                    (void*) arr_img_out, &vecEvPrevPrinting, 0);
+            // Prints image into png file
+            ImageManager::write3DImage((char*) "images/temp_results/newPhi/", arr_img_out, width, height, depth, 0);
+        }
 
         vecEvPrevCopyPhiBackToGL.push_back(evAvgInOut_SmoothPhi);
         queue->enqueueCopyBufferToImage(buf_smooth_phi, img_phi_gl, (size_t)0, origin, 
-                            region, &vecEvPrevCopyPhiBackToGL, &evAcOGL);
-		queue->finish(); //Be sure we finish everything
-		err = queue->enqueueReleaseGLObjects(&cl_textures, NULL, 0);
-		
+                region, &vecEvPrevCopyPhiBackToGL, &evAcOGL);
+        queue->finish(); //Be sure we finish everything
+        err = queue->enqueueReleaseGLObjects(&cl_textures, NULL, 0);
+
     } catch (cl::Error ex) {
         cout << "EXCEPTION" << endl;
         clMan.printError(ex);
@@ -421,25 +472,25 @@ cl::Event ActiveContours::copyBufToImg(cl::Buffer& buf, cl::Image3D& img, vector
     try {
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
-		
+
         cl::Kernel kernelBufToText(*program, (char*) "bufToText");
         kernelBufToText.setArg(0, buf);
         kernelBufToText.setArg(1, img);
         kernelBufToText.setArg(2, width);
         kernelBufToText.setArg(3, height);
-		//If false, then we assume the buffer only contains one band and we copy
-		//it to the rest of the channels.
+        //If false, then we assume the buffer only contains one band and we copy
+        //it to the rest of the channels.
         kernelBufToText.setArg(4, (int)bufHasAllBands);
-		
+
         // Do the work
         queue->enqueueNDRangeKernel(
-		kernelBufToText,
+                kernelBufToText,
                 cl::NullRange,
                 cl::NDRange((size_t) width, (size_t) height),
                 cl::NDRange((size_t) grp_size_x, (size_t) grp_size_y),
                 &vecEvPrev,
                 &evBufToText);
-		
+
     } catch (cl::Error ex) {
         clMan.printError(ex);
     }
@@ -450,9 +501,9 @@ cl::Event ActiveContours::copyBufToImg(cl::Buffer& buf, cl::Image3D& img, vector
  * This function simply prints the current NDRanges that are being used
  */
 void ActiveContours::printNDRanges(int cols, int rows, int z, 
-								int grp_cols, int grp_rows, int grp_z){
-	dout << "NDRange = " << cols << " \t " << rows << " \t " << z << endl;
-	dout << "NDGrps= " << grp_cols << " \t " << grp_rows << " \t " <<  grp_z << endl;
+        int grp_cols, int grp_rows, int grp_z){
+    dout << "NDRange = " << cols << " \t " << rows << " \t " << z << endl;
+    dout << "NDGrps= " << grp_cols << " \t " << grp_rows << " \t " <<  grp_z << endl;
 }
 /**
  * Copies a 3D texture into a buffer
@@ -463,27 +514,27 @@ cl::Event ActiveContours::copyTextToBuf(cl::Image3DGL& text, cl::Buffer& buf, ve
     try {
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
-		
+
         cl::Kernel kernelBufToText(*program, (char*) "textToBuf");
         kernelBufToText.setArg(0, text);
         kernelBufToText.setArg(1, buf);
-		
-		dout << "Copying 3D Image to buffer (copyTextToBuf)" << endl;
 
-		while(buf_size % dev_max_work_items != 0){
-			dev_max_work_items--;
-		}
+        dout << "Copying 3D Image to buffer (copyTextToBuf)" << endl;
 
-		printNDRanges(buf_size, 0, 0, dev_max_work_items, 0, 0);
+        while(buf_size % dev_max_work_items != 0){
+            dev_max_work_items--;
+        }
+
+        printNDRanges(buf_size, 0, 0, dev_max_work_items, 0, 0);
 
         queue->enqueueNDRangeKernel(
-		kernelBufToText,
+                kernelBufToText,
                 cl::NullRange,
                 cl::NDRange((size_t) buf_size),
                 cl::NDRange((size_t) dev_max_work_items),
                 &vecEvPrev,
                 &evBufToText);
-		
+
     } catch (cl::Error ex) {
         clMan.printError(ex);
     }
@@ -500,44 +551,44 @@ cl::Event ActiveContours::copyTextToBuf(cl::Image3DGL& text, cl::Buffer& buf, ve
  */
 cl::Event ActiveContours::compAvgInAndOut(cl::Buffer& buf_phi, cl::Buffer& buf_img_in,
         vector<cl::Event> vecPrevEvents) {
-	
-	dout << "Computing average pixel value for Phi > 0 and Phi < 0 ......" << endl;
 
-	cl::Event evAvgInOut_SmoothPhi;
+    dout << "Computing average pixel value for Phi > 0 and Phi < 0 ......" << endl;
+
+    cl::Event evAvgInOut_SmoothPhi;
     try {
-		// We are doing the average using just one Group. 
-		// The threads on that group will change the memory they use to compute the avg
-		
-		//If we want to fill the local memory how many cells can a work item compute
-		int cellsPerWorkItem = floor(dev_max_local_mem/dev_max_work_items);
-		
+        // We are doing the average using just one Group. 
+        // The threads on that group will change the memory they use to compute the avg
+
+        //If we want to fill the local memory how many cells can a work item compute
+        int cellsPerWorkItem = floor(dev_max_local_mem/dev_max_work_items);
+
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
-		
+
         cl::Kernel kernelAVGcolor(*program, (char*) "avgInOut");
         kernelAVGcolor.setArg(0, buf_phi);//SDF
         kernelAVGcolor.setArg(1, buf_img_in);//Texture data
         kernelAVGcolor.setArg(2, buf_avg_in_out);//Output variable
         kernelAVGcolor.setArg(3, buf_size);//Total number of values 
         kernelAVGcolor.setArg(4, cellsPerWorkItem);//Cells to compute in each iteration
-		
-		//We need to create an artificial increased size to get perfect fit
-		int incSize = dev_max_work_items*(ceil(buf_size/dev_max_work_items));
 
-		dout << "Max work items per group: " << dev_max_work_items << endl; 
-		dout << "Size: " << buf_size << endl; 
-		dout << "incSize: " << incSize << endl; 
-		dout << "Cells to compute per work item:" << cellsPerWorkItem << endl;
-		dout << "buf_avg_in_out size: " << 4 << endl;
+        //We need to create an artificial increased size to get perfect fit
+        int incSize = dev_max_work_items*(ceil(buf_size/dev_max_work_items));
+
+        dout << "Max work items per group: " << dev_max_work_items << endl; 
+        dout << "Size: " << buf_size << endl; 
+        dout << "incSize: " << incSize << endl; 
+        dout << "Cells to compute per work item:" << cellsPerWorkItem << endl;
+        dout << "buf_avg_in_out size: " << 4 << endl;
 
         queue->enqueueNDRangeKernel(
-		kernelAVGcolor,
+                kernelAVGcolor,
                 cl::NullRange,
                 cl::NDRange((size_t) dev_max_work_items),
                 cl::NDRange((size_t) dev_max_work_items),
                 &vecPrevEvents,
                 &evAvgInOut_SmoothPhi);
-		
+
     } catch (cl::Error ex) {
         cout << "Error at compAvgInandOut" << endl;
         clMan.printError(ex);
@@ -545,39 +596,40 @@ cl::Event ActiveContours::compAvgInAndOut(cl::Buffer& buf_phi, cl::Buffer& buf_i
     return evAvgInOut_SmoothPhi;
 }
 
-cl::Event ActiveContours::smoothPhi(vector<cl::Event> vecEvPrev, float alpha) {
+cl::Event ActiveContours::smoothPhi(vector<cl::Event> vecEvPrev, float dt_smooth) {
     if (WRITE) {
         cout << "----------- Smoothing new phi ------------" << endl;
+        cout << "----------- Using dt = " << dt_smooth << "------------" << endl;
     }
     cl::Event evSmooth;
     try {
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
-		
+
         cl::Kernel kernelSmoothPhi(*program, (char*) "smoothPhi");
         kernelSmoothPhi.setArg(0, buf_phi);
         kernelSmoothPhi.setArg(1, buf_smooth_phi);
-        kernelSmoothPhi.setArg(2, alpha);
+        kernelSmoothPhi.setArg(2, dt_smooth);
         kernelSmoothPhi.setArg(3, width);
         kernelSmoothPhi.setArg(4, height);
         kernelSmoothPhi.setArg(5, depth);
-	
-		int threads = height*depth;
-		int threadsPerGroup = dev_max_work_items;
-		while( threads % threadsPerGroup != 0){
-			threadsPerGroup --;
-		}
-		dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
-	
+
+        int threads = height*depth;
+        int threadsPerGroup = dev_max_work_items;
+        while( threads % threadsPerGroup != 0){
+            threadsPerGroup --;
+        }
+        dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
+
         // Do the work
         queue->enqueueNDRangeKernel(
-		kernelSmoothPhi,
+                kernelSmoothPhi,
                 cl::NullRange,
                 cl::NDRange((size_t) threads),
                 cl::NDRange((size_t) threadsPerGroup),
                 &vecEvPrev,
                 &evSmooth);
-		
+
     } catch (cl::Error ex) {
         clMan.printError(ex);
     }
@@ -592,7 +644,7 @@ cl::Event ActiveContours::compNewPhi(vector<cl::Event> vecEvPrev) {
     try {
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
-		
+
         cl::Kernel kernelDphiDt(*program, (char*) "newphi");
         kernelDphiDt.setArg(0, buf_phi);
         kernelDphiDt.setArg(1, buf_dphidt);
@@ -600,22 +652,22 @@ cl::Event ActiveContours::compNewPhi(vector<cl::Event> vecEvPrev) {
         kernelDphiDt.setArg(3, width);
         kernelDphiDt.setArg(4, height);
 
-		int threads = height*depth;
-		int threadsPerGroup = dev_max_work_items;
-		while( threads % threadsPerGroup != 0){
-			threadsPerGroup --;
-		}
-		dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
+        int threads = height*depth;
+        int threadsPerGroup = dev_max_work_items;
+        while( threads % threadsPerGroup != 0){
+            threadsPerGroup --;
+        }
+        dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
 
         // Do the work
         queue->enqueueNDRangeKernel(
-		kernelDphiDt,
+                kernelDphiDt,
                 cl::NullRange,
                 cl::NDRange((size_t) threads),
                 cl::NDRange((size_t) threadsPerGroup),
                 &vecEvPrev,
                 &evSDF_newPhi);
-		
+
     } catch (cl::Error ex) {
         clMan.printError(ex);
     }
@@ -627,7 +679,7 @@ cl::Event ActiveContours::compDphiDt(vector<cl::Event> vecEvPrev) {
     try {
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
-		
+
         cl::Kernel kernelDphiDt(*program, (char*) "dphidt");
         kernelDphiDt.setArg(0, buf_curvature);
         kernelDphiDt.setArg(1, buf_F);
@@ -637,21 +689,21 @@ cl::Event ActiveContours::compDphiDt(vector<cl::Event> vecEvPrev) {
         kernelDphiDt.setArg(5, width);
         kernelDphiDt.setArg(6, height);
 
-		int threads = height*depth;
-		int threadsPerGroup = dev_max_work_items;
-		while( threads % threadsPerGroup != 0){
-			threadsPerGroup --;
-		}
-		dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
+        int threads = height*depth;
+        int threadsPerGroup = dev_max_work_items;
+        while( threads % threadsPerGroup != 0){
+            threadsPerGroup --;
+        }
+        dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
 
         queue->enqueueNDRangeKernel(
-		kernelDphiDt,
+                kernelDphiDt,
                 cl::NullRange,
                 cl::NDRange((size_t) threads),
                 cl::NDRange((size_t) threadsPerGroup),
                 &vecEvPrev,
                 &evCompDphiDt);
-		
+
     } catch (cl::Error ex) {
         clMan.printError(ex);
     }
@@ -667,36 +719,36 @@ cl::Event ActiveContours::compDphiDt(vector<cl::Event> vecEvPrev) {
  * @return 
  */
 cl::Event ActiveContours::compCurvature(vector<cl::Event> vecEvPrev) {
-	
+
     cl::Event evCurvF;
-	dout << endl << " ----------------- Computing Curvature ---------" << endl;
+    dout << endl << " ----------------- Computing Curvature ---------" << endl;
 
     try {
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
-		
+
         cl::Kernel kernelCurvature(*program, (char*) "curvature");
         kernelCurvature.setArg(0, buf_phi);
         kernelCurvature.setArg(1, buf_curvature);
         kernelCurvature.setArg(2, width);
         kernelCurvature.setArg(3, height);
         kernelCurvature.setArg(4, depth);
-		
-		int threads = height*depth;
-		int threadsPerGroup = dev_max_work_items;
-		while( threads % threadsPerGroup != 0){
-			threadsPerGroup --;
-		}
-		dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
+
+        int threads = height*depth;
+        int threadsPerGroup = dev_max_work_items;
+        while( threads % threadsPerGroup != 0){
+            threadsPerGroup --;
+        }
+        dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
 
         queue->enqueueNDRangeKernel(
-		kernelCurvature,
+                kernelCurvature,
                 cl::NullRange,
                 cl::NDRange((size_t) threads),
                 cl::NDRange((size_t) threadsPerGroup),
                 &vecEvPrev,
                 &evCurvF);
-		
+
     } catch (cl::Error ex) {
         clMan.printError(ex);
     }
@@ -709,14 +761,14 @@ cl::Event ActiveContours::compCurvature(vector<cl::Event> vecEvPrev) {
  * @return 
  */
 cl::Event ActiveContours::compF(vector<cl::Event> vecEvPrev) {
-	
+
     cl::Event evCompF;
-	dout << endl << " ----------------- Computing F ---------" << endl;
+    dout << endl << " ----------------- Computing F ---------" << endl;
 
     try {
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
-		
+
         cl::Kernel kernelCurvature(*program, (char*) "compF");
         kernelCurvature.setArg(0, buf_avg_in_out);
         kernelCurvature.setArg(1, buf_img_in);
@@ -724,22 +776,22 @@ cl::Event ActiveContours::compF(vector<cl::Event> vecEvPrev) {
         kernelCurvature.setArg(3, width);
         kernelCurvature.setArg(4, height);
         kernelCurvature.setArg(5, depth);
-		
-		int threads = height*depth;
-		int threadsPerGroup = dev_max_work_items;
-		while( threads % threadsPerGroup != 0){
-			threadsPerGroup --;
-		}
-		dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
+
+        int threads = height*depth;
+        int threadsPerGroup = dev_max_work_items;
+        while( threads % threadsPerGroup != 0){
+            threadsPerGroup --;
+        }
+        dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
 
         queue->enqueueNDRangeKernel(
-		kernelCurvature,
+                kernelCurvature,
                 cl::NullRange,
                 cl::NDRange((size_t) threads),
                 cl::NDRange((size_t) threadsPerGroup),
                 &vecEvPrev,
                 &evCompF);
-		
+
     } catch (cl::Error ex) {
         clMan.printError(ex);
     }
@@ -757,46 +809,46 @@ cl::Event ActiveContours::compF(vector<cl::Event> vecEvPrev) {
  * @return 
  */
 cl::Event ActiveContours::compReduce(cl::Buffer& buf, cl::Buffer& buf_out, 
-						bool absVal, vector<cl::Event> vecEvPrev) {
-	
+        bool absVal, vector<cl::Event> vecEvPrev) {
+
     if (WRITE) {
         cout << endl << "--------- Computing Reduce -------------" << endl;
     }
-    	
-	cl::Event evReduce;
+
+    cl::Event evReduce;
     try {
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
-		
-		int length = width*height*depth;
-		int threadsPerGroup = min(dev_max_work_items,length);
-		int threads = threadsPerGroup;//We only want one group
 
-		dout << "Threads: " << threads << 
-				" Threads per group: " << threadsPerGroup << 
-				" Length: " << length << endl;
+        int length = width*height*depth;
+        int threadsPerGroup = min(dev_max_work_items,length);
+        int threads = threadsPerGroup;//We only want one group
+
+        dout << "Threads: " << threads << 
+            " Threads per group: " << threadsPerGroup << 
+            " Length: " << length << endl;
 
         cl::Kernel kernelMaxValue(*program, (char*) "reduce");
-		
+
         kernelMaxValue.setArg(0, buf);
         kernelMaxValue.setArg(1, sizeof (float) * threadsPerGroup, NULL);
         kernelMaxValue.setArg(2, buf_out);
         kernelMaxValue.setArg(3, length);
-        kernelMaxValue.setArg(4, absVal ? 1 : 0); // Don't use absolute value
-		
+        kernelMaxValue.setArg(4, absVal ? 1 : 0); //Indicates if we take the absolute vale or not
+
         // Do the work
         queue->enqueueNDRangeKernel(
-		kernelMaxValue,
+                kernelMaxValue,
                 cl::NullRange,
                 cl::NDRange((size_t) threads),
                 cl::NDRange((size_t) threadsPerGroup),
                 &vecEvPrev,
                 &evReduce);
-		
+
     } catch (cl::Error ex) {
         clMan.printError(ex);
     }
-	
+
     return evReduce;
 }
 
@@ -814,61 +866,97 @@ cl::Event ActiveContours::compReduce(cl::Buffer& buf, cl::Buffer& buf_out,
  * @param depthEnd Z end position of the cube 
  */
 void ActiveContours::create3DMask(int width, int height, int depth,
-		int colStart, int colEnd, int rowStart, int rowEnd, int depthStart, int depthEnd) {
-	
+        int colStart, int colEnd, int rowStart, int rowEnd, int depthStart, int depthEnd) {
+
     arr_buf_mask = new unsigned char[width * height * depth];
-	
+
     //Update local width and height of the image
     width = width;
     height = height;
     depth  = depth;
-	
+
     int size = width * height * depth;
     int indx = 0;
-	
+
     cout << "--------------------- Creating mask (" << width << "," 
-			<< height << "," << depth << ") ----------" << endl;
+        << height << "," << depth << ") ----------" << endl;
 
     dout << "col min: " << colStart << " col max: " << colEnd << endl;
     dout << "row min: " << rowStart << " row max: " << rowEnd << endl;
     dout << "depth min: " << depthStart << " depth max: " << depthEnd << endl;
-	
+
     //Initialize to 0
     for (int i = 0; i < size; i++) {
         arr_buf_mask[i] = 0; // Red value
     }
-	
+
     int count = 0;
     //Set the internal mask to 1
-	for (int z = depthStart; z < depthEnd; z++) {
-		for (int row = colStart; row < colEnd; row++) {
-			indx = ImageManager::indxFromCoord3D(width, height, row, rowStart, z);
-			for (int col = rowStart; col < rowEnd; col++) {
-				arr_buf_mask[indx] = 1; //R
-				indx = indx + 1;
+    for (int z = depthStart; z < depthEnd; z++) {
+        for (int row = rowStart; row < rowEnd; row++) {
+            //indx = ImageManager::indxFromCoord3D(width, height, row, rowStart, z);
+            indx = width * height * z + width * row + colStart;
+            for (int col = colStart; col < colEnd; col++) {
+                arr_buf_mask[indx] = 1; //R
+                indx = indx + 1;
                 count++;
-			}
+            }
         }
     }
-	
+
     dout << "Total one's on mask: " << count << endl;
 }
 
 
-void ActiveContours::printBuffer(cl::Buffer& buf, int size, vector<cl::Event> vecPrev){
-	
+void ActiveContours::printBuffer(cl::Buffer& buf, int size, int offset, int width, int height, vector<cl::Event> vecPrev){
+
     cl::CommandQueue* queue = clMan.getQueue();
 
-	float* result = new float[size];
-	dout << "Reading: " << size<< " elements" << endl;
-	res = queue->enqueueReadBuffer(buf,
-			CL_TRUE, (size_t) 0, (size_t) (sizeof(float)*size),
-			(void*) result, &vecPrev, 0);
-	
-	queue->finish();
-	
-	for(int i = 0; i< size; i++){
-		dout << "Value at i: " << i << " = " << result[i] << endl;
-	}
-	
+    float* result = new float[size];
+    dout << "Reading: " << size<< " elements" << endl;
+    // buffer, block, offset, size, ptr, ev_wait, new_ev
+    res = queue->enqueueReadBuffer
+        (buf, CL_TRUE, (size_t) (sizeof(float)*offset), (size_t) (sizeof(float)*size), 
+         (void*) result, &vecPrev, 0);
+
+    queue->finish();
+
+    int count = 0;
+    while(count < size){
+        cout << "------ Slice ------" << (offset/(width*height) + 1) << endl << endl;
+        for(int row= 0; row<height; row++){
+            for(int col= 0; col<width; col++){
+                if( count < size){
+                    cout << result[count] << "\t";
+                    count++;
+                }else{
+                    break;
+                }
+            }//col
+            cout << endl;
+            if( count >= size){
+                break;
+            }
+        }//row
+    }
+
+} 
+
+
+void ActiveContours::printBuffer(cl::Buffer& buf, int size, vector<cl::Event> vecPrev){
+
+    cl::CommandQueue* queue = clMan.getQueue();
+
+    float* result = new float[size];
+    dout << "Reading: " << size<< " elements" << endl;
+    res = queue->enqueueReadBuffer(buf,
+            CL_TRUE, (size_t) 0, (size_t) (sizeof(float)*size),
+            (void*) result, &vecPrev, 0);
+
+    queue->finish();
+
+    for(int i = 0; i< size; i++){
+        dout << "Value at i: " << i << " = " << result[i] << endl;
+    }
+
 }

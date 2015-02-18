@@ -25,6 +25,8 @@ float CameraMovement::CalcFrustrumScale(float FOVdeg)
 
 void CameraMovement::Reshape(int w, int h)
 {
+    win_width = w;
+    win_height = h;
     cout << "Modifying projection matrix... " << endl;
 //    projMatrix[0].x = fFrustumScale / (w/ (float)h);
 //    projMatrix[1].y = fFrustumScale;
@@ -56,6 +58,9 @@ CameraMovement::CameraMovement(float fzNear, float fzFar, float FOV)
     modelMatrix = glm::mat4(1.0f);
     viewMatrix = glm::mat4(1.0f);
 
+    //Giving initial values 
+    win_height = 0;
+    win_width = 0;
 	/*
     fFrustumScale = this->CalcFrustrumScale(FOV);
 
@@ -88,4 +93,8 @@ glm::mat4 CameraMovement::getModelMatrix(){
 }
 glm::mat4 CameraMovement::getProjectionMatrix(){
     return projMatrix;
+}
+
+void CameraMovement::setModelMatrix(glm::mat4 newModelMatrix){
+    modelMatrix = newModelMatrix;
 }

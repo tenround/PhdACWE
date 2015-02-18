@@ -129,6 +129,7 @@ void GLWidget::SelectImage() {
     QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/Box.nii";
     //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/Gradient.nii";
     //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/SmallReal256.nii";
+    //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/CompleteNormalized.nii";
     //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/SmallReal16.nii";
 
 	/*
@@ -195,8 +196,8 @@ void GLWidget::CreateSamplers() {
 
 void GLWidget::InitActiveCountours() {
     cout << "InitActiveCountours" << endl;
-    float alpha = 0.5;
-    float def_dt = .5;
+    float alpha = 0.2;
+    float def_dt = 5;
 	
 	if(firstTimeImageSelected){
 		clObj.loadProgram(maxActCountIter, alpha, def_dt);
@@ -451,8 +452,6 @@ void GLWidget::InitShaders() {
     glUniform1i(textSamplerUniform, imgTextId); //Binds the texture with the sampler
     glUniform1i(segTextSamplerUniform, segTextId); //Binds the texture with the sampler
 
-    cout << "%%%%%%%%%%%%%%%%%%%%%%%% " << imgTextId << endl;
-    cout << "%%%%%%%%%%%%%%%%%%%%%%%% " << segTextId << endl;
     glUniform1i(displaySegmUnif, 0); //Binds the texture with the sampler
 	
     //glUniformMatrix4fv(g_program.cameraToClipMatrixUnif, 1, GL_FALSE, 
@@ -817,7 +816,7 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event) {
         float newX = currX / (float) winWidth;
         float newY = (winHeight - currY) / (float) winHeight;
 
-        cout << currX << "/" << winWidth << "....." << currY << "/" << winHeight << endl;
+        //cout << currX << "/" << winWidth << "....." << currY << "/" << winHeight << endl;
 
         newX = newX*2 -1;
         newY = newY*2 -1;
@@ -903,8 +902,7 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
 
             break;
         case 'Z':
-            if( abs(verticesPlanes[2]+stepSize) <= cubeDepth &&
-                verticesPlanes[2]+stepSize <= 0){
+            if( abs(verticesPlanes[2]+stepSize) <= (cubeDepth/2)){
                 dout << "Moving billboard at Z = 0" << endl;
                 glBindVertexArray(vaoPlanesId); //First VAO setup (only one this time)
                 verticesPlanes[2] += stepSize; 
@@ -1008,13 +1006,12 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
 
 void GLWidget::InitVertexData(){
 
-    float zvalNear = 0;
     //Change the size of the cube depending on widht, heigh and depth
     cubeWidth = 1;//Using with as the normalized with
     cubeHeight = (float)height/(float)width;//Using with as the normalized with
     //Multiply by 2 because cube Width is for each side.
     cubeDepth = 2*((float)depth/(float)width);
-
+    
     // -- Initalizing vertices for each plane --
     // -- Initalizing vertices for cube sides --
     float halfDepth = cubeDepth/2;
@@ -1022,64 +1019,64 @@ void GLWidget::InitVertexData(){
     // 0 Top left
     verticesPlanes[0]= -cubeWidth;
     verticesPlanes[1]= cubeHeight;
-    verticesPlanes[2]= -halfDepth;
+    verticesPlanes[2]= 0;
     verticesPlanes[3]= 1.0f;
     // 1 Top right
     verticesPlanes[4]= cubeWidth;
     verticesPlanes[5]= cubeHeight;
-    verticesPlanes[6]= -halfDepth;
+    verticesPlanes[6]= 0;
     verticesPlanes[7]= 1.0f;
     // 2 Bottom right
     verticesPlanes[8]= cubeWidth;
     verticesPlanes[9]= -cubeHeight;
-    verticesPlanes[10]= -halfDepth;
+    verticesPlanes[10]= 0;
     verticesPlanes[11]= 1.0f;
     // 3 Bottom left
     verticesPlanes[12]=-cubeWidth;
     verticesPlanes[13]=-cubeHeight;
-    verticesPlanes[14]= -halfDepth;
+    verticesPlanes[14]= 0;
     verticesPlanes[15]= 1.0f;
     // -- Side Plane--
     // 0 Top left
     verticesPlanes[16]= 0;
     verticesPlanes[17]= cubeHeight;
-    verticesPlanes[18]= -cubeDepth;
+    verticesPlanes[18]= -halfDepth;
     verticesPlanes[19]= 1.0f;
     // 1 Top right
     verticesPlanes[20]= 0;
     verticesPlanes[21]= cubeHeight;
-    verticesPlanes[22]= zvalNear;
+    verticesPlanes[22]= halfDepth;
     verticesPlanes[23]= 1.0f;
     // 2 Bottom right
     verticesPlanes[24]= 0;
     verticesPlanes[25]= -cubeHeight;
-    verticesPlanes[26]= zvalNear;
+    verticesPlanes[26]= halfDepth;
     verticesPlanes[27]= 1.0f;
     // 3 Bottom left
     verticesPlanes[28]= 0;
     verticesPlanes[29]=-cubeHeight;
-    verticesPlanes[30]= -cubeDepth;
+    verticesPlanes[30]= -halfDepth;
     verticesPlanes[31]= 1.0f;
     // -- Horizontal plane --
     // 0 Top left
     verticesPlanes[32]= -cubeWidth;
     verticesPlanes[33]= 0;
-    verticesPlanes[34]= -cubeDepth;
+    verticesPlanes[34]= -halfDepth;
     verticesPlanes[35]= 1.0f;
     // 1 Top right
     verticesPlanes[36]= cubeWidth;
     verticesPlanes[37]= 0;
-    verticesPlanes[38]= -cubeDepth;
+    verticesPlanes[38]= -halfDepth;
     verticesPlanes[39]= 1.0f;
     // 2 Bottom right
     verticesPlanes[40]= cubeWidth;
     verticesPlanes[41]= 0;
-    verticesPlanes[42]= zvalNear;
+    verticesPlanes[42]= halfDepth;
     verticesPlanes[43]= 1.0f;
     // 3 Bottom left
     verticesPlanes[44]= -cubeWidth;
     verticesPlanes[45]= 0;
-    verticesPlanes[46]= zvalNear;
+    verticesPlanes[46]= halfDepth;
     verticesPlanes[47]= 1.0f;
 
 
@@ -1087,43 +1084,43 @@ void GLWidget::InitVertexData(){
     // 0 Top left
     verticesCube[0]= -cubeWidth;
     verticesCube[1]= cubeHeight;
-    verticesCube[2]= zvalNear;
+    verticesCube[2]= halfDepth;
     verticesCube[3]= 1.0f;
     // 1 Top right
     verticesCube[4]= cubeWidth;
     verticesCube[5]= cubeHeight;
-    verticesCube[6]= zvalNear;
+    verticesCube[6]= halfDepth;
     verticesCube[7]= 1.0f;
     // 2 Bottom right
     verticesCube[8]= cubeWidth;
     verticesCube[9]= -cubeHeight;
-    verticesCube[10]= zvalNear;
+    verticesCube[10]= halfDepth;
     verticesCube[11]= 1.0f;
     // 3 Bottom left
     verticesCube[12]=-cubeWidth;
     verticesCube[13]=-cubeHeight;
-    verticesCube[14]= zvalNear;
+    verticesCube[14]= halfDepth;
     verticesCube[15]= 1.0f;
     // Second four, the far ones
     // 4 Top left far
     verticesCube[16]=-cubeWidth;
     verticesCube[17]= cubeHeight;
-    verticesCube[18]= -cubeDepth;
+    verticesCube[18]= -halfDepth;
     verticesCube[19]= 1.0f;
     // 5 Top right
     verticesCube[20]= cubeWidth;
     verticesCube[21]= cubeHeight;
-    verticesCube[22]= -cubeDepth;
+    verticesCube[22]= -halfDepth;
     verticesCube[23]= 1.0f;
     // 6 Bottom right
     verticesCube[24]= cubeWidth;
     verticesCube[25]=-cubeHeight;
-    verticesCube[26]= -cubeDepth;
+    verticesCube[26]= -halfDepth;
     verticesCube[27]= 1.0f;
     // 7 Bottom left
     verticesCube[28]=-cubeWidth;
     verticesCube[29]=-cubeHeight;
-    verticesCube[30]= -cubeDepth;
+    verticesCube[30]= -halfDepth;
     verticesCube[31]= 1.0f;
 }//InitVertexData
 

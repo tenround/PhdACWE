@@ -24,11 +24,11 @@ void main()
     textColor = texture(imgSampler, currTextCoord);
 
     float count = 100;
-    float gamma = 3;
-    float decay = .5;
+    float gamma = 4;
+    float decay = .15;
 
-    //textColor.r = textColor.r*decay;
-    textColor.r = textColor.r*(gamma/count);
+    textColor.r = textColor.r*decay;
+    //textColor.r = textColor.r*(gamma/count);
     outputColor = vec4(textColor.r,textColor.r, textColor.r, .4);
 
     float th= .001;
@@ -51,19 +51,22 @@ void main()
     float bthreshold = .1;// This is the threshold of the SDF to be displayed in red
 
     if(drawPlanes == 1){
-        vec4 mixVal = vec4(.5,0, 0, 0); 
+        vec4 mixVal = vec4(.5,.5, .5, .5); 
         textColor = texture(imgSampler, textCoord);
         outputColor = outputColor + vec4(textColor.r, textColor.r, textColor.r, .5);
         // Move if outside the loop
         if(dispSegmentation == 1){
             textColor = texture(segSampler, currTextCoord);
-            if( (textColor.r <= bthreshold) && (textColor.r <= bthreshold)){
-                outputColor = mix(outputColor,vec4(1, 0, 0, 0),mixVal);
+            if( textColor.r <= bthreshold ){
+                outputColor = mix(outputColor,vec4(1, 0, 0, 1),mixVal);
+            }else{
+                outputColor = mix(outputColor,vec4(0, 0, textColor.r/20, 1),mixVal);
             }
         }
     }else{
 
-        vec4 mixVal = vec4(.005,0, 0, 0); 
+        vec4 mixVal = vec4(.05,0.05, 0.05, 0); 
+        int firstNonZero= 0;
         for(int i = 1; i < count; i++){
             currTextCoord = currTextCoord + dir;
             if( any(greaterThan(currTextCoord, maxCoords)) || 
@@ -72,9 +75,14 @@ void main()
             }else{
                 //Verify we are not out of bounds
                 textColor = texture(imgSampler, currTextCoord);
-                //textColor.r = textColor.r*(decay/i);
-                textColor.r = textColor.r*(gamma/count);
-                outputColor = outputColor + vec4(textColor.r, textColor.r, textColor.r, 0);
+                if(textColor.r > 0){
+                    firstNonZero = i;
+                }
+                if(firstNonZero > 0){
+                    textColor.r = textColor.r*(decay/(i+2-firstNonZero));
+                    //textColor.r = textColor.r*(gamma/count);
+                    outputColor = outputColor + vec4(textColor.r, textColor.r, textColor.r, 0);
+                }
                 // Move if outside the loop
                 if(dispSegmentation == 1){
                     textColor = texture(segSampler, currTextCoord);
