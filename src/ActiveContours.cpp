@@ -314,12 +314,12 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
 			
             //It computes the curvatue and F values, the curvature is stored on the first layer
             //and the F values are stored on the second layer
-            evCurvature = compCurvature(vecEvPrevCurvature);
+            evCurvature_copySmoothToPhi = compCurvature(vecEvPrevCurvature);
 			
             if (WRITE) {
                 cout << "--------------------Displaying the value of curvature..." << endl;
 				vecEvPrevPrinting.clear();
-				vecEvPrevPrinting.push_back(evCurvature);
+				vecEvPrevPrinting.push_back(evCurvature_copySmoothToPhi);
 				//printBuffer(buf_curvature, 10, vecEvPrevPrinting);
                 //printBuffer(buf_curvature, 400, 0, width, height, vecEvPrevPrinting);
                 //printBuffer(buf_curvature, 400, width*height, width, height, vecEvPrevPrinting);
@@ -373,7 +373,7 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
                 printBuffer(buf_max_F, 1, vecEvPrevPrinting);
             }
 
-            vecEvPrevDphiDt.push_back(evCurvature);// Wait for curvature
+            vecEvPrevDphiDt.push_back(evCurvature_copySmoothToPhi);// Wait for curvature
             vecEvPrevDphiDt.push_back(evMaxF);// Wait for max F -> and F
             evDphiDt_MaxDphiDt = compDphiDt(vecEvPrevDphiDt);
 
@@ -472,6 +472,13 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
                 //printBuffer(buf_smooth_phi, 400, width*height*18, width, height, vecEvPrevPrinting);
                 //printBuffer(buf_smooth_phi, 400, width*height*19, width, height, vecEvPrevPrinting);
             }
+
+            vecEvPrevCopySmoothToPhi.push_back(evAvgInOut_SmoothPhi);
+            res = queue->enqueueCopyBuffer(buf_smooth_phi, buf_phi,
+                    (size_t)0, (size_t) 0,  (size_t) sizeof (float) *buf_size,
+                    &vecEvPrevCopySmoothToPhi, &evCurvature_copySmoothToPhi);
+
+            vecEvPrevAvgInOut.push_back(evCurvature_copySmoothToPhi);
 
             vecEvPrevAvgInOut.clear();
             vecEvPrevAvg.clear();

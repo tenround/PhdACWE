@@ -8,7 +8,7 @@ __constant sampler_t def_sampler = CLK_NORMALIZED_COORDS_FALSE |
 								CLK_FILTER_NEAREST;
 
 __constant float thresporc = .004f;
-__constant float EPS = .00001f;
+__constant float EPS = .000000000001f;
 
 float temp_dD(float a, float b, float c, float d, float e, float f, float phi){
 
@@ -40,8 +40,7 @@ float temp_dD(float a, float b, float c, float d, float e, float f, float phi){
 	return dD;
 }
 
-// It computes the curvature of the curve phi close to 0 and
-// also the value of the Force F
+// Forces the Sussman smooth function, smooths the function depending on the value of the norm of gradient
 __kernel void
 smoothPhi(global float* phi, global float* sm_phi, float beta, int width, int height, int depth){
 
@@ -335,9 +334,9 @@ curvature(global float* phi, global float* curvature,
     phi_xx = phi[curr] - 2*phi[curr] + phi[ri];
     phi_yy = phi[dn] - 2*phi[curr] + phi[up];
     phi_zz = phi[ccurr] - 2*phi[curr] + phi[fcurr];;
-    phi_xy = -0.25*phi[dl] - 0.25*phi[ur] + .25*phi[dr] + .25*phi[up];
-    phi_xz = -0.25*phi[ccurr] - 0.25*phi[fri] + .25*phi[cri] + .25*phi[fcurr];
-    phi_zy = -0.25*phi[cdn] - 0.25*phi[fup] + .25*phi[fdn] + .25*phi[cup];
+    phi_xy = .25*phi[dr] - 0.25*phi[up] + .25*phi[ur] -0.25*phi[dn] ;
+    phi_xz = .25*phi[fri] - 0.25*phi[ccurr] + .25*phi[fcurr] - 0.25*phi[cri];
+    phi_zy = 0.25*phi[fup] - 0.25*phi[cdn] + .25*phi[fdn] - .25*phi[cup];
     //Squares
     phi_x2 = phi_x*phi_x;
     phi_y2 = phi_y*phi_y;
@@ -346,9 +345,8 @@ curvature(global float* phi, global float* curvature,
     curvature[curr] =   ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_xx + 
                         phi_y2*phi_zz + phi_z2*phi_xx + phi_z2*phi_yy
                         - 2*phi_x*phi_y*phi_xy -2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
-                        pow((float)(phi_x2 + phi_y2 + phi_z2 + EPS),(float)(3/2));
+                        pow((float)(phi_x2 + phi_y2 + phi_z2 + EPS),(float)(1.5));//It doesn't work if use 3/2 it does ceil or top
 
-    curvature[curr] = phi_y;
     //Iterate over the 'middle' columns
     for(int col = 1; col < width-1; col++){
         //First order
@@ -359,9 +357,9 @@ curvature(global float* phi, global float* curvature,
         phi_xx = phi[lf+col] - 2*phi[curr+col] + phi[ri+col];
         phi_yy = phi[dn+col] - 2*phi[curr+col] + phi[up+col];
         phi_zz = phi[ccurr+col] - 2*phi[curr+col] + phi[fcurr+col];;
-        phi_xy = -0.25*phi[dl+col] - 0.25*phi[ur+col] + .25*phi[dr+col] + .25*phi[ul+col];
-        phi_xz = -0.25*phi[clf+col] - 0.25*phi[fri+col] + .25*phi[cri+col] + .25*phi[flf+col];
-        phi_zy = -0.25*phi[cdn+col] - 0.25*phi[fup+col] + .25*phi[fdn+col] + .25*phi[cup+col];
+        phi_xy = .25*phi[dr+col] - 0.25*phi[ul+col] + .25*phi[ur+col] -0.25*phi[dl+col] ;
+        phi_xz = .25*phi[fri+col] - 0.25*phi[clf+col] + .25*phi[flf+col] - 0.25*phi[cri+col];
+        phi_zy = 0.25*phi[fup+col] - 0.25*phi[cdn+col] + .25*phi[fdn+col] - .25*phi[cup+col];
         //Squares
         phi_x2 = phi_x*phi_x;
         phi_y2 = phi_y*phi_y;
@@ -370,9 +368,7 @@ curvature(global float* phi, global float* curvature,
         curvature[curr+col] =   ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_xx + 
                 phi_y2*phi_zz + phi_z2*phi_xx + phi_z2*phi_yy
                 - 2*phi_x*phi_y*phi_xy -2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
-            pow((float)(phi_x2 + phi_y2 + phi_z2 + EPS),(float)(3/2));
-
-        curvature[curr+col] = phi_y;
+            pow((float)(phi_x2 + phi_y2 + phi_z2 + EPS),(float)(1.5));//It doesn't work if use 3/2 it does ceil or top
     }
 
     //-------------------- Last column (no RIGHT COLUMN VALUES)----------------
@@ -385,9 +381,9 @@ curvature(global float* phi, global float* curvature,
     phi_xx = phi[lf+col] - 2*phi[curr+col] + phi[curr+col];
     phi_yy = phi[dn+col] - 2*phi[curr+col] + phi[up+col];
     phi_zz = phi[ccurr+col] - 2*phi[curr+col] + phi[fcurr+col];;
-    phi_xy = -0.25*phi[dn+col] - 0.25*phi[up+col] + .25*phi[curr+col] + .25*phi[ul+col];
-    phi_xz = -0.25*phi[clf+col] - 0.25*phi[fcurr+col] + .25*phi[ccurr+col] + .25*phi[flf+col];
-    phi_zy = -0.25*phi[cdn+col] - 0.25*phi[fup+col] + .25*phi[fdn+col] + .25*phi[cup+col];
+    phi_xy = .25*phi[dn+col] - 0.25*phi[ul+col] + .25*phi[up+col] -0.25*phi[dl+col] ;
+    phi_xz = .25*phi[fcurr+col] - 0.25*phi[clf+col] + .25*phi[flf+col] - 0.25*phi[ccurr+col];
+    phi_zy = 0.25*phi[fup+col] - 0.25*phi[cdn+col] + .25*phi[fdn+col] - .25*phi[cup+col];
     //Squares
     phi_x2 = phi_x*phi_x;
     phi_y2 = phi_y*phi_y;
@@ -396,9 +392,8 @@ curvature(global float* phi, global float* curvature,
     curvature[curr+col] =   ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_xx + 
             phi_y2*phi_zz + phi_z2*phi_xx + phi_z2*phi_yy
             - 2*phi_x*phi_y*phi_xy -2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
-        pow((float)(phi_x2 + phi_y2 + phi_z2 + EPS),(float)(3/2));
+            pow((float)(phi_x2 + phi_y2 + phi_z2 + EPS),(float)(1.5));//It doesn't work if use 3/2 it does ceil or top
 
-    curvature[curr+col] = phi_y;
     /*
     //Test if it is detecting each border correctly
     slice = width*height;

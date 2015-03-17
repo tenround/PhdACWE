@@ -155,6 +155,7 @@ private:
     bool useAllBands;
 
     //For textures and initial mask
+
     char* inputImage;
     char* outputImage;
     int* mask;

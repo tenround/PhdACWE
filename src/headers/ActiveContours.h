@@ -150,6 +150,7 @@ private:
     vector<cl::Event> vecEvPrevTextToBuffer;
     vector<cl::Event> vecEvPrevCopyBackTexture;
     vector<cl::Event> vecEvPrevCopyPhiBackToGL;
+    vector<cl::Event> vecEvPrevCopySmoothToPhi;
 
     
 	cl::Event evAcOGL; //Event to aquire the input texture from OpenGL
@@ -157,7 +158,7 @@ private:
     cl::Event evImgSegWrt; //Wevent for writing the 'mask' image
     cl::Event evSDF_newPhi;
     cl::Event evAvgInOut_SmoothPhi;
-    cl::Event evCurvature;
+    cl::Event evCurvature_copySmoothToPhi;
     cl::Event evF;// When the computation of the Force has finish
     cl::Event evMaxF;
     cl::Event evDphiDt_MaxDphiDt;
