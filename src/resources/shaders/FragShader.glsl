@@ -25,7 +25,7 @@ void main()
 
     float count = 100;
     float gamma = 4;
-    float decay = .15;
+    float decay = .12;
 
     textColor.r = textColor.r*decay;
     //textColor.r = textColor.r*(gamma/count);
@@ -60,7 +60,7 @@ void main()
             if( textColor.r <= bthreshold ){
                 outputColor = mix(outputColor,vec4(1, 0, 0, 1),mixVal);
             }else{
-                outputColor = mix(outputColor,vec4(0, 0, textColor.r/20, 1),mixVal);
+                //outputColor = mix(outputColor,vec4(0, 0, textColor.r/20, 1),mixVal);
             }
         }
     }else{

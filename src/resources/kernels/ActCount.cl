@@ -43,7 +43,7 @@ float temp_dD(float a, float b, float c, float d, float e, float f, float phi){
 // It computes the curvature of the curve phi close to 0 and
 // also the value of the Force F
 __kernel void
-smoothPhi(global float* phi, global float* sm_phi, float dt, int width, int height, int depth){
+smoothPhi(global float* phi, global float* sm_phi, float beta, int width, int height, int depth){
 
     int globId = (int)get_global_id(0);// From 0 to height*depth
 
@@ -114,38 +114,39 @@ smoothPhi(global float* phi, global float* sm_phi, float dt, int width, int heig
     float phi_z2 = 0;
 
 	//------------ First column ---------
-	float a = 0; // Backward in x
-	float b = phi[ri] - phi[curr]; // Forward in x
-	float c = phi[curr] - phi[dn]; // Backward in y
-	float d = phi[up] - phi[curr]; //Forward in y
-	float e = phi[curr] - phi[ccurr]; // Backward in z
-	float f = phi[fcurr] - phi[curr]; // Forward in z
+	float a = 0; // Backward in x Good
+	float b = phi[ri] - phi[curr]; // Forward in x Good
+	float c = phi[curr] - phi[up]; // Backward in y Good
+	float d = phi[dn] - phi[curr]; //Forward in y Good
+	float e = phi[curr] - phi[ccurr]; // Backward in z Good
+	float f = phi[fcurr] - phi[curr]; // Forward in z Good
 
 	float dD = temp_dD(a,b,c,d,e,f,phi[curr]);
- 	sm_phi[curr] = phi[curr] - dt * (phi[curr]/sqrt( pow(phi[curr],2) + 1)) * dD;
+ 	sm_phi[curr] = phi[curr] - beta * (phi[curr]/sqrt( pow(phi[curr],2) + 1)) * dD;
+
 	//Iterate over the 'middle' columns
 	for(int col = 1; col < width-1; col++){
-		a = phi[curr+col] - phi[lf+col]; // Backward in x
-		b = phi[ri+col] - phi[curr+col]; // Forward in x
-		c = phi[curr+col] - phi[dn+col]; // Backward in y
-		d = phi[up+col] - phi[curr+col]; //Forward in y
-		e = phi[curr+col] - phi[ccurr+col]; // Backward in z
-		f = phi[fcurr+col] - phi[curr+col]; // Forward in z
+		a = phi[curr+col] - phi[lf+col]; // Backward in x Good
+		b = phi[ri+col] - phi[curr+col]; // Forward in x Good
+		c = phi[curr+col] - phi[up+col]; // Backward in y Good
+		d = phi[dn+col] - phi[curr+col]; //Forward in y Good
+		e = phi[curr+col] - phi[ccurr+col]; // Backward in z Good
+		f = phi[fcurr+col] - phi[curr+col]; // Forward in z Good
 
 		dD = temp_dD(a,b,c,d,e,f,phi[curr+col]);
-		sm_phi[curr+col] = phi[curr+col] - dt * (phi[curr+col]/sqrt( pow(phi[curr+col],2) + 1)) * dD;
+		sm_phi[curr+col] = phi[curr+col] - beta * (phi[curr+col]/sqrt( pow(phi[curr+col],2) + 1)) * dD;
 	}
 
     int col = width-1;
-    a = phi[curr+col] - phi[lf+col]; // Backward in x
-    b = 0; // Forward in x
-    c = phi[curr+col] - phi[dn+col]; // Backward in y
-    d = phi[up+col] - phi[curr+col]; //Forward in y
-    e = phi[curr+col] - phi[ccurr+col]; // Backward in z
-    f = phi[fcurr+col] - phi[curr+col]; // Forward in z
+    a = phi[curr+col] - phi[lf+col]; // Backward in x Good
+    b = 0; // Forward in x Good
+    c = phi[curr+col] - phi[up+col]; // Backward in y Good
+    d = phi[dn+col] - phi[curr+col]; //Forward in y Good
+    e = phi[curr+col] - phi[ccurr+col]; // Backward in z Good
+    f = phi[fcurr+col] - phi[curr+col]; // Forward in z Good
     
     dD = temp_dD(a,b,c,d,e,f,phi[curr]);
-    sm_phi[curr+col] = phi[curr+col] - dt * (phi[curr+col]/sqrt( pow(phi[curr+col],2) + 1)) * dD;
+    sm_phi[curr+col] = phi[curr+col] - beta * (phi[curr+col]/sqrt( pow(phi[curr+col],2) + 1)) * dD;
 }
 
 __kernel
@@ -342,11 +343,12 @@ curvature(global float* phi, global float* curvature,
     phi_y2 = phi_y*phi_y;
     phi_z2 = phi_z*phi_z;
 
-    curvature[curr] =   ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_zz + 
-            phi_z2*phi_xx + phi_z2*phi_yy - 2*phi_x*phi_y*phi_xy + 
-            -2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
-        pow((float)(phi_x2 + phi_y2 + phi_z2 + .001),(float)(3/2));
+    curvature[curr] =   ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_xx + 
+                        phi_y2*phi_zz + phi_z2*phi_xx + phi_z2*phi_yy
+                        - 2*phi_x*phi_y*phi_xy -2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
+                        pow((float)(phi_x2 + phi_y2 + phi_z2 + EPS),(float)(3/2));
 
+    curvature[curr] = phi_y;
     //Iterate over the 'middle' columns
     for(int col = 1; col < width-1; col++){
         //First order
@@ -365,11 +367,12 @@ curvature(global float* phi, global float* curvature,
         phi_y2 = phi_y*phi_y;
         phi_z2 = phi_z*phi_z;
 
-        curvature[curr+col] =   ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_zz + 
-                phi_z2*phi_xx + phi_z2*phi_yy - 2*phi_x*phi_y*phi_xy + 
-                -2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
-            pow((float)(phi_x2 + phi_y2 + phi_z2 + .001),(float)(3/2));
-        //		curvature[globId] = currCoords.x;
+        curvature[curr+col] =   ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_xx + 
+                phi_y2*phi_zz + phi_z2*phi_xx + phi_z2*phi_yy
+                - 2*phi_x*phi_y*phi_xy -2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
+            pow((float)(phi_x2 + phi_y2 + phi_z2 + EPS),(float)(3/2));
+
+        curvature[curr+col] = phi_y;
     }
 
     //-------------------- Last column (no RIGHT COLUMN VALUES)----------------
@@ -390,11 +393,12 @@ curvature(global float* phi, global float* curvature,
     phi_y2 = phi_y*phi_y;
     phi_z2 = phi_z*phi_z;
 
-    curvature[curr+col] = ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_zz + 
-            phi_z2*phi_xx + phi_z2*phi_yy - 2*phi_x*phi_y*phi_xy + 
-            -2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
-        pow((float)(phi_x2 + phi_y2 + phi_z2 + .001),(float)(3/2));
+    curvature[curr+col] =   ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_xx + 
+            phi_y2*phi_zz + phi_z2*phi_xx + phi_z2*phi_yy
+            - 2*phi_x*phi_y*phi_xy -2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
+        pow((float)(phi_x2 + phi_y2 + phi_z2 + EPS),(float)(3/2));
 
+    curvature[curr+col] = phi_y;
     /*
     //Test if it is detecting each border correctly
     slice = width*height;

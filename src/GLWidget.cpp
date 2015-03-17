@@ -127,9 +127,10 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
 void GLWidget::SelectImage() {
 	
     QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/Box.nii";
+    //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/CompleteNormalized.nii";
+
     //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/Gradient.nii";
     //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/SmallReal256.nii";
-    //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/CompleteNormalized.nii";
     //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/SmallReal16.nii";
 
 	/*
@@ -197,7 +198,7 @@ void GLWidget::CreateSamplers() {
 void GLWidget::InitActiveCountours() {
     cout << "InitActiveCountours" << endl;
     float alpha = 0.2;
-    float def_dt = 5;
+    float def_dt = .5;
 	
 	if(firstTimeImageSelected){
 		clObj.loadProgram(maxActCountIter, alpha, def_dt);
@@ -857,15 +858,16 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
     //printMatrix(camera->getCameraMatrix());
     switch (event->key()) {
 
-        case 105:// Case 'I' start and stops Active Contours
-        case 73:
+        case 'j':// Case 'J' or 'j' shows and hides the segmentation 
+            displaySegmentation = !displaySegmentation;
+            break;
+        case 'I':// Case 'I' start and stops Active Contours
+        case 'i':
             //Start iterating
             acIterate = !acIterate;
-
             // After running the SDF for the first time we 
             // start displaying the segmentation.
             displaySegmentation = true;
-
             break;
         case 'p':// Case 'B' toggle using all bands or only red band
         case 'P':
@@ -879,13 +881,13 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
         case 'T':
             ts.dumpTimings();
             break;
-        case 'S':
+        case 'S':// Case 'S' Select new image
             SelectImage();
             break;
         case Qt::Key_Escape:
             close();
             break;
-        case 'Y':
+        case 'Y':// Case Y Translate objects (not tested)
             //verticesCube = translateMatrix*verticesCube;
             verticesCube[2] -= .1;
             glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);

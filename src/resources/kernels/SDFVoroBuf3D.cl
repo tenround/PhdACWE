@@ -1,4 +1,3 @@
-
 /**
  * For vectors X and Y it computes SUM of (x.i - y.i)^2  for i != dimension 
  */
@@ -137,8 +136,9 @@ mergePhisBuf( __global float* buf_phi_half,__global float* buf_phi_sec_half,
 		float sechalf = buf_phi_sec_half[currIndex];
 
 		if( sechalf > -1){
-			//The plus 1 is in order to have a band of 0
-			buf_phi[currIndex] = fhalf - sechalf + 1;
+//			buf_phi[currIndex] = fhalf - sechalf - .5;
+//			buf_phi[currIndex] = fhalf;
+			buf_phi[currIndex] = fhalf + (float) min((float) (-sechalf + 1),(float) 0) - .5;
 		}else{
 			buf_phi[currIndex] = fhalf;
 		}

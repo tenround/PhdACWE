@@ -9,7 +9,7 @@
 #define MAXDPHIDT 2
 
 // Writes is used to write results to disk
-#define WRITE true 
+#define WRITE true
 // PRINT_IMG_VAL is used to print images values (only for very small images)
 #define PRINT_IMG_VAL false 
 
@@ -293,9 +293,18 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
             if (currIter % ITER == 0) {
                 cout << endl << endl << "******************** Iter " << currIter << " ******************** " << endl;
             }
-			
+
             evAvgInOut_SmoothPhi = compAvgInAndOut(buf_phi, buf_img_in, vecEvPrevAvgInOut);
-			
+
+            if (WRITE) {// Prints the previous values of phi
+                cout << endl << "----------- Previous Phi ------------" << endl;
+				vecEvPrevPrinting.clear();
+				vecEvPrevPrinting.push_back(evAvgInOut_SmoothPhi);
+                printBuffer(buf_phi, 400, width*height*9, width, height, vecEvPrevPrinting);
+                printBuffer(buf_phi, 400, width*height*10, width, height, vecEvPrevPrinting);
+                printBuffer(buf_phi, 400, width*height*11, width, height, vecEvPrevPrinting);
+			}		
+
             if (WRITE) {// Gets the final average values obtained
                 cout << endl << "----------- Final Average  (avg out, avg in, count out, count in,  sum out, sum in)------------" << endl;
 				vecEvPrevPrinting.clear();
@@ -312,26 +321,26 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
 				vecEvPrevPrinting.clear();
 				vecEvPrevPrinting.push_back(evCurvature);
 				//printBuffer(buf_curvature, 10, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, 0, width, height, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, width*height, width, height, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, width*height*2, width, height, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, width*height*3, width, height, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, width*height*4, width, height, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, width*height*5, width, height, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, width*height*6, width, height, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, width*height*7, width, height, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, width*height*8, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, 0, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, width*height, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, width*height*2, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, width*height*3, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, width*height*4, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, width*height*5, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, width*height*6, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, width*height*7, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, width*height*8, width, height, vecEvPrevPrinting);
                 printBuffer(buf_curvature, 400, width*height*9, width, height, vecEvPrevPrinting);
                 printBuffer(buf_curvature, 400, width*height*10, width, height, vecEvPrevPrinting);
                 printBuffer(buf_curvature, 400, width*height*11, width, height, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, width*height*12, width, height, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, width*height*13, width, height, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, width*height*14, width, height, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, width*height*15, width, height, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, width*height*16, width, height, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, width*height*17, width, height, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, width*height*18, width, height, vecEvPrevPrinting);
-                printBuffer(buf_curvature, 400, width*height*19, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, width*height*12, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, width*height*13, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, width*height*14, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, width*height*15, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, width*height*16, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, width*height*17, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, width*height*18, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_curvature, 400, width*height*19, width, height, vecEvPrevPrinting);
 
             }
 			
@@ -346,7 +355,11 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
 				vecEvPrevPrinting.push_back(evF);
 				//printBuffer(buf_F, 10, vecEvPrevPrinting);
                 //printBuffer(buf_F, 400, 0, width, height, vecEvPrevPrinting);
-                //printBuffer(buf_F, 400, width*height*1, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_F, 400, width*height*7, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_F, 400, width*height*8, width, height, vecEvPrevPrinting);
+                printBuffer(buf_F, 400, width*height*9, width, height, vecEvPrevPrinting);
+                printBuffer(buf_F, 400, width*height*10, width, height, vecEvPrevPrinting);
+                printBuffer(buf_F, 400, width*height*11, width, height, vecEvPrevPrinting);
             }
 
             //Computing maximum value of F
@@ -378,9 +391,9 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
                 //printBuffer(buf_dphidt, 400, width*height*6, width, height, vecEvPrevPrinting);
                 //printBuffer(buf_dphidt, 400, width*height*7, width, height, vecEvPrevPrinting);
                 //printBuffer(buf_dphidt, 400, width*height*8, width, height, vecEvPrevPrinting);
-                //printBuffer(buf_dphidt, 400, width*height*9, width, height, vecEvPrevPrinting);
-                //printBuffer(buf_dphidt, 400, width*height*10, width, height, vecEvPrevPrinting);
-                //printBuffer(buf_dphidt, 400, width*height*11, width, height, vecEvPrevPrinting);
+                printBuffer(buf_dphidt, 400, width*height*9, width, height, vecEvPrevPrinting);
+                printBuffer(buf_dphidt, 400, width*height*10, width, height, vecEvPrevPrinting);
+                printBuffer(buf_dphidt, 400, width*height*11, width, height, vecEvPrevPrinting);
                 //printBuffer(buf_dphidt, 400, width*height*12, width, height, vecEvPrevPrinting);
                 //printBuffer(buf_dphidt, 400, width*height*13, width, height, vecEvPrevPrinting);
                 //printBuffer(buf_dphidt, 400, width*height*14, width, height, vecEvPrevPrinting);
@@ -408,9 +421,27 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
                 cout << "--------------------Displaying values of new phi ..." << endl;
                 vecEvPrevPrinting.clear();
                 vecEvPrevPrinting.push_back(evSDF_newPhi);
-                //printBuffer(buf_phi, 10, vecEvPrevPrinting);
-                //printBuffer(buf_phi, 400, 0, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_phi, 400, width*height*7, width, height, vecEvPrevPrinting);
+//                printBuffer(buf_phi, 400, width*height*1, width, height, vecEvPrevPrinting);
+//                printBuffer(buf_phi, 400, width*height*2, width, height, vecEvPrevPrinting);
+//                printBuffer(buf_phi, 400, width*height*3, width, height, vecEvPrevPrinting);
+//                printBuffer(buf_phi, 400, width*height*4, width, height, vecEvPrevPrinting);
+//                printBuffer(buf_phi, 400, width*height*5, width, height, vecEvPrevPrinting);
+//                printBuffer(buf_phi, 400, width*height*6, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_phi, 400, width*height*7, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_phi, 400, width*height*8, width, height, vecEvPrevPrinting);
+                printBuffer(buf_phi, 400, width*height*9, width, height, vecEvPrevPrinting);
                 printBuffer(buf_phi, 400, width*height*10, width, height, vecEvPrevPrinting);
+                printBuffer(buf_phi, 400, width*height*11, width, height, vecEvPrevPrinting);
+//                printBuffer(buf_phi, 400, width*height*12, width, height, vecEvPrevPrinting);
+//                printBuffer(buf_phi, 400, width*height*13, width, height, vecEvPrevPrinting);
+//                printBuffer(buf_phi, 400, width*height*14, width, height, vecEvPrevPrinting);
+//                printBuffer(buf_phi, 400, width*height*15, width, height, vecEvPrevPrinting);
+//                printBuffer(buf_phi, 400, width*height*16, width, height, vecEvPrevPrinting);
+//                printBuffer(buf_phi, 400, width*height*17, width, height, vecEvPrevPrinting);
+//                printBuffer(buf_phi, 400, width*height*18, width, height, vecEvPrevPrinting);
+//                printBuffer(buf_phi, 400, width*height*19, width, height, vecEvPrevPrinting);
+               
             }
 
             vecEvPrevSmPhi.push_back(evSDF_newPhi);
@@ -420,10 +451,28 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
                 cout << "--------------------Displaying values of smoothed phi ..." << endl;
                 vecEvPrevPrinting.clear();
                 vecEvPrevPrinting.push_back(evAvgInOut_SmoothPhi);
-                //printBuffer(buf_smooth_phi, 10, vecEvPrevPrinting);
-                //printBuffer(buf_smooth_phi, 400, 0, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*7, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*1, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*2, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*3, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*4, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*5, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*6, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*7, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*8, width, height, vecEvPrevPrinting);
+                printBuffer(buf_smooth_phi, 400, width*height*9, width, height, vecEvPrevPrinting);
                 printBuffer(buf_smooth_phi, 400, width*height*10, width, height, vecEvPrevPrinting);
+                printBuffer(buf_smooth_phi, 400, width*height*11, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*12, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*13, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*14, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*15, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*16, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*17, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*18, width, height, vecEvPrevPrinting);
+                //printBuffer(buf_smooth_phi, 400, width*height*19, width, height, vecEvPrevPrinting);
             }
+
             vecEvPrevAvgInOut.clear();
             vecEvPrevAvg.clear();
             vecEvPrevCurvature.clear();
@@ -438,7 +487,8 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
             vecEvPrevTextToBuffer.clear();
         }//Main loop
 
-        cout << "Done ..................." << endl;
+        queue->finish(); //Be sure we finish everything
+        dout << "Done ..................." << endl;
 
         if (WRITE) {
             cout << "--------------------Writing new PHI as images in images/temp_results/newPhi/" << endl;
@@ -451,6 +501,7 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
             ImageManager::write3DImage((char*) "images/temp_results/newPhi/", arr_img_out, width, height, depth, 0);
         }
 
+        dout << " Copying back everything to OpenGL ... " << endl;
         vecEvPrevCopyPhiBackToGL.push_back(evAvgInOut_SmoothPhi);
         queue->enqueueCopyBufferToImage(buf_smooth_phi, img_phi_gl, (size_t)0, origin, 
                 region, &vecEvPrevCopyPhiBackToGL, &evAcOGL);
