@@ -11,7 +11,7 @@
 // Writes is used to write results to disk
 #define WRITE false
 #define ITER 50 //Defines every how many iterations will write the outputs
-#define TIME false
+#define TIME true
 // PRINT_IMG_VAL is used to print images values (only for very small images)
 #define PRINT_IMG_VAL false 
 
@@ -648,7 +648,7 @@ cl::Event ActiveContours::smoothPhi(vector<cl::Event> vecEvPrev, float dt_smooth
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
 
-        cl::Kernel kernelSmoothPhi(*program, (char*) "smoothPhi");
+        cl::Kernel kernelSmoothPhi(*program, (char*) "smoothPhiVec");
         kernelSmoothPhi.setArg(0, buf_phi);
         kernelSmoothPhi.setArg(1, buf_smooth_phi);
         kernelSmoothPhi.setArg(2, dt_smooth);
@@ -657,10 +657,13 @@ cl::Event ActiveContours::smoothPhi(vector<cl::Event> vecEvPrev, float dt_smooth
         kernelSmoothPhi.setArg(5, depth);
 
         int threads = height*depth;
+        int threadsPerGroup = 32; //After optimization it is hard coded to 32
+/*
         int threadsPerGroup = dev_max_work_items;
         while( threads % threadsPerGroup != 0){
             threadsPerGroup --;
         }
+*/
         dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
 
         // Do the work
@@ -695,10 +698,13 @@ cl::Event ActiveContours::compNewPhi(vector<cl::Event> vecEvPrev) {
         kernelDphiDt.setArg(4, height);
 
         int threads = height*depth;
+        int threadsPerGroup = 32; //After optimization it is hard coded to 32
+/*
         int threadsPerGroup = dev_max_work_items;
         while( threads % threadsPerGroup != 0){
             threadsPerGroup --;
         }
+*/
         dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
 
         // Do the work
@@ -732,10 +738,13 @@ cl::Event ActiveContours::compDphiDt(vector<cl::Event> vecEvPrev) {
         kernelDphiDt.setArg(6, height);
 
         int threads = height*depth;
+        int threadsPerGroup = 32; //After optimization it is hard coded to 32
+/*
         int threadsPerGroup = dev_max_work_items;
         while( threads % threadsPerGroup != 0){
             threadsPerGroup --;
         }
+*/
         dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
 
         queue->enqueueNDRangeKernel(
@@ -777,10 +786,13 @@ cl::Event ActiveContours::compCurvature(vector<cl::Event> vecEvPrev) {
         kernelCurvature.setArg(4, depth);
 
         int threads = height*depth;
+        int threadsPerGroup = 32; //After optimization it is hard coded to 32
+        /*
         int threadsPerGroup = dev_max_work_items;
         while( threads % threadsPerGroup != 0){
             threadsPerGroup --;
-        }
+        }*/
+        
         dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
 
         queue->enqueueNDRangeKernel(
@@ -820,10 +832,13 @@ cl::Event ActiveContours::compF(vector<cl::Event> vecEvPrev) {
         kernelCurvature.setArg(5, depth);
 
         int threads = height*depth;
+        int threadsPerGroup = 32; //After optimization it is hard coded to 32
+/*
         int threadsPerGroup = dev_max_work_items;
         while( threads % threadsPerGroup != 0){
             threadsPerGroup --;
         }
+*/
         dout << "Threads: " << threads << " Threads per group: " << threadsPerGroup << endl;
 
         queue->enqueueNDRangeKernel(

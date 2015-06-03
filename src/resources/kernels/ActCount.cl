@@ -10,36 +10,150 @@ __constant sampler_t def_sampler = CLK_NORMALIZED_COORDS_FALSE |
 __constant float thresporc = .004f;
 __constant float EPS = .000000000001f;
 
+
 float temp_dD(float a, float b, float c, float d, float e, float f, float phi){
 
-	float ap = a < 0? 0: a;
-	float bp = b < 0? 0: b;
-	float cp = c < 0? 0: c;
-	float dp = d < 0? 0: d;
-	float ep = e < 0? 0: e;
-	float fp = f < 0? 0: f;
+    float ap = a < 0? 0: a;
+    float bp = b < 0? 0: b;
+    float cp = c < 0? 0: c;
+    float dp = d < 0? 0: d;
+    float ep = e < 0? 0: e;
+    float fp = f < 0? 0: f;
 
-	float an = a > 0? 0: a;
-	float bn = b > 0? 0: b;
-	float cn = c > 0? 0: c;
-	float dn = d > 0? 0: d;
-	float en = e > 0? 0: e;
-	float fn = f > 0? 0: f;
+    float an = a > 0? 0: a;
+    float bn = b > 0? 0: b;
+    float cn = c > 0? 0: c;
+    float dn = d > 0? 0: d;
+    float en = e > 0? 0: e;
+    float fn = f > 0? 0: f;
 
-	float dD = 0;
-	if( phi > 0){
-		dD = sqrt( max( pow(ap,2), pow(bn,2) ) + 
-				   max( pow(cp,2), pow(dn,2) ) +
-				   max( pow(ep,2), pow(fn,2) ) ) -1;
-	}
-	if( phi < 0){
-		dD = sqrt( max( pow(an,2), pow(bp,2) ) + 
-				   max( pow(cn,2), pow(dp,2) ) +
-				   max( pow(en,2), pow(fp,2) ) ) -1;
-	}
-	return dD;
+    float dD = 0;
+    if( phi > 0){
+        dD = sqrt( max( pow(ap,2), pow(bn,2) ) + 
+                   max( pow(cp,2), pow(dn,2) ) +
+                   max( pow(ep,2), pow(fn,2) ) ) -1;
+    }
+    if( phi < 0){
+        dD = sqrt( max( pow(an,2), pow(bp,2) ) + 
+                   max( pow(cn,2), pow(dp,2) ) +
+                   max( pow(en,2), pow(fp,2) ) ) -1;
+    }
+    return dD;
 }
 
+float16 temp_dD_vec(float16 a, float16 b, float16 c, float16 d, float16 e, float16 f, float16 phi){
+
+    float16 result;
+
+    float16 ap = a < 0? 0: a;
+    float16 bp = b < 0? 0: b;
+    float16 cp = c < 0? 0: c;
+    float16 dp = d < 0? 0: d;
+    float16 ep = e < 0? 0: e;
+    float16 fp = f < 0? 0: f;
+
+    float16 an = a > 0? 0: a;
+    float16 bn = b > 0? 0: b;
+    float16 cn = c > 0? 0: c;
+    float16 dn = d > 0? 0: d;
+    float16 en = e > 0? 0: e;
+    float16 fn = f > 0? 0: f;
+
+    float16 dD = 0;
+
+    float16 opt1 = sqrt( max( pow(ap,2), pow(bn,2) ) + 
+                         max( pow(cp,2), pow(dn,2) ) +
+                         max( pow(ep,2), pow(fn,2) ) ) -1;
+
+    float16 opt2 = sqrt( max( pow(an,2), pow(bp,2) ) + 
+                         max( pow(cn,2), pow(dp,2) ) +
+                         max( pow(en,2), pow(fp,2) ) ) -1;
+    
+    dD = phi > 0 ? opt1 : 0;
+    dD = phi < 0 ? opt2 : 0;
+
+    return result;
+}
+
+// Forces the Sussman smooth function, smooths the function depending on the value of the norm of gradient
+__kernel void
+smoothPhiVec(global float* phi, global float* sm_phi, float beta, int width, int height, int depth){
+
+    int globId = (int)get_global_id(0);// From 0 to height*depth
+    int localId = get_local_id(0);
+
+    //Obtain current index
+    int slice = width*height;//This is the size of one 'slice'
+    int row = width;//This is the size of one 'row'
+
+    if(globId < slice){
+        int curr = globId*width;//Current value 0, width, 2*width, .. -> init 0 row, init 1 row, init 2 row
+
+        //(test if is last row)
+        bool isLastRow = ( (curr+row) % slice == 0) ? true : false;
+        //(test if is first row)
+        bool isFirstRow =  (curr % slice == 0)? true : false;
+
+        int currVect = globId*width/16;
+
+        int dn = isLastRow? 0: row; //down value 
+        int up = isFirstRow? 0: -row; //up value 
+
+        // ----------------- If we are are in the last slice then we can't have a far slice
+        if( curr > (slice*(depth-1) - 1) ){ slice = 0;}
+        int fcurr = slice;//(far current) 
+        int fdn = isLastRow? fcurr : fcurr+row; //far down value 
+        int fup = isFirstRow? fcurr : fcurr-row;//far up value
+
+        // ----------------- If we are are in the first slice then we can't have a closer slice
+        slice = width*height;
+        if( curr < slice ){ slice = 0;}
+        // Closer 9 neighbors
+        int ccurr = -slice;//(closer current) 
+        int cdn = isLastRow? ccurr : ccurr+row; //close down value 
+        int cup = isFirstRow? ccurr : ccurr-row; //Close up value
+
+        float16 a,b,c,d,e,f, dD;
+
+        for(int col = 0; col < (width/16); col++){
+            // Read all the data
+            // Same slice values 
+            float16 currvec = vload16(currVect+col,phi );//Current
+            float16 lfvec = vload16(currVect+col,phi - 1);//left
+            float16 rivec = vload16(currVect+col,phi + 1);//right
+            float16 dnvec = vload16(currVect+col,phi + dn); //down value 
+            float16 upvec = vload16(currVect+col,phi + up);//up value 
+            //Far values 
+            float16 fcurrvec = vload16(currVect+col,phi + fcurr);//(far current) 
+            // Closer values
+            float16 ccurrvec = vload16(currVect+col,phi + ccurr);//(closer current) 
+
+            // Fix the boundaries
+            if(col == 0){//Fix all the left values
+                lfvec.s0 = lfvec.s1;
+            }
+            if(col == (width/16) -1){//Fix all the left values
+                rivec.sF = rivec.sE;
+            }
+
+            a = currvec - lfvec; // Backward in x 
+            b = rivec - currvec; // Forward in x 
+            c = currvec - upvec; // Backward in y 
+            d = dnvec -  currvec; //Forward in y 
+            e = currvec - ccurrvec; // Backward in z 
+            f = fcurrvec  - currvec; // Forward in z 
+
+            dD = temp_dD_vec(a,b,c,d,e,f, currvec);
+
+            float16 sm_phiVal = currvec - beta * (currvec/sqrt( pow(currvec,2) + 1)) * dD;
+
+            vstore16(sm_phiVal, currVect+col, sm_phi);
+        }
+    }
+}
+
+// It computes the curvature of the curve phi close to 0 and
+// also the value of the Force F
 // Forces the Sussman smooth function, smooths the function depending on the value of the norm of gradient
 __kernel void
 smoothPhi(global float* phi, global float* sm_phi, float beta, int width, int height, int depth){
@@ -61,25 +175,15 @@ smoothPhi(global float* phi, global float* sm_phi, float beta, int width, int he
     int lf = curr-1;//The value left  (left)
     int ri = curr+1;//The value right (right) 
     int dn = isLastRow? curr : curr+row; //down value 
-    int dr = dn+1;// (down right)
-    int dl = dn-1;// (down left)
     int up = isFirstRow? curr : curr-row; //up value 
-    int ur = up+1;// (up right)
-    int ul = up-1;// (up left)
     // Farther 9 neighbors
 
     // ----------------- If we are are in the last slice then we can't have a far slice
     if( curr > (slice*(depth-1) - 1 ) ){ slice = 0;}
 
     int fcurr = curr + slice;//(far current) 
-    int flf = fcurr-1;// (far left)
-    int fri = fcurr+1;//(far right) 
     int fdn = isLastRow? fcurr : fcurr+row; //far down value 
-    int fdr = fdn+1;// (far down right)
-    int fdl = fdn-1;// (far down left)
     int fup = isFirstRow? fcurr : fcurr-row;//far up value
-    int fur = fup+1;// (up right)
-    int ful = fup-1;// (up left)
 
     // ----------------- If we are are in the first slice then we can't have a closer slice
     slice = width*height;
@@ -87,54 +191,30 @@ smoothPhi(global float* phi, global float* sm_phi, float beta, int width, int he
 
     // Closer 9 neighbors
     int ccurr = curr - slice;//(closer current) 
-    int clf = ccurr-1;// (closer left)
-    int cri = ccurr+1;//(closer right) 
-    int cdn = isLastRow? ccurr : ccurr+row; //close down value 
-    int cdr = cdn+1;// (closer down right)
-    int cdl = cdn-1;// (closer down left)
-    int cup = isFirstRow? ccurr : ccurr-row; //Close up value
-    int cur = cup+1;// (closer up right)
-    int cul = cup-1;// (closer up left)
 
-    //First order
-    float phi_x = 0;
-    float phi_y = 0;
-    float phi_z = 0;
-    //Second order
-    float phi_xx = 0;
-    float phi_yy = 0;
-    float phi_zz = 0;
-    float phi_xy = 0;
-    float phi_xz = 0;
-    float phi_zy = 0;
-    //Squares
-    float phi_x2 = 0;
-    float phi_y2 = 0;
-    float phi_z2 = 0;
+    //------------ First column ---------
+    float a = 0; // Backward in x Good
+    float b = phi[ri] - phi[curr]; // Forward in x Good
+    float c = phi[curr] - phi[up]; // Backward in y Good
+    float d = phi[dn] - phi[curr]; //Forward in y Good
+    float e = phi[curr] - phi[ccurr]; // Backward in z Good
+    float f = phi[fcurr] - phi[curr]; // Forward in z Good
 
-	//------------ First column ---------
-	float a = 0; // Backward in x Good
-	float b = phi[ri] - phi[curr]; // Forward in x Good
-	float c = phi[curr] - phi[up]; // Backward in y Good
-	float d = phi[dn] - phi[curr]; //Forward in y Good
-	float e = phi[curr] - phi[ccurr]; // Backward in z Good
-	float f = phi[fcurr] - phi[curr]; // Forward in z Good
+    float dD = temp_dD(a,b,c,d,e,f,phi[curr]);
+    sm_phi[curr] = phi[curr] - beta * (phi[curr]/sqrt( pow(phi[curr],2) + 1)) * dD;
 
-	float dD = temp_dD(a,b,c,d,e,f,phi[curr]);
- 	sm_phi[curr] = phi[curr] - beta * (phi[curr]/sqrt( pow(phi[curr],2) + 1)) * dD;
+    //Iterate over the 'middle' columns
+    for(int col = 1; col < width-1; col++){
+        a = phi[curr+col] - phi[lf+col]; // Backward in x Good
+        b = phi[ri+col] - phi[curr+col]; // Forward in x Good
+        c = phi[curr+col] - phi[up+col]; // Backward in y Good
+        d = phi[dn+col] - phi[curr+col]; //Forward in y Good
+        e = phi[curr+col] - phi[ccurr+col]; // Backward in z Good
+        f = phi[fcurr+col] - phi[curr+col]; // Forward in z Good
 
-	//Iterate over the 'middle' columns
-	for(int col = 1; col < width-1; col++){
-		a = phi[curr+col] - phi[lf+col]; // Backward in x Good
-		b = phi[ri+col] - phi[curr+col]; // Forward in x Good
-		c = phi[curr+col] - phi[up+col]; // Backward in y Good
-		d = phi[dn+col] - phi[curr+col]; //Forward in y Good
-		e = phi[curr+col] - phi[ccurr+col]; // Backward in z Good
-		f = phi[fcurr+col] - phi[curr+col]; // Forward in z Good
-
-		dD = temp_dD(a,b,c,d,e,f,phi[curr+col]);
-		sm_phi[curr+col] = phi[curr+col] - beta * (phi[curr+col]/sqrt( pow(phi[curr+col],2) + 1)) * dD;
-	}
+        dD = temp_dD(a,b,c,d,e,f,phi[curr+col]);
+        sm_phi[curr+col] = phi[curr+col] - beta * (phi[curr+col]/sqrt( pow(phi[curr+col],2) + 1)) * dD;
+    }
 
     int col = width-1;
     a = phi[curr+col] - phi[lf+col]; // Backward in x Good
@@ -148,6 +228,123 @@ smoothPhi(global float* phi, global float* sm_phi, float beta, int width, int he
     sm_phi[curr+col] = phi[curr+col] - beta * (phi[curr+col]/sqrt( pow(phi[curr+col],2) + 1)) * dD;
 }
 
+
+// Forces the Sussman smooth function, smooths the function depending on the value of the norm of gradient
+__kernel void
+smoothPhiLocal(global float* phi, global float* sm_phi, float beta, int width, int height, int depth){
+
+    int globId = (int)get_global_id(0);// From 0 to height*depth
+    int localId = get_local_id(0);
+    int grp_size = get_local_size(0);
+
+    __local float loc_array[1840];//This hard coded size is (num_threads+ghosts)*(block_size+ghosts)*3 = 
+    // 34*18*3 = 1836
+    // 34*34*3 = 3468
+
+    int curr = globId*width;//Current value 0, width, 2*width, .. -> init 0 row, init 1 row, init 2 row
+    int slice = width*height;//This is the size of one 'slice'
+
+    int globLocIdx =curr - slice - width - 1;//First index we need to access
+    int locIdx= 0;
+    int BLOCK_SIZE = 16;
+    int ghosts = 2;
+    int currBlock = 0;
+
+    int row = width;//This is the size of one 'row'
+    //(test if is last row)
+    bool isLastRow = ( (curr+row) % slice == 0) ? true : false;
+    //(test if is first row)
+    bool isFirstRow =  (curr % slice == 0)? true : false;
+
+    int locslice = (BLOCK_SIZE+2)*(grp_size + 2);
+    int locrow = BLOCK_SIZE + ghosts;
+
+    int totIter = (width/BLOCK_SIZE);
+
+    //Defines the index to be incremented in case we are in the last or first row
+    int dn = isLastRow? 0: locrow; //down value 
+    int up = isFirstRow? 0: -locrow; //up value 
+
+    // ----------------- If we are are in the last slice then we can't have a far slice
+    int fcurr = locslice;//(far current) 
+    // Test that we are not in the last slice
+    if( curr > (slice*(depth-1) - 1) ){ fcurr = 0;}
+
+    // ----------------- If we are are in the first slice then we can't have a closer slice
+    // Closer 9 neighbors
+    int ccurr = -locslice;//(closer current) 
+    if( curr < slice ){ ccurr = 0;}
+
+    int req_add_to_loc = localId*2;
+
+    float16 a,b,c,d,e,f, dD;
+
+    while(currBlock < totIter){
+        locIdx= 0;
+
+        //-------------------- Reads the required memory into local memory ----
+        if(localId == 0){
+            globLocIdx = curr - slice - width - 1 + currBlock*BLOCK_SIZE;//First index we need to access
+            //This loop fills each of the 3 slices
+            for(int fillSlice = 0; fillSlice < 3; fillSlice++){
+                //This loop is for each of the rows
+                for(int fillrow = 0; fillrow < grp_size + ghosts; fillrow++){
+                    //Iterate over the columns
+                    for(int col = 0; col < BLOCK_SIZE + ghosts; col++){
+                        loc_array[locIdx] = phi[globLocIdx];
+                        //loc_array[locIdx] = globLocIdx;
+                        locIdx++;
+                        globLocIdx++;
+                    }
+                    globLocIdx+= width - BLOCK_SIZE - ghosts;//Go to next row
+                }
+                //Position index in the next slice
+                globLocIdx = curr - width +  fillSlice*slice - 1 + currBlock*BLOCK_SIZE;
+            }
+        }
+
+        __local float* loc_phi  = loc_array + locslice + locrow + 1;
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        // Read all the data
+        // Same slice values 
+        float16 currvec = vload16(localId,loc_phi+req_add_to_loc);//Current
+        float16 lfvec = vload16(localId,loc_phi+req_add_to_loc-1);//left
+        float16 rivec = vload16(localId,loc_phi+req_add_to_loc+1);//right
+        float16 dnvec = vload16(localId,loc_phi+req_add_to_loc+dn); //down value 
+        float16 upvec = vload16(localId,loc_phi+req_add_to_loc+up);//up value 
+        //Far values 
+        float16 fcurrvec = vload16(localId,loc_phi+req_add_to_loc+fcurr);//(far current) 
+        // Closer values
+        float16 ccurrvec = vload16(localId,loc_phi+req_add_to_loc+ccurr);//(closer current) 
+
+        // Fix the boundaries
+        if(currBlock == 0){//Fix all the left values
+            lfvec.s0 = lfvec.s1;
+        }
+        if(currBlock == (width/BLOCK_SIZE) -1){//Fix all the rigth values
+            rivec.sF = rivec.sE;
+        }
+
+        a = currvec - lfvec; // Backward in x 
+        b = rivec - currvec; // Forward in x 
+        c = currvec - upvec; // Backward in y 
+        d = dnvec -  currvec; //Forward in y 
+        e = currvec - ccurrvec; // Backward in z 
+        f = fcurrvec  - currvec; // Forward in z 
+
+        dD = temp_dD_vec(a,b,c,d,e,f, currvec);
+
+        float16 sm_phiVal = currvec - beta * (currvec/sqrt( pow(currvec,2) + 1)) * dD;
+
+        vstore16(sm_phiVal, (curr/BLOCK_SIZE)+currBlock, sm_phi);
+
+        currBlock++;
+    }//Iterates over the blocks
+
+}
+
 __kernel
 void newphi( __global float* phi, __global float* dphidt,
         __global float* max_dphidt, int width, int height){
@@ -156,9 +353,19 @@ void newphi( __global float* phi, __global float* dphidt,
     int globId = (int)get_global_id(0);// From 0 to height*depth
     int curr = globId*width;//Current value
 
+    int totIter = (width/16);
+    int step = globId * totIter;
+
+    float16  oldPhi;
+    float16  dphidtVec;
+    float16  newphi;
+
     //Iterate over the 'middle' columns
-    for(int col = 0; col < width; col++){
-        phi[curr+col] = phi[curr+col] + dt*dphidt[curr+col];
+    for(int col = 0; col < totIter; col++){
+        oldPhi= vload16(step + col,phi);//left
+        dphidtVec= vload16(step + col,dphidt);//left
+        //phi[curr+col] = phi[curr+col] + dt*dphidt[curr+col];
+        vstore16(oldPhi + dt*dphidtVec, step + col, phi);
     }
 }
 
@@ -215,8 +422,17 @@ dphidt(__global float* curvature, __global float* F,
     float maxF = max_F[0];//Max value of F
 
     //Iterate over the 'middle' columns
-    for(int col = 0; col < width; col++){
-        dphidt[curr+col] = (F[curr+col]/(maxF + EPS)) + alpha*curvature[curr+col];
+    float16  fVal;
+    float16  dphidtVal;
+    float16  curvVal;
+    int totIter = (width/16);
+    int step = globId * totIter;
+
+    for(int col = 0; col < totIter; col++){
+        fVal = vload16( step + col,F );
+        curvVal = vload16( step + col,curvature);
+        dphidtVal = (fVal/(maxF + EPS)) + alpha * curvVal;
+        vstore16(dphidtVal, step + col, dphidt);
     }
 
 }
@@ -230,7 +446,6 @@ compF(global float* avg_in_out, global float* I,
         global float* F, int width, int height, int depth){
 
     int globId = (int)get_global_id(0);// From 0 to height*depth
-
     // This is the case we are in the middle of the cube, no worries about the
     // boundaries
     int curr = globId*width;//Current value
@@ -240,16 +455,18 @@ compF(global float* avg_in_out, global float* I,
     float u = avg_in_out[1];// v is exterior avg
 
     //Create temporal variables for faster response
-    float currValI = 0;
-    float currValU = 0;
-    float currValV = 0;
+    float16  currValI;
+    float16  currValU;
+    float16  currValV;
 
-    //Iterate over the 'middle' columns
-    for(int col = 0; col < width; col++){
-        currValI = I[curr+col];
+    int totIter = (width/16);
+    int step = globId * totIter;
+
+    for(int col = 0; col < totIter; col++){
+        currValI = vload16(step + col,I);//left
         currValU = currValI - u;
         currValV = currValI - v;
-        F[curr+col] = (currValU*currValU) - (currValV*currValV);
+        vstore16((currValU*currValU) - (currValV*currValV), step + col, F);
     }
 
 }//compF
@@ -263,166 +480,165 @@ curvature(global float* phi, global float* curvature,
         int width, int height, int depth){
 
     int globId = (int)get_global_id(0);// From 0 to height*depth
+    int localId = get_local_id(0);
+    int grp_size = get_local_size(0);
 
-    //Obtain current index
-    int slice = width*height;//This is the size of one 'slice'
-    int row = width;//This is the size of one 'row'
+    __local float loc_array[1840];//This hard coded size is (num_threads+ghosts)*(block_size+ghosts)*3 = 
+    // 34*18*3 = 1836
+    // 34*34*3 = 3468
 
     int curr = globId*width;//Current value 0, width, 2*width, .. -> init 0 row, init 1 row, init 2 row
+    int slice = width*height;//This is the size of one 'slice'
 
-    
+    int globLocIdx =curr - slice - width - 1;//First index we need to access
+    int locIdx= 0;
+    int BLOCK_SIZE = 16;
+    int ghosts = 2;
+    int currBlock = 0;
+
+    int row = width;//This is the size of one 'row'
     //(test if is last row)
     bool isLastRow = ( (curr+row) % slice == 0) ? true : false;
     //(test if is first row)
     bool isFirstRow =  (curr % slice == 0)? true : false;
 
-    // First 8 neighbors same slice
-    int lf = curr-1;//The value left  (left)
-    int ri = curr+1;//The value right (right) 
-    int dn = isLastRow? curr : curr+row; //down value 
-    int dr = dn+1;// (down right)
-    int dl = dn-1;// (down left)
-    int up = isFirstRow? curr : curr-row; //up value 
-    int ur = up+1;// (up right)
-    int ul = up-1;// (up left)
-    // Farther 9 neighbors
+    int locslice = (BLOCK_SIZE+2)*(grp_size + 2);
+    int locrow = BLOCK_SIZE + ghosts;
+
+    //int totIter = (width/BLOCK_SIZE);
+    int totIter = (width/BLOCK_SIZE);
+
+    //Defines the index to be incremented in case we are in the last or first row
+    int dn = isLastRow? 0: locrow; //down value 
+    int up = isFirstRow? 0: -locrow; //up value 
 
     // ----------------- If we are are in the last slice then we can't have a far slice
-    if( curr > (slice*(depth-1) - 1) ){ slice = 0;}
-
-    int fcurr = curr + slice;//(far current) 
-    int flf = fcurr-1;// (far left)
-    int fri = fcurr+1;//(far right) 
-    int fdn = isLastRow? fcurr : fcurr+row; //far down value 
-    int fdr = fdn+1;// (far down right)
-    int fdl = fdn-1;// (far down left)
-    int fup = isFirstRow? fcurr : fcurr-row;//far up value
-    int fur = fup+1;// (up right)
-    int ful = fup-1;// (up left)
+    int fcurr = locslice;//(far current) 
+    // Test that we are not in the last slice
+    if( curr > (slice*(depth-1) - 1) ){ fcurr = 0;}
+    int fdn = isLastRow? fcurr : fcurr+locrow; //far down value 
+    int fup = isFirstRow? fcurr : fcurr-locrow;//far up value
 
     // ----------------- If we are are in the first slice then we can't have a closer slice
-    slice = width*height;
-    if( curr < slice ){ slice = 0;}
-
     // Closer 9 neighbors
-    int ccurr = curr - slice;//(closer current) 
-    int clf = ccurr-1;// (closer left)
-    int cri = ccurr+1;//(closer right) 
-    int cdn = isLastRow? ccurr : ccurr+row; //close down value 
-    int cdr = cdn+1;// (closer down right)
-    int cdl = cdn-1;// (closer down left)
-    int cup = isFirstRow? ccurr : ccurr-row; //Close up value
-    int cur = cup+1;// (closer up right)
-    int cul = cup-1;// (closer up left)
+    int ccurr = -locslice;//(closer current) 
+    if( curr < slice ){ ccurr = 0;}
+    int cdn = isLastRow? ccurr : ccurr+locrow; //close down value 
+    int cup = isFirstRow? ccurr : ccurr-locrow; //Close up value
 
-    //First order
-    float phi_x = 0;
-    float phi_y = 0;
-    float phi_z = 0;
-    //Second order
-    float phi_xx = 0;
-    float phi_yy = 0;
-    float phi_zz = 0;
-    float phi_xy = 0;
-    float phi_xz = 0;
-    float phi_zy = 0;
-    //Squares
-    float phi_x2 = 0;
-    float phi_y2 = 0;
-    float phi_z2 = 0;
+    int req_add_to_loc = localId*2;
 
-    //********************* DELETE **********************
-    /*
-    curvature[curr] = 1;
-    for(int col = 1; col < width-1; col++){
-        curvature[curr+col] = 2;
-    }
+    while(currBlock < totIter){
+        locIdx= 0;
 
-    int col = width-1;
-    curvature[curr+col] = 3;
-    */
-    //********************* DELETE **********************
-    
-    // !!!! READ THIS !!! Computing for first column (we cant use left ones)
-    // TO VALIDATE WITH MATLAB CHECK COMPUTATION OF INTERNAL LOOP CODE
-    // -- Second order first dervatives
-    phi_x = phi[ri] - phi[curr];//
-    phi_y = phi[up] - phi[dn];
-    phi_z = phi[fcurr] - phi[ccurr];
-    //Second order second derivatives
-    phi_xx = phi[curr] - 2*phi[curr] + phi[ri];
-    phi_yy = phi[dn] - 2*phi[curr] + phi[up];
-    phi_zz = phi[ccurr] - 2*phi[curr] + phi[fcurr];;
-    phi_xy = .25*phi[dr] - 0.25*phi[up] + .25*phi[ur] -0.25*phi[dn] ;
-    phi_xz = .25*phi[fri] - 0.25*phi[ccurr] + .25*phi[fcurr] - 0.25*phi[cri];
-    phi_zy = 0.25*phi[fup] - 0.25*phi[cdn] + .25*phi[fdn] - .25*phi[cup];
-    //Squares
-    phi_x2 = phi_x*phi_x;
-    phi_y2 = phi_y*phi_y;
-    phi_z2 = phi_z*phi_z;
+        //-------------------- Reads the required memory into local memory ----
+        if(localId == 0){
+            globLocIdx = curr - slice - width - 1 + currBlock*BLOCK_SIZE;//First index we need to access
+            //This loop fills each of the 3 slices
+            for(int fillSlice = 0; fillSlice < 3; fillSlice++){
+                //This loop is for each of the rows
+                for(int fillrow = 0; fillrow < grp_size + ghosts; fillrow++){
+                    //Iterate over the columns
+                    for(int col = 0; col < BLOCK_SIZE + ghosts; col++){
+                        loc_array[locIdx] = phi[globLocIdx];
+                        //loc_array[locIdx] = globLocIdx;
+                        locIdx++;
+                        globLocIdx++;
+                    }
+                    globLocIdx+= width - BLOCK_SIZE - ghosts;//Go to next row
+                }
+                //Position index in the next slice
+                globLocIdx = curr - width +  fillSlice*slice - 1 + currBlock*BLOCK_SIZE;
+            }
+        }
 
-    curvature[curr] =   ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_xx + 
-                        phi_y2*phi_zz + phi_z2*phi_xx + phi_z2*phi_yy
-                        - 2*phi_x*phi_y*phi_xy -2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
-                        pow((float)(phi_x2 + phi_y2 + phi_z2 + EPS),(float)(1.5));//It doesn't work if use 3/2 it does ceil or top
+        __local float* loc_phi  = loc_array + locslice + locrow + 1;
 
-    //Iterate over the 'middle' columns
-    for(int col = 1; col < width-1; col++){
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        // Read all the data
+        // Same slice values 
+        float16 currvec= vload16(localId,loc_phi+req_add_to_loc);//left
+        float16 lfvec = vload16(localId,loc_phi+req_add_to_loc-1);//left
+        float16 rivec = vload16(localId,loc_phi+req_add_to_loc+1);//right
+        float16 dnvec = vload16(localId,loc_phi+req_add_to_loc+dn); //down value 
+        float16 drvec = vload16(localId,loc_phi+req_add_to_loc+dn+1);// (down right)
+        float16 dlvec = vload16(localId,loc_phi+req_add_to_loc+dn-1);// (down left)
+        float16 upvec = vload16(localId,loc_phi+req_add_to_loc+up);//up value 
+        float16 urvec = vload16(localId,loc_phi+req_add_to_loc+up+1);// (up right)
+        float16 ulvec = vload16(localId,loc_phi+req_add_to_loc+up-1);// (up left)
+        //Far values 
+        float16 fcurrvec = vload16(localId,loc_phi+req_add_to_loc+fcurr);//(far current) 
+        float16 flfvec = vload16(localId,loc_phi+req_add_to_loc+fcurr-1);// (far left)
+        float16 frivec = vload16(localId,loc_phi+req_add_to_loc+fcurr+1);//(far right) 
+        float16 fdnvec = vload16(localId,loc_phi+req_add_to_loc+fdn); //far down value 
+        float16 fdrvec = vload16(localId,loc_phi+req_add_to_loc+fdn+1);// (far down right)
+        float16 fdlvec = vload16(localId,loc_phi+req_add_to_loc+fdn-1);// (far down left)
+        float16 fupvec = vload16(localId,loc_phi+req_add_to_loc+fup);//far up value
+        float16 furvec = vload16(localId,loc_phi+req_add_to_loc+fup+1);// (up right)
+        float16 fulvec = vload16(localId,loc_phi+req_add_to_loc+fup-1);// (up left)
+        // Closer values
+        float16 ccurrvec = vload16(localId,loc_phi+req_add_to_loc+ccurr);//(closer current) 
+        float16 clfvec =vload16(localId,loc_phi+req_add_to_loc+ccurr-1);// (closer left)
+        float16 crivec =vload16(localId,loc_phi+req_add_to_loc+ccurr+1);//(closer right) 
+        float16 cdnvec =vload16(localId,loc_phi+req_add_to_loc+cdn); //close down value 
+        float16 cdrvec =vload16(localId,loc_phi+req_add_to_loc+cdn+1);// (closer down right)
+        float16 cdlvec =vload16(localId,loc_phi+req_add_to_loc+cdn-1);// (closer down left)
+        float16 cupvec =vload16(localId,loc_phi+req_add_to_loc+cup); //Close up value
+        float16 curvec =vload16(localId,loc_phi+req_add_to_loc+cup+1);// (closer up right)
+        float16 culvec =vload16(localId,loc_phi+req_add_to_loc+cup-1);// (closer up left)
+
+        // Fix the boundaries
+        if(currBlock == 0){//Fix all the left values
+            lfvec.s0 = lfvec.s1;
+            dlvec.s0 = dlvec.s1;
+            ulvec.s0 = ulvec.s1;
+            flfvec.s0 = flfvec.s1;
+            fdlvec.s0 = fdlvec.s1;
+            fulvec.s0 = fulvec.s1;
+            clfvec.s0 = clfvec.s1;
+            cdlvec.s0 = cdlvec.s1;
+            culvec.s0 = culvec.s1;
+        }
+        if(currBlock == (width/BLOCK_SIZE) -1){//Fix all the rigth values
+            rivec.sF = rivec.sE;
+            drvec.sF = drvec.sE;
+            urvec.sF = urvec.sE;
+            frivec.sF = frivec.sE;
+            fdrvec.sF = fdrvec.sE;
+            furvec.sF = furvec.sE;
+            crivec.sF = crivec.sE;
+            cdrvec.sF = cdrvec.sE;
+            curvec.sF = curvec.sE;
+        }
+
+        // Compute finite differences
         //First order
-        phi_x = phi[ri+col] - phi[lf+col];
-        phi_y = phi[up+col] - phi[dn+col];
-        phi_z = phi[fcurr+col] - phi[ccurr+col];
+        float16 phi_16_x = rivec - lfvec;
+        float16 phi_16_y = upvec - dnvec;
+        float16 phi_16_z = fcurrvec - ccurrvec;
         //Second order
-        phi_xx = phi[lf+col] - 2*phi[curr+col] + phi[ri+col];
-        phi_yy = phi[dn+col] - 2*phi[curr+col] + phi[up+col];
-        phi_zz = phi[ccurr+col] - 2*phi[curr+col] + phi[fcurr+col];;
-        phi_xy = .25*phi[dr+col] - 0.25*phi[ul+col] + .25*phi[ur+col] -0.25*phi[dl+col] ;
-        phi_xz = .25*phi[fri+col] - 0.25*phi[clf+col] + .25*phi[flf+col] - 0.25*phi[cri+col];
-        phi_zy = 0.25*phi[fup+col] - 0.25*phi[cdn+col] + .25*phi[fdn+col] - .25*phi[cup+col];
+        float16 phi_16_xx = lfvec - 2*currvec + rivec;
+        float16 phi_16_yy = dnvec - 2*currvec + upvec;
+        float16 phi_16_zz = ccurrvec - 2*currvec + fcurrvec;
+
+        float16 phi_16_xy = .25*drvec - 0.25*ulvec + .25*urvec -0.25*dlvec ;
+        float16 phi_16_xz = .25*frivec - 0.25*clfvec + .25*flfvec - 0.25*crivec;
+        float16 phi_16_zy = 0.25*fupvec - 0.25*cdnvec + .25*fdnvec - .25*cupvec;
         //Squares
-        phi_x2 = phi_x*phi_x;
-        phi_y2 = phi_y*phi_y;
-        phi_z2 = phi_z*phi_z;
+        float16 phi_16_x2 = phi_16_x*phi_16_x;
+        float16 phi_16_y2 = phi_16_y*phi_16_y;
+        float16 phi_16_z2 = phi_16_z*phi_16_z;
 
-        curvature[curr+col] =   ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_xx + 
-                phi_y2*phi_zz + phi_z2*phi_xx + phi_z2*phi_yy
-                - 2*phi_x*phi_y*phi_xy -2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
-            pow((float)(phi_x2 + phi_y2 + phi_z2 + EPS),(float)(1.5));//It doesn't work if use 3/2 it does ceil or top
-    }
+        float16 newcurv  =   ( phi_16_x2*phi_16_yy + phi_16_x2*phi_16_zz + phi_16_y2*phi_16_xx + 
+                phi_16_y2*phi_16_zz + phi_16_z2*phi_16_xx + phi_16_z2*phi_16_yy
+                - 2*phi_16_x*phi_16_y*phi_16_xy -2*phi_16_x*phi_16_z*phi_16_xz - 2*phi_16_y*phi_16_z*phi_16_zy) / 
+            pow((phi_16_x2 + phi_16_y2 + phi_16_z2 + EPS),(float)(1.5));//It doesn't work if use 3/2 it does ceil or top
 
-    //-------------------- Last column (no RIGHT COLUMN VALUES)----------------
-    int col = width-1;
-    //First order
-    phi_x = phi[curr+col] - phi[lf+col];
-    phi_y = phi[up+col] - phi[dn+col];
-    phi_z = phi[fcurr+col] - phi[ccurr+col];
-    //Second order
-    phi_xx = phi[lf+col] - 2*phi[curr+col] + phi[curr+col];
-    phi_yy = phi[dn+col] - 2*phi[curr+col] + phi[up+col];
-    phi_zz = phi[ccurr+col] - 2*phi[curr+col] + phi[fcurr+col];;
-    phi_xy = .25*phi[dn+col] - 0.25*phi[ul+col] + .25*phi[up+col] -0.25*phi[dl+col] ;
-    phi_xz = .25*phi[fcurr+col] - 0.25*phi[clf+col] + .25*phi[flf+col] - 0.25*phi[ccurr+col];
-    phi_zy = 0.25*phi[fup+col] - 0.25*phi[cdn+col] + .25*phi[fdn+col] - .25*phi[cup+col];
-    //Squares
-    phi_x2 = phi_x*phi_x;
-    phi_y2 = phi_y*phi_y;
-    phi_z2 = phi_z*phi_z;
+        vstore16(newcurv, (curr/BLOCK_SIZE)+currBlock, curvature);
 
-    curvature[curr+col] =   ( phi_x2*phi_yy + phi_x2*phi_zz + phi_y2*phi_xx + 
-            phi_y2*phi_zz + phi_z2*phi_xx + phi_z2*phi_yy
-            - 2*phi_x*phi_y*phi_xy -2*phi_x*phi_z*phi_xz - 2*phi_y*phi_z*phi_zy) / 
-            pow((float)(phi_x2 + phi_y2 + phi_z2 + EPS),(float)(1.5));//It doesn't work if use 3/2 it does ceil or top
-
-    /*
-    //Test if it is detecting each border correctly
-    slice = width*height;
-    bool isLastSlide =  curr > (slice*(depth-1) - 1);
-    bool isFirstSlide =  curr < slice;
-    curvature[curr] = isFirstRow;//Working
-    curvature[curr+1] = isFirstSlide;//Working
-    curvature[curr+2] = isLastSlide;
-    curvature[curr+3] = isLastRow;//Working
-    */
+        currBlock++;
+    }//Iterates over the blocks
 
 }//curvature
 

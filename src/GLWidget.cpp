@@ -613,7 +613,7 @@ void GLWidget::paintGL() {
         if ((currIter < maxActCountIter) && acIterate) {
             //Just for performance tests
             if(TESTS){
-                for( int i = 0; i < 1; i++){
+                for( int i = 0; i < 10; i++){
                     initMask();//Re-initialize the mask
                     runSDF();
                     iterStep = 100;
@@ -628,6 +628,7 @@ void GLWidget::paintGL() {
                     dout << "Current iter: " << currIter << endl;
 
                     acIterate = false;
+                    ts.dumpTimings();
                 }//For iterations 10
             }else{
                 iterStep = 2;
