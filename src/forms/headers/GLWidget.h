@@ -16,9 +16,9 @@
 #include "GLManager/GLManager.h"
 #include "CLManager/CLManager.h"
 #include "ImageManager/ImageManager.h"
-#include "Timers/timing.h"
-
 #include "ActiveContours.h"
+
+#include "Timers/timing.h"
 #include <QtOpenGL/QGLWidget>
 #include <QGLShaderProgram>
 #include <QGLShader>
@@ -63,6 +63,7 @@ protected:
     void printGLMmatrix(glm::mat4 matrix);
 	void printGLVersions();
 	void InitVertexData();
+    void runSDF();
 
 	//--------- 3D -------
 	void initTexture3D();

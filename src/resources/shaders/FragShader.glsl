@@ -48,7 +48,7 @@ void main()
     vec3 minCoords=  vec3(-th,-th,-th);
 
     dir= finDir.xyz;
-    float bthreshold = .1;// This is the threshold of the SDF to be displayed in red
+    float bthreshold = .5;// This is the threshold of the SDF to be displayed in red
 
     if(drawPlanes == 1){
         vec4 mixVal = vec4(.5,.5, .5, .5); 
@@ -57,7 +57,8 @@ void main()
         // Move if outside the loop
         if(dispSegmentation == 1){
             textColor = texture(segSampler, currTextCoord);
-            if( textColor.r <= bthreshold ){
+            //if( textColor.r >= -bthreshold && textColor.r <= bthreshold ){ // This is if we want just a red line in the contour
+            if(textColor.r <= bthreshold ){
                 outputColor = mix(outputColor,vec4(1, 0, 0, 1),mixVal);
             }else{
                 //outputColor = mix(outputColor,vec4(0, 0, textColor.r/20, 1),mixVal);
@@ -66,7 +67,7 @@ void main()
     }else{
 
         vec4 mixVal = vec4(.05,0.05, 0.05, 0); 
-        int firstNonZero= 0;
+        int firstNonTransparent= 0;
         for(int i = 1; i < count; i++){
             currTextCoord = currTextCoord + dir;
             if( any(greaterThan(currTextCoord, maxCoords)) || 
@@ -76,10 +77,10 @@ void main()
                 //Verify we are not out of bounds
                 textColor = texture(imgSampler, currTextCoord);
                 if(textColor.r > 0){
-                    firstNonZero = i;
+                    firstNonTransparent = i;
                 }
-                if(firstNonZero > 0){
-                    textColor.r = textColor.r*(decay/(i+2-firstNonZero));
+                if(firstNonTransparent > 0){
+                    textColor.r = textColor.r*(decay/(i+2-firstNonTransparent));
                     //textColor.r = textColor.r*(gamma/count);
                     outputColor = outputColor + vec4(textColor.r, textColor.r, textColor.r, 0);
                 }

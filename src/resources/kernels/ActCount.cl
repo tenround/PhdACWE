@@ -239,10 +239,17 @@ compF(global float* avg_in_out, global float* I,
     float v = avg_in_out[0];// u is interior avg
     float u = avg_in_out[1];// v is exterior avg
 
+    //Create temporal variables for faster response
+    float currValI = 0;
+    float currValU = 0;
+    float currValV = 0;
+
     //Iterate over the 'middle' columns
     for(int col = 0; col < width; col++){
-        F[curr+col] = pow( (I[curr+col] - u), 2) - pow( (I[curr+col] - v), 2);
-        //		F[curr+col] = curr+col;
+        currValI = I[curr+col];
+        currValU = currValI - u;
+        currValV = currValI - v;
+        F[curr+col] = (currValU*currValU) - (currValV*currValV);
     }
 
 }//compF
@@ -263,6 +270,7 @@ curvature(global float* phi, global float* curvature,
 
     int curr = globId*width;//Current value 0, width, 2*width, .. -> init 0 row, init 1 row, init 2 row
 
+    
     //(test if is last row)
     bool isLastRow = ( (curr+row) % slice == 0) ? true : false;
     //(test if is first row)
@@ -292,7 +300,6 @@ curvature(global float* phi, global float* curvature,
     int fur = fup+1;// (up right)
     int ful = fup-1;// (up left)
 
-    curvature[curr] = fcurr;
     // ----------------- If we are are in the first slice then we can't have a closer slice
     slice = width*height;
     if( curr < slice ){ slice = 0;}
@@ -324,6 +331,18 @@ curvature(global float* phi, global float* curvature,
     float phi_y2 = 0;
     float phi_z2 = 0;
 
+    //********************* DELETE **********************
+    /*
+    curvature[curr] = 1;
+    for(int col = 1; col < width-1; col++){
+        curvature[curr+col] = 2;
+    }
+
+    int col = width-1;
+    curvature[curr+col] = 3;
+    */
+    //********************* DELETE **********************
+    
     // !!!! READ THIS !!! Computing for first column (we cant use left ones)
     // TO VALIDATE WITH MATLAB CHECK COMPUTATION OF INTERNAL LOOP CODE
     // -- Second order first dervatives

@@ -39,10 +39,10 @@ OBJECTS_DIR = build
 DESTDIR = dist
 MOC_DIR = build/moc
 
-DEFINES += DEBUG
+#DEFINES += DEBUG
 
+CONFIG += qt
 #CONFIG += qt debug
-CONFIG += qt debug
 
 QT +=core gui opengl
-QMAKE_CXXFLAGS += -w
+QMAKE_CXXFLAGS += -w -std=gnu++11 -O

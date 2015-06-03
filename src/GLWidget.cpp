@@ -31,6 +31,8 @@
 #define YELLOW  1.0f, 1.0f, 0.0f, 1.0f
 #define WHITE   1.0f, 1.0f, 1.0f, 1.0f
 
+#define TESTS 1
+
 #define NUM_SAMPLERS = 1;
 
 //Vertex colors are then defined only by vertex from 0 to 7 
@@ -126,14 +128,12 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
  */
 void GLWidget::SelectImage() {
 	
-    QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/Box.nii";
+    //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/Box20.nii";
+    //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/Gradient160.nii";
     //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/CompleteNormalized.nii";
-
-    //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/Gradient.nii";
-    //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/SmallReal256.nii";
-    //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/SmallReal16.nii";
-
-	/*
+    //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/1Breast.nii";
+    //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/substractRed.nii";
+    //QString fileName = "/home/olmozavala/Dropbox/TestImages/nifti/Basics/substract.nii";
 	QString fileName;
 	
 	QFileDialog dialog(this);
@@ -143,7 +143,7 @@ void GLWidget::SelectImage() {
 	if (dialog.exec()){
 		fileNames = dialog.selectedFiles();
 		fileName = fileNames[0];
-	}*/
+	}
 	
     if (!fileName.isNull()) {
         inputImage = new char[fileName.length() + 1];
@@ -167,10 +167,9 @@ void GLWidget::SelectImage() {
         // the 'segmentation' until a new ROI is selected
         displaySegmentation = false;
 		init();
+        firstTimeImageSelected = false;
 	
-		//TODO THis part should not be here is just for testing
-		initMask();
-//		acIterate = true;
+        newMask = true;
     } else {
         //TODO display a dialog informing the following text.
         cout << "The image haven't been selected. " << endl;
@@ -201,7 +200,7 @@ void GLWidget::InitActiveCountours() {
     float def_dt = .5;
 	
 	if(firstTimeImageSelected){
-		clObj.loadProgram(maxActCountIter, alpha, def_dt);
+		clObj.loadProgram(maxActCountIter, alpha, def_dt, ts);
 	}
 	
 }
@@ -323,7 +322,9 @@ void GLWidget::initTexture3D(){
 	glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE,&test);
 	dout << "Max 3d Texture size " << test << endl;
 	
-    glGenTextures(1, &tbo_in);
+	if(firstTimeImageSelected){
+        glGenTextures(1, &tbo_in);
+    }
     glBindTexture(GL_TEXTURE_3D, tbo_in);
 	
 	//glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -351,7 +352,9 @@ void GLWidget::initTexture3D(){
 //	enqueueCopyImageToBuffer function to work properly.
 	
     //------------- Adding output 3d texture
-    glGenTextures(1, &tbo_out);
+	if(firstTimeImageSelected){
+        glGenTextures(1, &tbo_out);
+    }
     glBindTexture(GL_TEXTURE_3D, tbo_out);
 	
 	//glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -492,7 +495,7 @@ void GLWidget::init() {
     InitTextures(); //Init textures
     dout << "Textures initialized!! " << endl;
 	
-	//if(firstTimeImageSelected){
+	if(firstTimeImageSelected){
 		//Create the Vertex Array Object (contains info of vertex, color, coords, and textures)
         glUseProgram(g_program.theProgram); //Start using the builded program
 		glGenVertexArrays(1, &vaoId); //Generate 1 vertex array
@@ -508,14 +511,14 @@ void GLWidget::init() {
 
 		glBindVertexArray(vaoId); //First VAO setup (only one this time)
 		initImgVaoBuffer(); //Init Vertex buffers
-	//}
-	
-    // This should be already after mask 
-    dout << "Initializing OpenCL... " << endl;
-	InitActiveCountours();
+
+        // This should be already after mask 
+        dout << "Initializing OpenCL... " << endl;
+        InitActiveCountours();
+	}
 	
     dout << "Initializing images, arrays and buffers (CL)!! " << endl;
-	clObj.initImagesArraysAndBuffers(tbo_in, tbo_out, width, height, depth);
+	clObj.initImagesArraysAndBuffers(tbo_in, tbo_out, width, height, depth, !firstTimeImageSelected);
 	
     dout << "Init SUCCESSFUL................" << endl;
 	
@@ -561,7 +564,6 @@ void GLWidget::initializeGL() {
     dout << "OpenGL program initialized ... " << endl;
 
     tm_oclogl_init.end();
-    SelectImage();
 }
 
 void GLWidget::resizeGL(int w, int h) {
@@ -578,6 +580,20 @@ void GLWidget::resizeGL(int w, int h) {
 }
 
 /**
+ * Run the SDF on the clObj
+ */
+void GLWidget::runSDF() {
+    Timer tm_ocl_sdf(ts, "SDF");
+    tm_ocl_sdf.start();
+
+    clObj.create3DMask(width, height, depth, mask[0], mask[1],
+            mask[2], mask[3], mask[4], mask[5]);
+
+    clObj.runSDF();
+    tm_ocl_sdf.end();
+
+}
+/**
  * This is the main OpenGL loop. Here the display of results is made
  */
 void GLWidget::paintGL() {
@@ -587,65 +603,50 @@ void GLWidget::paintGL() {
     //Check if we already have an image selected, if not nothing should be done
     if (imageSelected) {
         //        dout << "Painting........... " << endl;
-
         if (newMask) {
-            cout << "--------------- Initializing mask and making SDF..........." << endl;
-
-            Timer tm_ocl_sdf(ts, "SDF");
-
-            tm_ocl_sdf.start();
-            //TODO obtain this parameters form the GUI using OpenGL
-            int maskWidthSize= floor(width/4);
-            int maskHeightSize= floor(height/4);
-            int maskDepthSize= floor(depth/4);
-
-            /*
-            mask[0] = floor(width/2-maskWidthSize);//colStart
-            mask[1] = floor(width/2+maskWidthSize);//colEnd
-            mask[2] = floor(height/2-maskHeightSize);//rowStart 
-            mask[3] = floor(height/2+maskHeightSize);//rowEnd
-            mask[4] = floor(depth/2-maskDepthSize);//depthStart 
-            mask[5] = floor(depth/2+maskDepthSize);//depthStart 
-            */
-
-            mask[0] = 7;//colStart
-            mask[1] = 12;//colEnd
-            mask[2] = 7;//rowStart 
-            mask[3] = 12;//rowEnd
-            mask[4] = 10;//depthStart 
-            mask[5] = 15;//depthStart 
-
-            cout << "Mask cube limits: " << 
-                mask[0] << ',' << mask[1]<< ',' << mask[2]<< ',' 
-                << mask[3]<< ',' << mask[4]<< ',' << mask[5] << ',' << endl;;
-
-            clObj.create3DMask(width, height, depth, mask[0], mask[1],
-                    mask[2], mask[3], mask[4], mask[5]);
-
-            clObj.runSDF();
-            tm_ocl_sdf.end();
-
-            newMask = false;
+            if(!TESTS){
+                initMask();
+                runSDF();
+            }
         }
 
         if ((currIter < maxActCountIter) && acIterate) {
+            //Just for performance tests
+            if(TESTS){
+                for( int i = 0; i < 1; i++){
+                    initMask();//Re-initialize the mask
+                    runSDF();
+                    iterStep = 100;
+                    dout << "iterating ....." << currIter << endl;
+                    dout << " number of iterations: " << iterStep << endl;
+                    Timer tm_ocl_ac(ts, "ACont");
+                    tm_ocl_ac.start();
 
-            iterStep = 1;
-            dout << "iterating ....." << currIter << endl;
-            dout << " number of iterations: " << iterStep << endl;
-            Timer tm_ocl_ac(ts, "ACont");
-            tm_ocl_ac.start();
+                    clObj.iterate(iterStep, useAllBands); //Iterate the ActiveCountours n times
+                    currIter += iterStep;
+                    tm_ocl_ac.end();
+                    dout << "Current iter: " << currIter << endl;
 
-            clObj.iterate(iterStep, useAllBands); //Iterate the ActiveCountours n times
-            currIter += iterStep;
-            tm_ocl_ac.end();
-            dout << "Current iter: " << currIter << endl;
+                    acIterate = false;
+                }//For iterations 10
+            }else{
+                iterStep = 2;
+                dout << "iterating ....." << currIter << endl;
+                dout << " number of iterations: " << iterStep << endl;
+                Timer tm_ocl_ac(ts, "ACont");
+                tm_ocl_ac.start();
+
+                clObj.iterate(iterStep, useAllBands); //Iterate the ActiveCountours n times
+                currIter += iterStep;
+                tm_ocl_ac.end();
+                dout << "Current iter: " << currIter << endl;
+
+            }
             ts.dumpTimings();
-
-            acIterate = false;
         }
 
-        glClearColor(0.33f, 0.33f, 0.33f, 0.0f);
+        //glClearColor(0.33f, 0.33f, 0.33f, 0.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(g_program.theProgram);
@@ -658,7 +659,6 @@ void GLWidget::paintGL() {
                 glm::value_ptr(camera->getProjectionMatrix() * camera->getViewMatrix()));
 
         // This is used to display the ROI that the user is selecting
-        displaySegmentation = 1;
         if(displaySegmentation){
             glUniform1i(displaySegmUnif, 1); 
         }else{
@@ -704,27 +704,43 @@ void GLWidget::paintGL() {
  * Initializes the mask at the center of the 3D cube. 
  */
 void GLWidget::initMask(){
-    // CURRENTLY NOT BEING USED (in 3d version)
+    cout << "--------------- Initializing mask and making SDF..........." << endl;
+
+    //TODO obtain this parameters form the GUI using OpenGL
+    int maskWidthSize= floor(width/8);
+    int maskHeightSize= floor(height/8);
+    int maskDepthSize= floor(depth/8);
+
     /*
-       dout << "Updating mask........ " << endl;
-       dout << "Start at: (" << startXmask << "," << startYmask << ")" << endl;
-       dout << "Ends at: (" << endXmask << "," << endYmask << ")" << endl;
-
-       dout << "Image size : (" << width << "," << height << ")" << endl;
-       dout << "Window size : (" << winWidth << "," << winHeight << ")" << endl;
-
-    mask[0] = (int) ((startXmask * width) / winWidth);
-    mask[1] = (int) ((endXmask * width) / winWidth);
-
-    mask[2] = height - (int) ((endYmask * height) / winHeight);
-    mask[3] = height - (int) ((startYmask * height) / winHeight);
-
-    dout << "Corresp mask start: (" << mask[0] << "," << mask[2] << ")" << endl;
-    dout << "Corresp mask end: (" << mask[1] << "," << mask[3] << ")" << endl;
+       mask[0] = floor((1*width)/6);//colStart
+       mask[1] = floor((2*width)/6);//colEnd
+       mask[2] = floor((2*height)/5);//rowStart 
+       mask[3] = floor((3*height)/5);//rowEnd
+       mask[4] = floor((1*depth)/4);//depthStart 
+       mask[5] = floor((2*depth)/4);//depthEnd
        */
 
-    newMask = true; //Run SDF (start displaying segmentation) 
-    updatingROI = false; //Stop drawing user ROI, start displaying segmentation
+    mask[0] = floor(width/2-maskWidthSize);//colStart
+    mask[1] = floor(width/2+maskWidthSize);//colEnd
+    mask[2] = floor(height/2-maskHeightSize);//rowStart 
+    mask[3] = floor(height/2+maskHeightSize);//rowEnd
+    mask[4] = floor(depth/2-maskDepthSize);//depthStart 
+    mask[5] = floor(depth/2+maskDepthSize);//depthStart 
+
+    /*
+       mask[0] = 7;//colStart
+       mask[1] = 12;//colEnd
+       mask[2] = 7;//rowStart 
+       mask[3] = 12;//rowEnd
+       mask[4] = 10;//depthStart 
+       mask[5] = 15;//depthStart 
+       */
+
+    dout << "Mask cube limits: " << 
+        mask[0] << ',' << mask[1]<< ',' << mask[2]<< ',' 
+        << mask[3]<< ',' << mask[4]<< ',' << mask[5] << ',' << endl;;
+
+    newMask = false;
 }
 
 /**
@@ -738,8 +754,6 @@ void GLWidget::mouseReleaseEvent(QMouseEvent *event) {
     if( event->button() == GLUT_RIGHT_BUTTON){
         endXmask = event->x();
         endYmask = event->y();
-
-        initMask();
     }
 }
 
@@ -858,8 +872,10 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
     //printMatrix(camera->getCameraMatrix());
     switch (event->key()) {
 
-        case 'j':// Case 'J' or 'j' shows and hides the segmentation 
+        case 'J':// Case 'J' or 'j' shows and hides the segmentation 
+        case 'j':
             displaySegmentation = !displaySegmentation;
+            cout << "Display segmention: " << displaySegmentation << endl;
             break;
         case 'I':// Case 'I' start and stops Active Contours
         case 'i':
@@ -1013,7 +1029,7 @@ void GLWidget::InitVertexData(){
     cubeHeight = (float)height/(float)width;//Using with as the normalized with
     //Multiply by 2 because cube Width is for each side.
     cubeDepth = 2*((float)depth/(float)width);
-    
+
     // -- Initalizing vertices for each plane --
     // -- Initalizing vertices for cube sides --
     float halfDepth = cubeDepth/2;

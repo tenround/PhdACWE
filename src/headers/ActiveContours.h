@@ -18,12 +18,14 @@
 #include <fstream>
 #include <sstream>
 #include <math.h>
+#include <chrono>
 
 #include "FreeImage.h"
 #include "CLManager/CLManager.h"
 #include "FileManager/FileManager.h"
 #include "ImageManager/ImageManager.h"
 #include "CLManager/ErrorCodes.h"
+#include "Timers/timing.h"
 
 class ActiveContours {
 public:
@@ -31,23 +33,27 @@ public:
     ActiveContours(const ActiveContours& orig);
     virtual ~ActiveContours();
 
-    void loadProgram(int iter, float alpha, float dt);
+    void loadProgram(int iter, float alpha, float dt, Timings& ts);
 
     void iterate(int numIterations, bool useAllBands);
     void initImagesArraysAndBuffers(GLuint& gl_text_input, GLuint& gl_text_output,
-						int locwidth, int locheight, int locdepth);
+						int locwidth, int locheight, int locdepth, bool cleanBuffers);
     void runSDF(); 
     void create3DMask(int width, int height, int depth,
-		int colStart, int colEnd, int rowStart, int rowEnd, int depthStart, int depthEnd);
+    int colStart, int colEnd, int rowStart, int rowEnd, int depthStart, int depthEnd);
 
 private:
     
 	void printNDRanges(int cols, int rows, int z, int grp_cols, int grp_rows, int grp_z);
 	void printBuffer(cl::Buffer& buf, int size, vector<cl::Event> vecPrev);
+	void printBufferArray(cl::Buffer& buf, int size, int width, int height,
+            vector<cl::Event> vecPrev,int* slides, int sizeOfArray);
 	void printBuffer(cl::Buffer& buf, int size, int offset, int width, int height, vector<cl::Event> vecPrev);
     int SDFoz(CLManager cl, cl::Context context, cl::CommandQueue queue, cl::Program program);
     int SDFVoro(CLManager cl, cl::Context context, cl::CommandQueue queue, cl::Program program);
     int iterateAvgInAndOut(int width, int height, int grp_size_x, int grp_size_y, int arraySize);
+    void tic(Timer* timer);
+    void toc(Timer* timer);
     
 	void copySegToText();
     cl::Event compDphiDt(vector<cl::Event> vecEvPrev);
@@ -65,15 +71,23 @@ private:
 	cl::Event compAvgInAndOut(cl::Buffer& buf_phi, cl::Buffer& buf_img_in,
         vector<cl::Event> vecPrevEvents);
     
+    Timings* ts;
+    Timer* tm_copyGlToBuffer;
+    Timer* tm_avgInOut;
+    Timer* tm_curvature;
+    Timer* tm_F;
+    Timer* tm_maxF;
+    Timer* tm_DphiDt;
+    Timer* tm_maxDphiDt;
+    Timer* tm_phi;
+    Timer* tm_smoothPhi;
+    Timer* tm_copySmoothPhi;
+    Timer* tm_bufToGL;
+
+
 	// Here we are using width*height*depth*8
     cl::Image3DGL img_in_gl;//This is the object that holds the 3D texture of the nii image
     cl::Image3DGL img_phi_gl;//Output 
-    cl::Image3D img_in;
-    cl::Image3D img_phi;
-    cl::Image3D img_mask;
-    cl::Image3D img_curv_F;
-    cl::Image3D img_dphidt;
-    cl::Image3D img_newphi;
     
 	std::vector<cl::Memory> cl_textures;
     
