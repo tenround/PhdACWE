@@ -8,12 +8,14 @@
 #define MAXF 1
 #define MAXDPHIDT 2
 
-// Writes is used to write results to disk
+// Writes is used to write results to terminal for DEBUGING
 #define WRITE false
-#define ITER 50 //Defines every how many iterations will write the outputs
-#define TIME true
+#define ITER 100 //Defines every how many iterations will write the outputs
+
+#define TIME false
+
 // PRINT_IMG_VAL is used to print images values (only for very small images)
-#define PRINT_IMG_VAL false 
+#define PRINT_IMG_VAL false
 
 #include "ActiveContours.h"
 #include "SignedDistFunc.h"
@@ -203,13 +205,14 @@ void ActiveContours::runSDF() {
 		
         char* sdfPath = (char*) "images/SDF/"; //Path to save SDF images
 		
-//        if (WRITE) {//Writes the original mask
-        if (false) {//Writes the original mask
+        if (WRITE) {//Writes the original mask
+        //if (false) {//Writes the original mask
 			dout << "******** Writing original mask .... " << endl;
             string folder = appendStr(sdfPath, (char*) "OriginalMask/");
 			ImageManager::write3DImageSDF( (char*) folder.c_str(), arr_buf_mask, width, height, depth);
 		}
 		
+
         SignedDistFunc sdfObj;
 		
 		dev_max_work_items = 512;
@@ -218,14 +221,14 @@ void ActiveContours::runSDF() {
         evSDF_newPhi = sdfObj.run3DSDFBuf(&clMan, buf_mask, buf_phi, dev_max_work_items, width, 
 				height, depth, evImgSegWrt, sdfPath);
 		
-//        if (WRITE) {// Saves the SDF result as an image
-		if (WRITE) {
+		if (WRITE) {// Saves the SDF result as an image
 			cout << "--------------------Displaying some values of the SDF..." << endl;
 			vecEvPrevPrinting.clear();
 			vecEvPrevPrinting.push_back(evSDF_newPhi);
 			//printBuffer(buf_phi, 10, vecEvPrevPrinting);
-			printBuffer(buf_phi, 400, 0, width, height, vecEvPrevPrinting);
+			printBuffer(buf_phi, width*height*2, 0, width, height, vecEvPrevPrinting);
 		}
+
         if (WRITE) {// Saves the SDF result as an image
             dout << "Saving SDF result..." << endl;
             string folder = appendStr(sdfPath, (char*) "SDFOutput/");
@@ -346,9 +349,9 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
                 cout << endl << "----------- Previous Phi ------------" << endl;
 				vecEvPrevPrinting.clear();
 				vecEvPrevPrinting.push_back(evAvgInOut_SmoothPhi);
-                printBuffer(buf_phi, 400, width*height*9, width, height, vecEvPrevPrinting);
-                printBuffer(buf_phi, 400, width*height*10, width, height, vecEvPrevPrinting);
-                printBuffer(buf_phi, 400, width*height*11, width, height, vecEvPrevPrinting);
+                printBuffer(buf_phi, width*height, width*height*9, width, height, vecEvPrevPrinting);
+                printBuffer(buf_phi, width*height, width*height*16, width, height, vecEvPrevPrinting);
+                printBuffer(buf_phi, width*height, width*height*28, width, height, vecEvPrevPrinting);
 			}		
 
             if (WRITE) {// Gets the final average values obtained
@@ -369,7 +372,7 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
 				vecEvPrevPrinting.clear();
 				vecEvPrevPrinting.push_back(evCurvature_copySmoothToPhi);
 				//printBuffer(buf_curvature, 10, vecEvPrevPrinting);
-                printBufferArray(buf_curvature, 400, width, height, vecEvPrevPrinting, slidesToPrint, sizeOfArray);
+                printBufferArray(buf_curvature, width*height, width, height, vecEvPrevPrinting, slidesToPrint, sizeOfArray);
 
             }
 			
@@ -385,8 +388,8 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
                 cout << "--------------------Displaying the value of F ..." << endl;
 				vecEvPrevPrinting.clear();
 				vecEvPrevPrinting.push_back(evF);
-                //printBuffer(buf_F, 400, 0, width, height, vecEvPrevPrinting);
-                printBufferArray(buf_F, 400, width, height, vecEvPrevPrinting, slidesToPrint, sizeOfArray);
+                //printBuffer(buf_F, width*height, 0, width, height, vecEvPrevPrinting);
+                printBufferArray(buf_F, width*height, width, height, vecEvPrevPrinting, slidesToPrint, sizeOfArray);
             }
 
             //Computing maximum value of F
@@ -412,8 +415,8 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
                 cout << "--------------------Displaying values of Dphi/dt ..." << endl;
                 vecEvPrevPrinting.clear();
                 vecEvPrevPrinting.push_back(evDphiDt_MaxDphiDt);
-                //printBuffer(buf_dphidt, 400, 0, width, height, vecEvPrevPrinting);
-                printBufferArray(buf_dphidt, 400, width, height, vecEvPrevPrinting, slidesToPrint, sizeOfArray);
+                //printBuffer(buf_dphidt, width*height, 0, width, height, vecEvPrevPrinting);
+                printBufferArray(buf_dphidt, width*height, width, height, vecEvPrevPrinting, slidesToPrint, sizeOfArray);
             }
 
             vecEvPrevMaxDphiDt.push_back(evDphiDt_MaxDphiDt);
@@ -437,8 +440,8 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
                 cout << "--------------------Displaying values of new phi ..." << endl;
                 vecEvPrevPrinting.clear();
                 vecEvPrevPrinting.push_back(evSDF_newPhi);
-                //printBuffer(buf_phi, 400, width*height*7, width, height, vecEvPrevPrinting);
-                printBufferArray(buf_phi, 400, width, height, vecEvPrevPrinting, slidesToPrint, sizeOfArray);
+                //printBuffer(buf_phi, width*height, width*height*7, width, height, vecEvPrevPrinting);
+                printBufferArray(buf_phi, width*height, width, height, vecEvPrevPrinting, slidesToPrint, sizeOfArray);
             }
 
             vecEvPrevSmPhi.push_back(evSDF_newPhi);
@@ -450,7 +453,7 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
                 cout << "--------------------Displaying values of smoothed phi ..." << endl;
                 vecEvPrevPrinting.clear();
                 vecEvPrevPrinting.push_back(evAvgInOut_SmoothPhi);
-                printBufferArray(buf_smooth_phi, 400, width, height, vecEvPrevPrinting, slidesToPrint, sizeOfArray);
+                printBufferArray(buf_smooth_phi, width*height, width, height, vecEvPrevPrinting, slidesToPrint, sizeOfArray);
             }
 
             vecEvPrevCopySmoothToPhi.push_back(evAvgInOut_SmoothPhi);
@@ -474,6 +477,7 @@ void ActiveContours::iterate(int numIterations, bool useAllBands) {
             vecEvPrevSDF.clear();
             vecEvPrevPrinting.clear();
             vecEvPrevTextToBuffer.clear();
+
         }//Main loop
 
         queue->finish(); //Be sure we finish everything
@@ -648,7 +652,8 @@ cl::Event ActiveContours::smoothPhi(vector<cl::Event> vecEvPrev, float dt_smooth
         cl::CommandQueue* queue = clMan.getQueue();
         cl::Program* program = clMan.getProgram();
 
-        cl::Kernel kernelSmoothPhi(*program, (char*) "smoothPhiVec");
+        //cl::Kernel kernelSmoothPhi(*program, (char*) "smoothPhiVec");
+        cl::Kernel kernelSmoothPhi(*program, (char*) "smoothPhi");
         kernelSmoothPhi.setArg(0, buf_phi);
         kernelSmoothPhi.setArg(1, buf_smooth_phi);
         kernelSmoothPhi.setArg(2, dt_smooth);
@@ -1039,6 +1044,6 @@ void ActiveContours::toc(Timer* timer){
 void ActiveContours:: printBufferArray(cl::Buffer& buf, int size, int width, int height,
             vector<cl::Event> vecPrev, int* slides, int sizeOfArray){
     for(int i = 0; i < sizeOfArray; i++){
-        printBuffer(buf_smooth_phi, 400, width*height*i, width, height, vecEvPrevPrinting);
+        printBuffer(buf_smooth_phi, width*height, width*height*i, width, height, vecEvPrevPrinting);
     }
 }

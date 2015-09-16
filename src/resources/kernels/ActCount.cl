@@ -147,13 +147,13 @@ smoothPhiVec(global float* phi, global float* sm_phi, float beta, int width, int
 
             float16 sm_phiVal = currvec - beta * (currvec/sqrt( pow(currvec,2) + 1)) * dD;
 
-            vstore16(sm_phiVal, currVect+col, sm_phi);
+            //vstore16(sm_phiVal, currVect+col, sm_phi);
+            vstore16(currvec, currVect+col, sm_phi);
         }
     }
 }
 
-// It computes the curvature of the curve phi close to 0 and
-// also the value of the Force F
+// It smooths the level set depending on the slope
 // Forces the Sussman smooth function, smooths the function depending on the value of the norm of gradient
 __kernel void
 smoothPhi(global float* phi, global float* sm_phi, float beta, int width, int height, int depth){
@@ -462,11 +462,13 @@ compF(global float* avg_in_out, global float* I,
     int totIter = (width/16);
     int step = globId * totIter;
 
+    float lamda1 = 1.1;
+    float lamda2 = .9;
     for(int col = 0; col < totIter; col++){
         currValI = vload16(step + col,I);//left
         currValU = currValI - u;
         currValV = currValI - v;
-        vstore16((currValU*currValU) - (currValV*currValV), step + col, F);
+        vstore16(lamda1*(currValU*currValU) - lamda2*(currValV*currValV), step + col, F);
     }
 
 }//compF
@@ -612,19 +614,20 @@ curvature(global float* phi, global float* curvature,
             curvec.sF = curvec.sE;
         }
 
+        // Assuming h = .5
         // Compute finite differences
         //First order
-        float16 phi_16_x = rivec - lfvec;
-        float16 phi_16_y = upvec - dnvec;
-        float16 phi_16_z = fcurrvec - ccurrvec;
+        float16 phi_16_x = (rivec - lfvec);
+        float16 phi_16_y = (upvec - dnvec);
+        float16 phi_16_z = (fcurrvec - ccurrvec);
         //Second order
-        float16 phi_16_xx = lfvec - 2*currvec + rivec;
-        float16 phi_16_yy = dnvec - 2*currvec + upvec;
-        float16 phi_16_zz = ccurrvec - 2*currvec + fcurrvec;
+        float16 phi_16_xx = (lfvec - 2*currvec + rivec);
+        float16 phi_16_yy = (dnvec - 2*currvec + upvec);
+        float16 phi_16_zz = (ccurrvec - 2*currvec + fcurrvec);
 
-        float16 phi_16_xy = .25*drvec - 0.25*ulvec + .25*urvec -0.25*dlvec ;
-        float16 phi_16_xz = .25*frivec - 0.25*clfvec + .25*flfvec - 0.25*crivec;
-        float16 phi_16_zy = 0.25*fupvec - 0.25*cdnvec + .25*fdnvec - .25*cupvec;
+        float16 phi_16_xy = 0.25f*(drvec - ulvec + urvec - dlvec );
+        float16 phi_16_xz = 0.25f*(frivec - clfvec + flfvec - crivec);
+        float16 phi_16_zy = 0.25f*(fupvec - cdnvec + fdnvec - cupvec);
         //Squares
         float16 phi_16_x2 = phi_16_x*phi_16_x;
         float16 phi_16_y2 = phi_16_y*phi_16_y;

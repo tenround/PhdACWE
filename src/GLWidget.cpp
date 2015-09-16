@@ -31,7 +31,7 @@
 #define YELLOW  1.0f, 1.0f, 0.0f, 1.0f
 #define WHITE   1.0f, 1.0f, 1.0f, 1.0f
 
-#define TESTS 1
+#define TESTS 0
 
 #define NUM_SAMPLERS = 1;
 
@@ -103,12 +103,13 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent) {
 	
     maxActCountIter = 12000;// Maximum number of ACWE iterations
     currIter = 0; // Current ACWE iteration
-    iterStep = 5; //Number of ACWE iterations before retrieving result back to CPU
+    iterStep = 30; //Number of ACWE iterations before retrieving result back to CPU
     acIterate = false;
     //Cool: 12, 13, 2, 6
     acExample = 1; //Example 7 is 128x128
     useAllBands = true; // Use all bands as an average for the ACWE algorithm
     drawPlanes= 0; // 1 -> Draws in 'Raycasting mode' 0 -> Draws the 4 planes
+    rayCastingDecayValue = .12;
 	
     mask = new int[6];//These are the 6 points of the ROI as a cube
 	
@@ -169,7 +170,13 @@ void GLWidget::SelectImage() {
 		init();
         firstTimeImageSelected = false;
 	
+        xmask = width/2;
+        ymask = height/2;
+        zmask = depth/2;
+
         newMask = true;
+        maskSize = 1.0f/4.0f;
+        maskMove = 1.0f/30.0f;
     } else {
         //TODO display a dialog informing the following text.
         cout << "The image haven't been selected. " << endl;
@@ -451,6 +458,9 @@ void GLWidget::InitShaders() {
     drawPlanesUnif = glGetUniformLocation(g_program.theProgram, "drawPlanes");
 	Tools::validateGLlocations(drawPlanesUnif, "drawPlanes");
 
+    rayCastingDecayUnif = glGetUniformLocation(g_program.theProgram, "decay");
+	Tools::validateGLlocations(rayCastingDecayUnif, "decay");
+
     glUseProgram(g_program.theProgram); //Start using the builded program
 	
     glUniform1i(textSamplerUniform, imgTextId); //Binds the texture with the sampler
@@ -541,7 +551,7 @@ void GLWidget::initializeGL() {
         fprintf(stderr, "GLEW Error: %s\n", glewGetErrorString(err));
     }
 
-    //glDisable(GL_CULL_FACE); //Cull ('desechar') one or more faces of polygons
+    glDisable(GL_CULL_FACE); //Cull ('desechar') one or more faces of polygons
     //    glCullFace(GL_BACK); // Hide the 'back' face
     //    glFrontFace(GL_CW); //Which face is 'front' face, defines as Clock Wise
     glEnable(GL_BLEND);//Enables depth buffer
@@ -582,7 +592,7 @@ void GLWidget::resizeGL(int w, int h) {
 /**
  * Run the SDF on the clObj
  */
-void GLWidget::runSDF() {
+void GLWidget::createMaskRunSDF() {
     Timer tm_ocl_sdf(ts, "SDF");
     tm_ocl_sdf.start();
 
@@ -596,29 +606,30 @@ void GLWidget::runSDF() {
 /**
  * This is the main OpenGL loop. Here the display of results is made
  */
-void GLWidget::paintGL() {
-    glFlush();
+void GLWidget::paintGL() { glFlush();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     //Check if we already have an image selected, if not nothing should be done
     if (imageSelected) {
         //        dout << "Painting........... " << endl;
         if (newMask) {
-            if(!TESTS){
-                initMask();
-                runSDF();
-            }
+            //if(!TESTS){
+                initMaskLimits();
+                createMaskRunSDF();
+                displaySegmentation = 1;
+                //}
         }
 
         if ((currIter < maxActCountIter) && acIterate) {
             //Just for performance tests
             if(TESTS){
-                for( int i = 0; i < 10; i++){
-                    initMask();//Re-initialize the mask
-                    runSDF();
+                for( int i = 0; i < 1; i++){
+                    cout << " Run number: " << i << endl;
+                    initMaskLimits();//Re-initialize the mask
+                    createMaskRunSDF();
                     iterStep = 100;
-                    dout << "iterating ....." << currIter << endl;
-                    dout << " number of iterations: " << iterStep << endl;
+                    dout << " Iterating ....." << currIter << endl;
+                    dout << " Number of iterations: " << iterStep << endl;
                     Timer tm_ocl_ac(ts, "ACont");
                     tm_ocl_ac.start();
 
@@ -628,10 +639,9 @@ void GLWidget::paintGL() {
                     dout << "Current iter: " << currIter << endl;
 
                     acIterate = false;
-                    ts.dumpTimings();
                 }//For iterations 10
+                ts.dumpTimings();
             }else{
-                iterStep = 2;
                 dout << "iterating ....." << currIter << endl;
                 dout << " number of iterations: " << iterStep << endl;
                 Timer tm_ocl_ac(ts, "ACont");
@@ -643,7 +653,7 @@ void GLWidget::paintGL() {
                 dout << "Current iter: " << currIter << endl;
 
             }
-            ts.dumpTimings();
+            //ts.dumpTimings();
         }
 
         //glClearColor(0.33f, 0.33f, 0.33f, 0.0f);
@@ -651,6 +661,7 @@ void GLWidget::paintGL() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(g_program.theProgram);
+        glUniform1f(rayCastingDecayUnif, rayCastingDecayValue); // We will display the planes
 
         modelMatrix = camera->getModelMatrix();
         // Sets the model matrix
@@ -704,13 +715,13 @@ void GLWidget::paintGL() {
 /**
  * Initializes the mask at the center of the 3D cube. 
  */
-void GLWidget::initMask(){
-    cout << "--------------- Initializing mask and making SDF..........." << endl;
+void GLWidget::initMaskLimits(){
+    dout << "--------------- Initializing mask and making SDF..........." << endl;
 
     //TODO obtain this parameters form the GUI using OpenGL
-    int maskWidthSize= floor(width/8);
-    int maskHeightSize= floor(height/8);
-    int maskDepthSize= floor(depth/8);
+    int maskWidthSize= floor((float)width*maskSize);
+    int maskHeightSize= floor((float)height*maskSize);
+    int maskDepthSize= floor((float)depth*maskSize);
 
     /*
        mask[0] = floor((1*width)/6);//colStart
@@ -721,14 +732,8 @@ void GLWidget::initMask(){
        mask[5] = floor((2*depth)/4);//depthEnd
        */
 
-    mask[0] = floor(width/2-maskWidthSize);//colStart
-    mask[1] = floor(width/2+maskWidthSize);//colEnd
-    mask[2] = floor(height/2-maskHeightSize);//rowStart 
-    mask[3] = floor(height/2+maskHeightSize);//rowEnd
-    mask[4] = floor(depth/2-maskDepthSize);//depthStart 
-    mask[5] = floor(depth/2+maskDepthSize);//depthStart 
 
-    /*
+    /* // For very small tests
        mask[0] = 7;//colStart
        mask[1] = 12;//colEnd
        mask[2] = 7;//rowStart 
@@ -736,6 +741,15 @@ void GLWidget::initMask(){
        mask[4] = 10;//depthStart 
        mask[5] = 15;//depthStart 
        */
+
+    //Default in the middle of the image, used for perftests
+   mask[0] = floor(xmask-maskWidthSize);//colStart
+   mask[1] = floor(xmask+maskWidthSize);//colEnd
+   mask[2] = floor(ymask-maskHeightSize);//rowStart 
+   mask[3] = floor(ymask+maskHeightSize);//rowEnd
+   mask[4] = floor(zmask-maskDepthSize);//depthStart 
+   mask[5] = floor(zmask+maskDepthSize);//depthStart 
+
 
     dout << "Mask cube limits: " << 
         mask[0] << ',' << mask[1]<< ',' << mask[2]<< ',' 
@@ -858,7 +872,7 @@ void GLWidget::keyReleaseEvent(QKeyEvent* event) {
 void GLWidget::keyPressEvent(QKeyEvent* event) {
 
     camera->keyPressEvent(event);
-    dout << "Key = " << (unsigned char) event->key() << endl;
+    cout << "Key = " << (unsigned char) event->key() << endl;
 
     glm::mat4 translateMatrix = glm::mat4(1.0f);
     float stepSize = 0.02f;
@@ -873,6 +887,46 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
     //printMatrix(camera->getCameraMatrix());
     switch (event->key()) {
 
+        //These 4 keys are to move the ROI
+        case Qt::Key_Left:
+            xmask+= width*maskMove;
+            newMask = true;
+            break;
+        case Qt::Key_Right:
+            xmask-= width*maskMove;
+            newMask = true;
+            break;
+        case Qt::Key_Up:
+            if(event->modifiers().testFlag(Qt::ControlModifier)){
+                ymask-= height*maskMove;
+            }else{
+                zmask+= depth*maskMove;
+            }
+            newMask = true;
+            break;
+        case Qt::Key_Down:
+            if(event->modifiers().testFlag(Qt::ControlModifier)){
+                ymask+= height*maskMove;
+            }else{
+                zmask-= depth*maskMove;
+            }
+            newMask = true;
+            break;
+        case '9':// Case 'J' or 'j' shows and hides the segmentation 
+            rayCastingDecayValue-= .02;
+            break;
+        case '0':// Case 'J' or 'j' shows and hides the segmentation 
+            rayCastingDecayValue+= .02;
+            break;
+
+        case '-':// Case 'J' or 'j' shows and hides the segmentation 
+            maskSize *= .8;
+            newMask = true;
+            break;
+        case '+':// Case 'J' or 'j' shows and hides the segmentation 
+            maskSize *= 1.2;
+            newMask = true;
+            break;
         case 'J':// Case 'J' or 'j' shows and hides the segmentation 
         case 'j':
             displaySegmentation = !displaySegmentation;

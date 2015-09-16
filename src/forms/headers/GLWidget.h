@@ -51,7 +51,7 @@ protected:
     void keyPressEvent(QKeyEvent *event);
     void keyReleaseEvent(QKeyEvent *event);
     void init();
-    void initMask();
+    void initMaskLimits();
     void InitShaders();
     void InitTextures();
     void initImgVaoBuffer();
@@ -63,7 +63,7 @@ protected:
     void printGLMmatrix(glm::mat4 matrix);
 	void printGLVersions();
 	void InitVertexData();
-    void runSDF();
+    void createMaskRunSDF();
 
 	//--------- 3D -------
 	void initTexture3D();
@@ -83,6 +83,8 @@ private:
     // Used to decide if we display the planes or draw using Ray Casting
     GLuint drawPlanesUnif;
     int drawPlanes;
+    GLuint rayCastingDecayUnif;
+    float rayCastingDecayValue;
 
 	GLuint errCode; //Texture buffer object
 
@@ -160,6 +162,16 @@ private:
     char* inputImage;
     char* outputImage;
     int* mask;
+    //Three positions of the center of the ROI
+    int xmask;
+    int ymask;
+    int zmask;
+    //Percentage of the mask size in each dimension. If maskSize = .5 the
+    // ROI will be half the size in each direction
+    float maskSize;
+    // What percentage of the size of the dimension the ROI will be moved 
+    // when pressing any of the arrow keys
+    float maskMove;
     int width;
     int height;
     int depth;

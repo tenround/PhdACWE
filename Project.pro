@@ -45,4 +45,4 @@ CONFIG += qt
 #CONFIG += qt debug
 
 QT +=core gui opengl
-QMAKE_CXXFLAGS += -w -std=gnu++11 -O
+QMAKE_CXXFLAGS += -w -std=gnu++11 -O3

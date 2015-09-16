@@ -9,11 +9,11 @@ uniform mat4 perspectiveMatrix;
 uniform mat4 modelMatrix;
 uniform int dispSegmentation;
 uniform int drawPlanes;
+uniform float decay;
 
 //This part is for the textures
 uniform sampler3D imgSampler;// Used to specify how to apply texture
 uniform sampler3D segSampler;// Used to specify how to apply texture
-
 
 layout (location = 0 ) out vec4 outputColor;
 
@@ -25,7 +25,7 @@ void main()
 
     float count = 100;
     float gamma = 4;
-    float decay = .12;
+    //float decay = .12;
 
     textColor.r = textColor.r*decay;
     //textColor.r = textColor.r*(gamma/count);
@@ -89,6 +89,7 @@ void main()
                     textColor = texture(segSampler, currTextCoord);
                     if( (textColor.r <= bthreshold) && (textColor.r <= bthreshold)){
                         outputColor = mix(outputColor,vec4(1, 0, 0, 0),mixVal);
+                        //outputColor = vec4(1, 0, 0, 0);
                     }
                 }
             }

@@ -12,6 +12,7 @@ uniform vec3 vertexNormal;
 smooth out vec4 theColor;
 smooth out vec3 textCoord;//Coordinate of the texture
 
+uniform int drawPlanes;
 /*
 vec3 computeLightForVertex(vec3 vertexNormal, vec3 color){
 	vec3 ligthVector = vec3(0.0, 100.0, 0.0);//Always same ligth position
@@ -27,7 +28,12 @@ vec3 computeLightForVertex(vec3 vertexNormal, vec3 color){
 
 void main(){
     vec4 cameraPos = modelMatrix *  position;
-    gl_Position = perspectiveMatrix * cameraPos;
+    if(drawPlanes  == 1){
+        gl_Position = perspectiveMatrix * cameraPos;
+    }else{
+        gl_Position = perspectiveMatrix * cameraPos;
+    }
+
     // We need to understand better the whole matrix and world stuff
     theColor = color;
     textCoord= inTextCoord;
